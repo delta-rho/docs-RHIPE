@@ -1,0 +1,106 @@
+# RHIPE Tutorial #
+
+## Installation ##
+
+### Installation ###
+RHIPE is an R package, that can be downloaded at [this website](http://ml.stat.purdue.edu/rhipebin/Rhipe_0.73.1.tar.gz). 
+To install it the user needs to
+- Set an environment variable *HADOOP* that points to the Hadoop installation directory. It is 
+expected that *HADOOP\bin* contains the Hadoop shell executable *hadoop*.
+- A version of Google's Protocol Buffers [here](https://code.google.com/p/protobuf/) greater than
+2.3.0
+
+Once the package has been downloaded the user can install it via
+
+```{r,eval=FALSE}
+R CMD INSTALL Rhipe_version.tar.gz
+```
+
+where *version* is the latest version of RHIPE. The source is under version control at [GitHub](https://github.com/tesseradata/RHIPE/).
+
+This needs to be installed on all the computers: the one you run your R environment and all the task
+computers. Use RHIPE is much easier if your filesystem layout (i.e location of R, Hadoop, libraries 
+etc) is identical across all computers.
+
+### Tests ###
+
+In R
+
+```{r,eval=FALSE}
+library(Rhipe)
+rhinit()
+```
+
+should work successfully.
+
+```{r,eval=FALSE}
+## a is a list consisting of 3 elements and each element is a list containing two elements
+a = list(list(1,c(1,2,3)),list(2,c(1,2,3)),list(3,c(1,2,3)))
+rhwrite(a,"/tmp/xx")
+```
+
+should successfully write the list to the HDFS
+
+```{r,eval=FALSE}
+b = rhread("/tmp/xx")
+str(b)
+```
+
+Return a list of length 3 each element a list of 2 objects.
+
+```
+List of 3
+ $ :List of 2
+  ..$ : num 1
+  ..$ : num [1:3] 1 2 3
+ $ :List of 2
+  ..$ : num 2
+  ..$ : num [1:3] 1 2 3
+ $ :List of 2
+  ..$ : num 3
+  ..$ : num [1:3] 1 2 3
+```
+
+And a quick run of this should also work
+
+```{r,eval=FALSE}
+map <- expression({
+  lapply(seq_along(map.values),function(r){
+    x <- runif(map.values[[r]])
+    rhcollect(map.keys[[r]],c(n = map.values[[r]],mean = mean(x),sd = sd(x)))
+  })
+})
+
+## Create a job object
+z <- rhwatch(
+  map    = map, 
+  input  = c (10,10),
+  output = "/tmp/xx", 
+  mapred = list(mapred.reduce.tasks=0),
+  noeval = TRUE
+  )
+
+## Submit the job
+rhex(z, async = FALSE )
+## Read the results
+res    <- rhread('/tmp/xx')
+colres <- do.call('rbind',lapply(res,"[[",2))
+colres
+```
+
+```
+       n      mean        sd
+ [1,]  1 0.4314606        NA
+ [2,]  2 0.1920560 0.2477057
+ [3,]  3 0.5399694 0.3059996
+ [4,]  4 0.5103296 0.3543939
+ [5,]  5 0.6566606 0.2697990
+ [6,]  6 0.5678072 0.2698144
+ [7,]  7 0.5696185 0.2967622
+ [8,]  8 0.5207922 0.3553869
+ [9,]  9 0.5791976 0.3101113
+[10,] 10 0.4795422 0.2394009
+
+
+```
+

@@ -1,0 +1,161 @@
+## Simulations ##
+
+### Simulations are Embarrassingly Parallel ###
+
+Simulations are an example of task parallel routines in which a function is called repeatedly with 
+varying parameters. These computations are processor intensive and consume/produce little data. 
+The evaluation of these tasks are independent in that there is no communication between them. With 
+`N` tasks and `P` processors, if `P = N` we could run all N in parallel and collect the results. 
+However, often `P << N` and thus we must either
+
+* Create a queue of tasks and assign the top most task on the queue to the next free processor. 
+This works very well in an heterogeneous environment e.g. with varying processor capacities or 
+varying task characteristics - free resources will be automatically assigned pending tasks. The 
+cost in creating a new task can be much greater than the cost of evaluating the task.
+* Partition the `N` tasks into `n` splits each containing $\lceil N/n \rceil$ tasks (with the last 
+split containing the remainder). These splits are placed in a queue, each processor is assigned a 
+splits and the tasks in a split are evaluated sequentially.
+
+The second approach simplifies to the first when `n = N`. Creating one split per task is 
+inefficient since the time to create,assign launch the task contained in a split might be much 
+greater than the evaluation of the task. Moreover, with `N` in the millions, this will cause the 
+Jobtracker to run out of memory. It is recommended to divide the `N` tasks into fewer splits of 
+sequential tasks. Because of non uniform running times among tasks, processors can spend time in 
+the sequential execution of tasks in a split $\sigma$ with other processors idle. Hadoop will 
+schedule the split $\sigma$ to another processor (however it will not divide the split into smaller 
+splits), and the output of whichever completes first will be used.
+
+RHIPE provides two approaches to this sort of computation. To apply the function `F` to the set $\lbrace 1, 2,\ldots, M \rbrace$, the pseudo code would follow as (here we assume `F` returns a data frame)
+```{r eval=FALSE, tidy=FALSE}
+FC <- expression({
+  results <- do.call("rbind", lapply(map.values, F))
+  rhcollect(1, results)
+})
+mrFC <- rhwatch(
+  map    = FC,
+  input  = c(1000, 8),
+  output = "/tmp/FC",
+  inout  = c('lapply', 'sequence'),
+  mapred = list(mapred.map.tasks = 1000)
+  )
+do.call('rbind',lapply(rhread('/tempfolder', mc=TRUE),'[[',2))
+```
+Here `F` is applied to the numbers $1, 2,\ldots, M$. The job is decomposed into `1000` splits 
+(specified by `mapred.map.tasks`) each containing approximately $\lceil M/1000 \rceil$ tasks. 
+The expression, `FC` sequentially applies `F` to the elements of `map.values` (which will 
+contain a subset of $1, 2,\ldots ,M$) and aggregate the returned data frames with a call to rbind. 
+In the last line, the results of the `1000` tasks (which is a list of data frames) are read from 
+the HDFS, the data frame are extracted from the list and combined using a call to rbind. Much of 
+this is boiler plate RHIPE code and the only varying portions are: the function `F`, the number of 
+iterations `M`, the number of groups (e.g. `mapred.map.tasks`) and the aggregation scheme (e.g. I 
+used the call to rbind). R lists can be written to a file on the HDFS (with `rhwrite`), which can 
+be used as input to a MapReduce job.
+
+### Medians of Standard Normal Samples Example ###
+
+The following is example code for how to generate random deviates and store the medians of each 
+subset to the HDFS. This example will generate a total of `N <- 2^18` standard normal deviates in 
+`R <- 2^8` subsets of size `m <- 2^10` and reduce to the median value of each subset:
+```{r eval=FALSE, tidy=FALSE}
+dir <- "tmp/rnorm/"
+N <- 2^18
+m <- 2^10
+mapZ <- expression({
+  m <- 2^10
+  for(i in seq_along(map.values)){
+    Z <- rnorm(m)
+    med <- median(Z)
+    rhcollect(NULL, med)
+  }
+})
+reduceZ <- expression({rhcollect(reduce.key, reduce.values)})
+mrZ <- rhwatch(
+  map      = mapZ,
+  reduce   = reduceZ,
+  input    = c(N/m, 8), 
+  output   = paste(dir, "Z", sep=""),
+  mapred   = list(mapred.reduce.tasks = 1),
+  readback = FALSE
+  )
+```
+Observe the use of `NULL` in the key component of `rhcollect()` within the `mapZ` expression(). 
+This choice is, because there is no need to differentiate one simulation from another as being 
+unique or special. This makes it easier to work with this particular simulation when bringing this 
+data into your R Global Environment.
+
+### Observing Location of Median HDFS Data ###
+
+A simple call to list the available files within your HDFS directory through R utilizing the RHIPE 
+library command `rhls()` will display where the random values are stored.
+```{r eval=FALSE, tidy=FALSE}
+rhls("/tmp/rnorm/Z")
+```
+```
+    permission   owner      group    size          modtime
+1   -rwr---r-- jtroisi supergroup       0 2014-06-30 13:53
+2   drwxrwxrwt jtroisi supergroup       0 2014-06-30 13:53
+3   -rw-r--r-- jtroisi supergroup 6.15 kb 2014-06-30 13:53
+                         file
+1       /tmp/rnorm/Z/_SUCCESS
+2          /tmp/rnorm/Z/_logs
+3   /tmp/rnorm/Z/part-r-00000
+```
+Files are list as above.
+
+### Reading Median HDFS Data into Global Environment ###
+
+To call any of these sets of random numbers into your local environment it is as simple as a call 
+to the RHIPE command `rhread()`.
+```{r eval=FALSE, tidy=FALSE}
+Zmedians <- unlist(rhread("/tmp/rnorm/Z/part-r-00000"))
+head(Zmedians)
+```
+```{r echo=FALSE}
+Zmedians <- 1:6
+for(i in 1:6) Zmedians[i] <- median(rnorm(2^10))
+Zmedians
+```
+
+### AR(2) Simulation Example ###
+
+Estimating the parameters of an Auto Regressive Integrated Moving Average (ARIMA) Model requires 
+numerous approximations that inevitably still leave us without a closed form solution. The 
+following code will step us through the task of a good way to use the HDFS to effectively estimate 
+an Auto Regressive Two (AR(2)) Model.
+```{r eval=FALSE, tidy=FALSE}
+dir <- "/tmp/advsim/" 
+N <- 2^18 
+m <- 2^10
+maprho <- expression({
+  m <- 2^10
+  rho.true <- c(2/3, -1/3)
+  w.vec <- 2*pi*0:(m - 1)/m
+  ginv <- function(lambda, rho1, rho2)
+    1 + rho1^2 + rho2^2 - 2*rho1*(1 - rho2)*cos(lambda) - 2*rho2*cos(2*lambda)
+  for(i in seq_along(map.values)){
+    AR2 <- arima.sim(n = m, model = list(ar = rho.true)) #Random AR(2) Data
+    X <- fft(AR2) #Fast Fourier Transform
+    per <- Re(X)^2 + Im(X)^2 #Periodogram
+    #Whittle Approximate Likelihood Function for AR(2) Time Series Model
+    lW <- function(rho)
+      m*log(sum(ginv(w.vec, rho[1], rho[2])*per)/m) + sum(log(1/ginv(w.vec, rho[1], rho[2])))
+    rho.argmin <- optim(c(0, 0), lW)$par
+    rhcollect(NULL, rho.argmin)
+  }
+})
+reducerho <- expression(reduce = {rhcollect(reduce.key, reduce.values)})
+mrrho <- rhwatch(
+  map      = maprho,
+  reduce   = reducerho,
+  input    = c(N/m, 8),
+  output   = paste(dir, "rho.argmin", sep=""),
+  mapred   = list(mapred.reduce.tasks = 1),
+  readback = FALSE
+  )
+```
+At this point it is best to bring the values back into the R global environment. The code for this 
+is as follows:
+```{r eval=FALSE, tidy=FALSE}
+rho.est <- matrix(unlist(rhread(dirrho)), ncol = 2, byrow = TRUE)
+```
+The first column are your `rho1` estimates and the second column are your `rho2` estimates.

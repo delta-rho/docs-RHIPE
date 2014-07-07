@@ -1,0 +1,371 @@
+### Analysis ###
+
+We compute some summaries and displays to understand the data.
+
+#### Top 20 cities by total volume of flights ####
+
+We compute some summaries and displays to understand the data.
+
+```{r eval=FALSE, tidy=FALSE}
+map <- expression({
+  a <- do.call("rbind", map.values)
+  inbound <- table(a[, 'origin'])
+  outbound <- table(a[, 'dest'])
+  total <- table(unlist(c(a[, 'origin'], a['dest'])))
+  for(n in names(total)) {
+    inb <- if(is.na(inbound[n])) 0 else inbound[n]
+    ob <- if(is.na(outbound[n])) 0 else outbound[n]
+    rhcollect(n, c(inb, ob, total[n]))
+  }
+})
+reduce <- expression(
+  pre = {
+    sums <- c(0, 0, 0)
+  },
+  reduce = {
+    sums <- sums + apply(do.call("rbind", reduce.values), 2, sum)
+  },
+  post = {
+    rhcollect(reduce.key, sums)
+  }
+)
+mapred <- list(rhipe_map_buff_size = 15)
+z <- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt("/tmp/airline/output/blocks", type = "sequence"),
+  output   = rhfmt("/tmp/airline/output/volume", type = "sequence"),
+  mapred   = mapred,
+  readback = FALSE
+)
+```
+
+The code is straightforward. We increased the value of `rhipe_map_buff_size` since we are doing 
+summaries of columns. The figure 
+[Log of time to complete vs log of rhipe_map_buff_size](./plots/rhipemapbuff.pdf). Plots the
+time of completion vs the mean of three trials for different values of `rhipe_map_buff_size`. The 
+trials set `rhipe_map_buff_size` to 5, 10, 15, 20, 25 and 125. All experiments (like the rest in the 
+manual) were performed on a 72 core cluster across 8 servers with RAM varying from 16 to 64 GB.
+
+Read the data into R and display them using the lattice library.
+
+```{r eval=FALSE, tidy=FALSE}
+counts <- rhread("/airline/volume")
+aircode <- unlist(lapply(counts, "[[",1))
+count <- do.call("rbind",lapply(counts,"[[",2))
+results <- data.frame(
+           aircode = aircode,
+               inb = count[, 1],
+               oub = count[, 2],
+               all = count[, 3],
+  stringsAsFactors = FALSE
+)
+results <- results[order(results$all, decreasing = TRUE), ]
+library(lattice)
+r <- results[1:20, ]
+af <- reorder(r$aircode, r$all)
+trellis.device(postscript, file = "volume.ps", color=TRUE, paper="letter")
+dotplot(af ~ log(r[, 'all'], 10),
+  xlab = 'Log_10 Total Volume',
+  ylab = 'Airport',
+   col = 'black',
+  aspect = 1
+)
+dev.off()
+```
+
+There are 352 locations (airports) of which the top 20 serve 50% of the volume.
+[Dot plot of top 20 cities by total volume of flights](./plots/volume.pdf)
+
+#### Carrier Popularity ####
+
+Some carriers come and go, others demonstrate regular growth. In the following display, the log base
+10 volume (total flights) over years are displayed by carrier. The carriers are ranked by their 
+median volume (over the 10 year span).
+
+As mentioned before, RHIPE is mostly boilerplate. Notice the similarities between this and previous
+examples (on a side note, to do this for 12GB of data takes 1 minute and 32 seconds across 72 cores 
+and all the examples, except the download and conversion to R data frames, in the manual are less 
+than 10 minutes)
+
+```{r eval=FALSE, tidy=FALSE}
+map <- expression({
+  a <- do.call("rbind", map.values)
+  total <- table(years = a[, 'year'], a[, 'carrier'])
+  ac <- rownames(total)
+  ys <- colnames(total)
+  for(yer in ac){
+    for(ca in ys){
+      if(total[yer, ca] > 0) 
+        rhcollect(c(yer, ca), total[yer, ca])
+    }
+  }
+})
+reduce <- expression(
+  pre = {
+    sums <- 0
+  },
+  reduce = {
+    sums <- sums + sum(do.call("rbind", reduce.values))
+  },
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+
+mapred <- list()
+mapred$rhipe_map_buff_size <- 5
+z <- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt("/tmp/airline/output/blocks/", type="sequence"),
+  output   = rhfmt("/tmp/airline/output/carrier.pop/", type="sequence"),
+  mapred   = mapred,
+  readback = FALSE
+)
+```
+
+This is the RHIPE code to create summaries. We need to extract the data from Hadoop and create a 
+display.
+[Carrier Popularity](./plots/carrier.pdf)
+
+```{r eval=FALSE, tidy=FALSE}
+a <- rhread("/tmp/airline/output/carrier.pop")
+head(a, 3)
+```
+```
+[[1]]
+[[1]][[1]]
+[1] "1987" "AA"  
+
+[[1]][[2]]
+[1] 165121
+
+
+[[2]]
+[[2]][[1]]
+[1] "1987" "AS"  
+
+[[2]][[2]]
+[1] 21406
+
+
+[[3]]
+[[3]][[1]]
+[1] "1987" "CO"  
+
+[[3]][[2]]
+[1] 123002
+```
+
+```{r eval=FALSE, tidy=FALSE}
+yr <- as.numeric(unlist(lapply(lapply(a, "[[", 1), "[[", 1)))
+carrier <- unlist(lapply(lapply(a, "[[", 1), "[[", 2))
+count <- unlist(lapply(a, "[[", 2))
+results <- data.frame(
+                yr = yr,
+           carcode = carrier,
+             count = count,
+  stringsAsFactors = FALSE
+)
+results <- results[order(results$yr, results$count, decreasing = TRUE), ]
+carr <- reorder(results$carcode, results$count, median)
+trellis.device(postscript, file = "carrier.ps", color=TRUE, paper="letter")
+xyplot(log(count, 10) ~ yr | carr, 
+  data           = results,
+  xlab           = "Years", 
+  ylab           = "Log10 count",
+  col            = 'black',
+  scales         = list(scale = 'free',tck = 0.5,cex = 0.7),
+  layout         = c(4, 4),
+  aspect         = " xy",
+  type           = 'b',
+  par.strip.text = list(lines = 0.8, cex = 0.7), 
+  cex            = 0.5,
+  panel          = function(...){
+    panel.grid(h = -1,v = -1)
+    panel.xyplot(...)
+  }
+)
+dev.off()
+```
+
+#### Proportion of Flights Delayed ####
+
+It is very likely in the future analysis, we want to study the flights information for a specific 
+day.So for this scenario we want to create new key/value pairs by using RHIPE. The input files are
+the blocks of data we created previously, and the ouput will be 'sequence' file with key is the 
+date, and corresponding value is a data frame of data for that particular day. For example, we would
+like to know what is the delay rate on everyday.
+
+```{r eval=FALSE, tidy=FALSE}
+map <- expression({
+  a <- do.call("rbind", map.values)
+  a$delay.sec <- as.vector(a[,'arrive']) - as.vector(a[,'sarrive'])
+  a <- a[!is.na(a$delay.sec),]
+  a$isdelayed <- sapply(a$delay.sec, function(r) if(r > 900) TRUE else FALSE)
+  e <- split(a, list(a$year, a$month, a$day))
+  lapply(e, function(r){
+    n <- nrow(r)
+    numdelayed <- sum(r$isdelayed)
+    rhcollect(as.vector(unlist(c(r[1, c("year", "month", "day")]))), c(n, numdelayed))
+  })
+})
+reduce <- expression(
+  pre = {
+    sums <- c(0, 0)
+  },
+  reduce = {
+    sums <- sums + apply(do.call("rbind", reduce.values), 2, sum)
+  },
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+mapred <- list()
+mapred$rhipe_map_buff_size <- 5
+z <- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt("/tmp/airline/output/blocks", type = "sequence"),
+  output   = rhfmt("/tmp/airline/output/delaybyday", type = "sequence"),
+  mapred   = mapred,
+  readback = FALSE
+)
+```
+
+In map expression, we still iterate over the `map.values`, which are number `rhipe_map_buff_size` 
+of the data frame with 5000 rows and 12 columns flights information. we define the second of delay
+as `delay.sec`. Of course, we have to remove all `NA` in `delay.sec` since there are some records 
+of flight have `NA` as missing data of arriving time. Then create a flag variable `isdelayed` to 
+identify if the flight is delayed. Object `e` is a list which come from the calling of `split()` 
+function. What we get for `e` is a data frame for each day as elements of the list. At last, we
+collect the key which is the date, and value which is a vector with total number of flights and 
+number of delayed flights for each element of `e`.
+
+In reduce expression, we initialize the `sums` in `pre` of reduce, which will be the final total
+number of flights and number of delay for a given day. And in `reduce` of reduce, we just cumulate
+all two numbers for same key. Finally, in `post` of reduce, collect the final key/value pairs. 
+`reduce.key` here is one particular date of the day, and `reduce.values` is a list with all 
+`c(numberofflight, numberofdelay)` as elements.
+
+We read the output by using `rhread()`, and then grab all the keys assigned to `y1`, grab all the 
+values assigned to `y2`. Based on keys and values, we create a data frame named `results` with 6 
+columns. The delay rate is the number of delay divided by the number of total flights on that day. 
+Finally, the data frame is sorted by the day.
+
+```{r eval=FALSE, tidy=FALSE}
+b <- rhread("/tmp/airline/output/delaybyday")
+y1 <- do.call("rbind", lapply(b, "[[", 1))
+y1 <- y1[-1, ]
+y2 <- do.call("rbind", lapply(b, "[[", 2))
+y2 <- y2[-1, ]
+results <- data.frame(
+  year    = y1[, 1],
+  month   = y1[, 2],
+  day     = y1[, 3],
+  nflight = y2[, 1],
+  ndelay  = y2[, 2]
+)
+results$rate <- results$ndelay/results$nflight
+results <- results[order(results$year, results$month, results$day), ]
+head(results)
+```
+```
+   year month day nflight ndelay      rate
+1  1987    10   1   14759   9067 0.6143370
+10 1987    10  10   13417   7043 0.5249311
+11 1987    10  11   14016   7790 0.5557934
+12 1987    10  12   14792   8376 0.5662520
+13 1987    10  13   14859   8623 0.5803217
+14 1987    10  14   14799   8806 0.5950402
+```
+
+STL decomposition of proportion of flights delayed is the STL decomposition of p (the proportion of
+flights delayed). The seasonal panel clearly demonstrates the holiday effect of delays. They don’t 
+seem to be increasing with time (see trend panel).
+
+```{r eval=FALSE, tidy=FALSE}
+prop <- results[,'rate']
+prop <- prop[!is.na(prop)]
+tprop <- ts(log(prop/(1 - prop)), 
+  start     = c(1987, 273),
+  frequency = 365
+)
+tprop[is.infinite(tprop)] <- 0
+trellis.device(postscript, file = "propdelayedxyplot.ps", color=TRUE, paper="letter")
+plot(stl(tprop,s.window="periodic"))
+dev.off()
+```
+
+[STL decomposition of proportion of flights delayed](./plots/propdelayedxyplot.pdf)
+
+We can do very similar thing that calculating the delay rate, but for each hour, instead of doing 
+that for each day. We only need to change the key to be the hour variable in data.
+
+```{r eval=FALSE, tidy=FALSE}
+map <- expression({
+  a <- do.call("rbind",map.values)
+  a$delay.sec <- as.vector(a[, 'arrive'])-as.vector(a[, 'sarrive'])
+  a <- a[!is.na(a$delay.sec),]
+  a$isdelayed <- sapply(a$delay.sec, function(r) if(r > 900) TRUE else FALSE)
+  a$hrs <- as.numeric(format(a[, 'sdepart'], "%H"))
+  e <- split(a,a$hrs)
+  lapply(e, function(r){
+    n <- nrow(r) 
+    numdelayed <- sum(r$isdelayed)
+    rhcollect(as.vector(unlist(c(r[1, c("hrs")]))), c(n, numdelayed))
+  })
+})
+reduce <- expression(
+  pre = {
+    sums <- c(0, 0)
+  },
+  reduce = {
+    sums <- sums + apply(do.call("rbind", reduce.values), 2, sum)
+  },
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+mapred <- list()
+mapred$rhipe_map_buff_size <- 5
+z <- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt("/tmp/airline/output/blocks/", type = "sequence"),
+  output   = rhfmt("/tmp/airline/output/delaybyhours", type = "sequence"),
+  mapred   = mapred,
+  readback = FALSE
+)
+```
+
+Does the delay proportion change with hour? It appears it does (see Proportion of flights delayed
+by hour of day). The hours are scheduled departure times. Why are so many flights leaving in the 
+hours (12-3) delayed?
+
+```{r eval=FALSE, tidy=FALSE}
+b <- rhread("/tmp/airline/output/delaybyhours")
+y1 <- do.call("rbind", lapply(b, "[[", 1))
+y2 <- do.call("rbind", lapply(b, "[[", 2))
+results <- data.frame(
+  hour = y1,
+  rate = y2[, 2] / y2[, 1]
+)
+trellis.device(postscript, file = "delaybyhours.ps", color=TRUE, paper="letter")
+dotplot( hour ~ rate, 
+  data           = results,
+  xlab           = "Proportion of Flights Delayed > 15 minutes", 
+  ylab           = "Hour of Day",
+  col            = 'black',
+  aspect         = " xy"
+)
+dev.off()
+```
+
+[Proportion of flights delayed by hour of day](./plots/delaybyhours.pdf)
+

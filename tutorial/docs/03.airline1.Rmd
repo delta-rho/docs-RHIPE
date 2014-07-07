@@ -1,0 +1,461 @@
+## Airline Data  ##
+
+The Airline data set consists of flight arrival and departure details for all commercial flights from
+1987 to 2008. The approximately 120MM records (CSV format), occupy 120GB space. The data set was used 
+for the Visualization Poster Competition, JSM 2009. The winning entries can be found 
+[here](http://stat-computing.org/dataexpo/2009/). To quote the objectives
+
+  “The aim of the data expo is to provide a graphical summary of important features of the data set. 
+This is intentionally vague in order to allow different entries to focus on different aspects of the
+data, but here are a few ideas to get you started:
+
+- When is the best time of day/day of week/time of year to fly to minimise delays?
+- Do older planes suffer more delays?
+- How does the number of people flying between different locations change over time?
+- How well does weather predict plane delays?
+- Can you detect cascading failures as delays in one airport create delays in others? Are there 
+critical links in the system?”
+
+In this chapter, we will demonstrate RHIPE code samples to create similar graphics found in the 
+winning entries [SAS] and [FLUSA].
+
+[SAS] Congestion in the Sky: Vizualising Domestic Airline Traffic with SAS, Rick Wicklin and Robert 
+Allison, SAS Institute. http://stat-computing.org/dataexpo/2009/posters/wicklin-allison.pdf
+
+[FLUSA]	Delayed, Cancelled, On-Time, Boarding ... Flying in the USA, Heike Hofmann, Di Cook, 
+Chris Kielion, Barret Schloerke, Jon Hobbs, Adam Loy,Lawrence Mosley, David Rockoff, Yuanyuan Sun, 
+Danielle Wrolstad and Tengfei. Yin, Iowa State University. 
+http://stat-computing.org/dataexpo/2009/posters/hofmann-cook.pdf
+
+### Copying the Data to the HDFS ###
+
+The Airline data can be found [at this site](http://stat-computing.org/dataexpo/2009/the-data.html).
+In this example, we download the data sets for the individual years and save them on the HDFS with
+the following code (with limited error checks)
+
+```{r eval=FALSE, tidy=FALSE}
+library(Rhipe)
+rhinit()
+map <- expression({
+  msys <- function(on){
+    system(sprintf("wget  %s --directory-prefix ./tmp 2> ./errors", on))
+    if(length(grep("(failed)|(unable)", readLines("./errors"))) > 0){
+      stop(paste(readLines("./errors"), collapse="\n"))
+    }
+  }
+  lapply(map.values, function(r){
+    x = 1986 + r
+    on <- sprintf("http://stat-computing.org/dataexpo/2009/%s.csv.bz2", x)
+    fn <- sprintf("./tmp/%s.csv.bz2", x)
+    rhstatus(sprintf("Downloading %s", on))
+    msys(on)
+    rhstatus(sprintf("Downloading %s", on))
+    system(sprintf('bunzip2 %s', fn))
+    rhstatus(sprintf("Unzipped %s", on))
+    rhcounter("FILES", x, 1)
+    rhcounter("FILES", "_ALL_", 1)
+  })
+})
+z <- rhwatch(
+  map       = map,
+  input     = rep(length(1987:2008), 2),
+  output    = "/tmp/airline/data",
+  mapred    = list( mapred.reduce.tasks = 0, mapred.task.timeout = 0 ),
+  copyFiles = TRUE,
+  readback  = FALSE,
+  noeval    = TRUE
+)
+j <- rhex(z, async = TRUE)
+```
+
+A lot is demonstrated in this code. `RHIPE` is loaded via the call in first line. A MapReduce job 
+takes a set of input keys, in this case the numbers 1987 to 2008. It also takes a corresponding set
+of values. The parameter `input` in `rhwatch` tells `RHIPE` how to convert the input the data to key, 
+value pairs. If the input file is a binary file but `input` specifies `text` as the `type`, `RHIPE`
+will not throw an error but provide very unexpected key/value pairs. `input` in this case is lapply,
+which treats the numbers 1 to `input[1]` as both keys and values.
+
+These key/value pairs are partitioned into splits. How they are partitioned depends on the `type` in
+`input` argument. For text files which specifies `type="text"` in `input`, the data
+is split into roughly equi-length blocks of e.g. 128MB each. A CSV text file will have approximately
+equal number of lines per block (not necessarily). `RHIPE` will launch R across all the compute
+nodes. Each node is responsible for processing a the key/value pairs in its assigned splits.
+
+This processing is performed in the map argument to `rhwatch`. The map argument is an R expression.
+Hadoop will read key,value pairs, send them to RHIPE which in turn buffers them by storing them in 
+a R list: `map.values` and `map.keys` respectively. Once the buffer is full, RHIPE calls the map 
+expression. The default length of `map.values` (and `map.keys`) is 10,000 [1].
+
+In our example, `input[1]` is 22. The variables `map.values` and `map.keys` will be lists of numbers
+1 to 22 and number 1 to 22 respectively. The entries need not be in the order 1 to 22.
+
+`rhwatch` is a call that packages the MapReduce job which is sent to Hadoop. It takes an input folder
+which can contain multiple files and subfolders. All the files will be given as input. If a 
+particular file cannot be understood by the input format (e.g. a text file given to `type="sequence"`),
+`RHIPE` will throw an error.
+
+The expression downloads the CSV file, unzips its, and stores in the folder tmp located in the 
+current directory. No copying is performed. The current directory is a temporary directory on the
+local filesystem of the compute node, not on the HDFS. Upon successful completion of the split, 
+the files stored in tmp (of the current directory) will be copied to the output folder specified
+by ofolder in the call to rhmr. Files are copied only if copyFiles is set to `TRUE`.
+
+Once a file has been downloaded, we inform Hadoop of our change in status, via `rhstatus`. The 
+example of rhstatus displays the various status of each of the 22 splits (also called Tasks)
+
+Once a file has been downloaded, we increment a distributed count. Counts belong to families, a 
+single family contains many counters. The counter for group G and name N is incremented via a call
+to `rhcounter`. We increment a counter for each of the 22 files. Since each file is downloaded once, 
+this is essentially a flag to indicate successful download. A count of files downloaded is tracked 
+in Files/\_ALL\_ .
+
+The operation of Hadoop is affected by many options, some of which can be found in Options for 
+`RHIPE`. Hadoop will terminate splits (tasks) after 10 minutes if they do not invoke `rhstatus`
+or return. Since each download takes approximately 30 minutes (the minimum is 4 minutes, the 
+maximum is 42 minutes, the mean is 30 minutes), Hadoop will kill the tasks. We tell Hadoop to not
+kill long running tasks by setting `mapred.task.timeout` to 0. We do not to need to reduce our 
+results so we set `mapred.reduce.tasks` to 0. Output from the map is written directly to the output
+folder on the HDFS. We do not have any output. These options are passed in the mapred argument.
+
+The call to `rhex` launches the job across Hadoop. We use the async argument to return control of 
+the R console to the user. We can monitor the status by calling `rhstatus`, giving it the value 
+returned from `rhex` or the job ID (e.g. job_201007281701_0053)
+
+```{r eval=FALSE, tidy=FALSE}
+rhstatus(j)
+```
+```
+[Mon Jun 30 17:07:06 2014] Name:2014-06-30 17:06:11 Job: job_201406101143_0118  State: RUNNING Duration: 54.346
+URL: http://hadoop-01.rcac.purdue.edu:50030/jobdetails.jsp?jobid=job_201406101143_0118
+       pct numtasks pending running complete killed failed_attempts killed_attempts
+map      1       22       0       6       16      0               0               0
+reduce   0        0       0       0        0      0               0               0
+Waiting 5 seconds
+[Mon Jun 30 17:07:11 2014] Name:2014-06-30 17:06:11 Job: job_201406101143_0118  State: RUNNING Duration: 59.496
+URL: http://hadoop-01.rcac.purdue.edu:50030/jobdetails.jsp?jobid=job_201406101143_0118
+       pct numtasks pending running complete killed failed_attempts killed_attempts
+map      1       22       0       2       20      0               0               0
+reduce   0        0       0       0        0      0               0               0
+```
+Once the job is finished, calling of `rhstatus` will return a list with different information of a
+finished job.
+
+```{r eval=FALSE, tidy=FALSE}
+a <- rhstatus(j)
+a$state
+```
+```
+[1] "SUCCEEDED"
+```
+```{r eval=FALSE, tidy=FALSE}
+a$duration
+```
+```
+[1] 156.52
+```
+```{r eval=FALSE, tidy=FALSE}
+a$counters
+```
+```
+$`Job Counters `
+                                                                     [,1]
+Launched map tasks                                                     22
+SLOTS_MILLIS_MAPS                                                  873813
+SLOTS_MILLIS_REDUCES                                                    0
+Total time spent by all maps waiting after reserving slots (ms)         0
+Total time spent by all reduces waiting after reserving slots (ms)      0
+...
+```
+
+This distributed download took 2 minutes to complete, 15 seconds more than the longest running 
+download (2007.csv.bz2). A sequential download would have taken several hours.
+
+**Note**  
+It is important to note that the above code is mostly boiler plate. There is almost no lines to 
+handle distribution across a cluster or task restart in case of transient node failure. The user
+of RHIPE need only consider how to frame her argument in the concepts of MapReduce.
+
+`rhls` function can help us to list all files under a directory on HDFS.
+
+```{r eval=FALSE, tidy=FALSE}
+rhls("/tmp/airline/data")
+```
+```
+   permission owner      group        size          modtime                           file
+1  -rw-r--r-- tongx supergroup           0 2014-06-11 10:44     /tmp/airline/data/_SUCCESS
+2  drwxrwxrwt tongx supergroup           0 2014-06-11 10:43        /tmp/airline/data/_logs
+3  drwxr-xr-x tongx supergroup           0 2014-06-11 17:51     /tmp/airline/data/_outputs
+4  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00000
+5  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00001
+6  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00002
+7  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00003
+8  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00004
+9  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00005
+10 -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00006
+...
+```
+All 'part-m-...' files are empty since we did not have real output content from the mapreduce 
+job. Downloaded files are actually coyied into a subdirectory named `_outputs`
+
+```{r eval=FALSE, tidy=FALSE}
+rhls("/tmp/airline/data/_outputs")
+```
+```
+   permission owner      group     size          modtime                                file
+1  -rw-r--r-- tongx supergroup 121.3 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1987.csv
+2  -rw-r--r-- tongx supergroup 477.8 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1988.csv
+3  -rw-r--r-- tongx supergroup   464 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1989.csv
+4  -rw-r--r-- tongx supergroup 485.6 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1990.csv
+5  -rw-r--r-- tongx supergroup 468.5 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1991.csv
+6  -rw-r--r-- tongx supergroup 469.5 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1992.csv
+7  -rw-r--r-- tongx supergroup   468 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1993.csv
+8  -rw-r--r-- tongx supergroup 478.3 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1994.csv
+9  -rw-r--r-- tongx supergroup 506.2 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1995.csv
+10 -rw-r--r-- tongx supergroup 509.2 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1996.csv
+...
+```
+### Converting to R Objects ###
+
+The data needs to be converted to R objects. Since we will be doing repeated analyses on the data,
+it is better to spend time converting them to R objects making subsequent computations faster, 
+rather than tokenizing strings and converting to R objects for every analysis.
+
+A sample of the text file
+
+```
+1987,10,14,3,741,730,912,849,PS,1451,NA,91,79,NA,23,11,SAN,SFO,447,NA,NA,0,NA,0,NA,NA,NA,NA,NA
+1987,10,15,4,729,730,903,849,PS,1451,NA,94,79,NA,14,-1,SAN,SFO,447,NA,NA,0,NA,0,NA,NA,NA,NA,NA
+1987,10,17,6,741,730,918,849,PS,1451,NA,97,79,NA,29,11,SAN,SFO,447,NA,NA,0,NA,0,NA,NA,NA,NA,NA
+...
+```
+
+The meaning of the columns can be found [here](http://stat-computing.org/dataexpo/2009/the-data.html)
+. Rather than store the entire 120MM rows as one big data frame, it is efficient to store it as
+rectangular blocks of R rows and M columns. We will not store all the above columns only the 
+following:
+- Dates: day of week, date, month and year (1,2,3, and 4)
+- Arrival and departure times: actual and scheduled (5,6,7 and 8)
+- Flight time: actual and scheduled (12 and 13)
+- Origin and Destination: airport code, latitude and longitude (17 and 18)
+- Distance (19)
+- Carrier Name (9)
+Since latitude and longitude are not present in the data sets, we will compute them later as 
+required. Carrier names are located in a different R data set which will be used to do perform 
+carrier code to carrier name translation.
+
+Before we start any mapreduce job for converting, there is one thing we have to do. As we already
+seen previously, the real text files are located in `/tmp/airline/data/_outputs/` directory. The 
+underscore at the beginning of a directory/file on HDFS makes the system to treat the directory/file 
+as invisible. That's why when we read from a directory that is an output from a mapreduce job, those
+file '_SUCCESS' and '_logs'are skipped and only files 'part-m-...' are read in. So in order to read 
+in those csv files, we have to change the name of directory to be without underscore.
+
+```{r eval=FALSE, tidy=FALSE}
+rhmv("/tmp/airline/data/_outputs", "/tmp/airline/data/outputs")
+rhls("/tmp/airline/data")
+```
+```
+   permission owner      group        size          modtime                           file
+1  -rw-r--r-- tongx supergroup           0 2014-06-11 10:44     /tmp/airline/data/_SUCCESS
+2  drwxrwxrwt tongx supergroup           0 2014-06-11 10:43        /tmp/airline/data/_logs
+3  drwxr-xr-x tongx supergroup           0 2014-06-11 22:05      /tmp/airline/data/outputs
+4  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00000
+5  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00001
+...
+```
+Now we are ready to go. First, we would like to store the data set as blocks of 5000 \(\times\) 12 
+rows and columns. These will be the values. The class of the values will be data.frame in R, and 
+every value must be mapped to a key. In this example, the keys (indices) to these blocks will not 
+have any meaning but will be unique. The key is the first scheduled departure time.
+
+The format of the data is a Sequence File, which can store binary representations of R objects.
+
+```{r eval=FALSE, tidy=FALSE}
+map <- expression({
+  convertHHMM <- function(s){
+    t(sapply(s, function(r){
+      l = nchar(r)
+      if(l == 4) c(substr(r, 1, 2), substr(r, 3, 4))
+      else if(l == 3) c(substr(r, 1, 1), substr(r, 2, 3))
+      else c('0', '0')
+    })
+  )}
+  y <- do.call("rbind", lapply(map.values, function(r) {
+    if(substr(r, 1, 4) != 'Year') strsplit(r, ",")[[1]]
+  }))
+  mu <- rep(1,nrow(y))
+  yr <- y[, 1]
+  mn <- y[, 2]
+  dy <- y[, 3]
+  hr <- convertHHMM(y[,5])
+  depart <- ISOdatetime(
+    year  = yr,
+    month = mn,
+    day   = dy,
+    hour  = hr[,1],
+    min   = hr[,2],
+    sec   = mu
+  )
+  hr <- convertHHMM(y[,6])
+  sdepart <- ISOdatetime(
+    year  = yr,
+    month = mn,
+    day   = dy,
+    hour  = hr[,1],
+    min   = hr[,2],
+    sec   = mu
+  )
+  hr <- convertHHMM(y[,7])
+  arrive <- ISOdatetime(
+    year  = yr,
+    month = mn,
+    day   = dy,
+    hour  = hr[,1],
+    min   = hr[,2],
+    sec   = mu
+  )
+  hr <- convertHHMM(y[,8])
+  sarrive <- ISOdatetime(
+    year  = yr,
+    month = mn,
+    day   = dy,
+    hour  = hr[,1],
+    min   = hr[,2],
+    sec   = mu
+  )
+  d <- data.frame(
+    depart = depart,
+    sdepart = sdepart,
+    arrive = arrive,
+    sarrive = sarrive,
+    carrier = y[, 9],
+    origin = y[, 17],
+    dest = y[, 18],
+    dist = as.numeric(y[, 19]),
+    year = as.numeric(yr),
+    month = as.numeric(mn),
+    day = as.numeric(dy),
+    cancelled = as.numeric(y[, 22]),
+    stringsAsFactors = FALSE
+  )
+  d <- d[order(d$sdepart),]
+  rhcollect(d[c(1,nrow(d)), "sdepart"], d)
+})
+reduce <- expression(
+  reduce = {
+    lapply(reduce.values, function(i) rhcollect(reduce.key, i))
+  }
+)
+z <- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  input    = rhfmt("/tmp/airline/data/outputs", type = "text"),
+  output   = rhfmt("/tmp/airline/output/blocks", type = "sequence"),
+  mapred   = list( rhipe_map_buff_size = 5000 ),
+  orderby  = "numeric",
+  readback = FALSE
+)
+```
+```
+...
+[Thu Jun 12 10:43:12 2014] Name:2014-06-12 10:13:54 Job: job_201405301308_0878  State: RUNNING Duration: 1757.38
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_0878
+             pct numtasks pending running complete killed failed_attempts killed_attempts
+map    1.0000000       37       0       0       37      0               0               3
+reduce 0.9915602        1       0       1        0      0               0               0
+Waiting 5 seconds
+[Thu Jun 12 10:43:17 2014] Name:2014-06-12 10:13:54 Job: job_201405301308_0878  State: RUNNING Duration: 1762.414
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_0878
+             pct numtasks pending running complete killed failed_attempts killed_attempts
+map    1.0000000       37       0       0       37      0               0               3
+reduce 0.9936993        1       0       1        0      0               0               0
+Waiting 5 seconds
+...
+```
+
+There are 37 splits for the mapreduce job. A split can consist of many `map.values` that need to be 
+processed. For text files as input, a split is 128MB or whatever your Hadoop block size is. In map
+expression, we first define a R function `convertHHMM()`, which will be used to separate an input 
+of four digit time record (hhmm) to a vector with hour and minute separately. Then we iterate over
+the `map.values`, which are the lines in text files, and tokenizing them. The first line in each 
+downloaded file is about thevariable names. The first line starts with column year which must be 
+ignored. The lines of text are aggregated using `rbind` and time related columns converted to datetime
+objects. The data frame is sorted by scheduled departure and saved to disk indexed by the range of 
+scheduled departures in the data frame. The size of the value (data frame) is important. RHIPE will 
+can write any sized object but cannot read key/value pairs that are more than 256MB. A data frame 
+of 5000 rows and 12 columns fits very well into 256MB.
+
+Running R across massive data can be illuminating. Without the calls to `ISOdatetime`, it is much 
+faster to complete.
+
+### Sorted Keys ###
+
+A reduce is not needed in this example. The text data is blocked into data frames and written to 
+disk. With 128MB block sizes and each block a split, each split being mapped by one R session, 
+there 96 files each containing several data frames. The reduce expression writes each incoming 
+intermediate value (a data frame) to disk. This is called an identity reducer which can be used 
+for
+
+1. Map file indexing. The intermediate keys are sorted. In the identity reduce, these keys are
+written to disk in sorted order. If the `type` of output is `map`, the output can be used as
+an external memory hash table. Given a key, `RHIPE` can use Hadoop to very quickly discover the 
+location of the key in the sorted (by key) output data and return the associated value. Thus even
+when no reduce logic is required the user can provide the identity reduce to create a queryable 
+Map File from the map output.
+
+2. Intermediate keys are sorted. But they can be sorted in different ways. `RHIPE`’s default is byte
+ordering i.e the keys are serialized to bytes and sorted byte wise. However, byte ordering is very
+different from semantic ordering. Thus keys e.g. 10,-1,20 which might be byte ordered are certainly
+not numerically ordered. `RHIPE` can numerically order keys so that in the reduce expression the 
+user is guaranteed to receive the keys in sorted numeric order. In the above code, we request this 
+feature by using `orderby` argument. Numeric sorting is as follows: keys A and B are ordered if A < B
+and of unit length or A[i] < B[i], 1$\le$ i $\le$ min(length(A), length(B))[2]. For keys 1, (2,1), 
+(1,1), 5, (1, 3, 4), (2, 1), 4, (4, 9) the ordering is 1, (1, 1),(1, 3, 4), (2, 1), (2, 1), 4, (4, 9),
+5 Using this ordering, all the values in a given file will be ordered by the range of the scheduled 
+departures. Using this custom sorter can be slower than the default byte ordering. Bear in mind, the
+keys in a part file will be ordered but keys in one part file need not be less than those in another 
+part file.
+
+To achieve ordering of keys set `orderby` in the call to `rhwatch` to one of bytes (default), 
+integer, numeric (for doubles) or character (alphabetical sorting) in the mapred argument to 
+`rhwatch`. If the output format is sequence, you also need to provide a reducer which can be an 
+identity reducer. Note, if your keys are discrete, it is best to use integer ordering. Values of
+`NA` can throw of ordering and will send all key,values to one reducer causing a severe imbalance.
+
+```{r eval=FALSE, tidy=FALSE}
+reduce = expression({
+  reduce={ lapply(reduce.values,function(r) rhcollect(reduce.key,r)) }
+})
+```
+
+3. To decrease the number of files. In this case decreasing the number of files is hardly needed, 
+but it can be useful if one has more thousands of splits.
+
+In situations (1) and (3), the user does not have to provide the R reduce expression and can leave 
+this parameter empty. In situation (2), you need to provide the above code. Also, (2) is incompatible
+with Map File outputs (i.e `type` in `output` set to `map`). Case (2) is mostly useful for time 
+series algorithms in the reduce section e.g. keys of the form (identifier, i) where identifier is an 
+object and i ranges from 1 to n_{identifier}. For each key, the value is sorted time series data. 
+The reducer will receive the values for the keys (identifier, i) in the order of i for a given 
+identifier. This also assumes the user has partitioned the data on identifier (see the `partition` 
+parameter of `rhwatch`: for this to work, all the keys (identifier, i) with the same identifier 
+need to be sent to the same reducer).
+
+A sample data frame:
+
+```
+                  depart             sdepart              arrive             sarrive carrier origin dest dist year
+1497 1987-10-01 00:00:01 1987-10-01 00:00:01 1987-10-01 06:05:01 1987-10-01 06:06:01      AA    SEA  ORD 1721 1987
+3789 1987-10-01 00:00:01 1987-10-01 00:00:01 1987-10-01 01:07:01 1987-10-01 01:15:01      AA    SMF  OAK   75 1987
+3075 1987-10-01 00:00:01 1987-10-01 01:00:01 1987-10-01 06:25:01 1987-10-01 06:10:01      AA    PHX  ORD 1440 1987
+3697 1987-10-01 01:18:01 1987-10-01 01:22:01 1987-10-01 05:58:01 1987-10-01 06:00:01      AA    ONT  DFW 1189 1987
+3850 1987-10-01 03:35:01 1987-10-01 03:33:01 1987-10-01 06:01:01 1987-10-01 05:58:01      AA    ELP  DFW  551 1987
+2696 1987-10-01 06:16:01 1987-10-01 06:15:01 1987-10-01 07:21:01 1987-10-01 07:38:01      AA    EWR  ORD  719 1987
+     month day cancelled
+1497    10   1         0
+3789    10   1         0
+3075    10   1         0
+3697    10   1         0
+3850    10   1         0
+2696    10   1         0
+```
