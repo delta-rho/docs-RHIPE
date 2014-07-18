@@ -1,3 +1,5 @@
+# RHIPE Tutorial #
+
 ## Introduction ##
 
 Massive data sets have become commonplace today. Powerful hardware is readily available with a terabyte
