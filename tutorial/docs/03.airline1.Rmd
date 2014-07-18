@@ -75,11 +75,11 @@ value pairs. If the input file is a binary file but `input` specifies `text` as 
 will not throw an error but provide very unexpected key/value pairs. `input` in this case is lapply,
 which treats the numbers 1 to `input[1]` as both keys and values.
 
-These key/value pairs are partitioned into splits. How they are partitioned depends on the `type` in
+These key/value pairs are partitioned into subsets. How they are partitioned depends on the `type` in
 `input` argument. For text files which specifies `type="text"` in `input`, the data
-is split into roughly equi-length blocks of e.g. 128MB each. A CSV text file will have approximately
+is divided into roughly equi-length blocks of e.g. 128MB each. A CSV text file will have approximately
 equal number of lines per block (not necessarily). `RHIPE` will launch R across all the compute
-nodes. Each node is responsible for processing a the key/value pairs in its assigned splits.
+nodes. Each node is responsible for processing a the key/value pairs in its assigned subsets.
 
 This processing is performed in the map argument to `rhwatch`. The map argument is an R expression.
 Hadoop will read key,value pairs, send them to RHIPE which in turn buffers them by storing them in 
@@ -96,12 +96,12 @@ particular file cannot be understood by the input format (e.g. a text file given
 
 The expression downloads the CSV file, unzips its, and stores in the folder tmp located in the 
 current directory. No copying is performed. The current directory is a temporary directory on the
-local filesystem of the compute node, not on the HDFS. Upon successful completion of the split, 
+local filesystem of the compute node, not on the HDFS. Upon successful completion of the subset, 
 the files stored in tmp (of the current directory) will be copied to the output folder specified
 by ofolder in the call to rhmr. Files are copied only if copyFiles is set to `TRUE`.
 
 Once a file has been downloaded, we inform Hadoop of our change in status, via `rhstatus`. The 
-example of rhstatus displays the various status of each of the 22 splits (also called Tasks)
+example of rhstatus displays the various status of each of the 22 subsets (also called Tasks)
 
 Once a file has been downloaded, we increment a distributed count. Counts belong to families, a 
 single family contains many counters. The counter for group G and name N is incremented via a call
@@ -110,7 +110,7 @@ this is essentially a flag to indicate successful download. A count of files dow
 in Files/\_ALL\_ .
 
 The operation of Hadoop is affected by many options, some of which can be found in Options for 
-`RHIPE`. Hadoop will terminate splits (tasks) after 10 minutes if they do not invoke `rhstatus`
+`RHIPE`. Hadoop will terminate subsets (tasks) after 10 minutes if they do not invoke `rhstatus`
 or return. Since each download takes approximately 30 minutes (the minimum is 4 minutes, the 
 maximum is 42 minutes, the mean is 30 minutes), Hadoop will kill the tasks. We tell Hadoop to not
 kill long running tasks by setting `mapred.task.timeout` to 0. We do not to need to reduce our 
@@ -373,8 +373,8 @@ Waiting 5 seconds
 ...
 ```
 
-There are 37 splits for the mapreduce job. A split can consist of many `map.values` that need to be 
-processed. For text files as input, a split is 128MB or whatever your Hadoop block size is. In map
+There are 37 subsets for the mapreduce job. A subset can consist of many `map.values` that need to be 
+processed. For text files as input, a subset is 128MB or whatever your Hadoop block size is. In map
 expression, we first define a R function `convertHHMM()`, which will be used to separate an input 
 of four digit time record (hhmm) to a vector with hour and minute separately. Then we iterate over
 the `map.values`, which are the lines in text files, and tokenizing them. The first line in each 
@@ -391,7 +391,7 @@ faster to complete.
 ### Sorted Keys ###
 
 A reduce is not needed in this example. The text data is blocked into data frames and written to 
-disk. With 128MB block sizes and each block a split, each split being mapped by one R session, 
+disk. With 128MB block sizes and each block a subset, each subset being mapped by one R session, 
 there 96 files each containing several data frames. The reduce expression writes each incoming 
 intermediate value (a data frame) to disk. This is called an identity reducer which can be used 
 for
@@ -429,7 +429,7 @@ reduce = expression({
 ```
 
 3. To decrease the number of files. In this case decreasing the number of files is hardly needed, 
-but it can be useful if one has more thousands of splits.
+but it can be useful if one has more thousands of subsets.
 
 In situations (1) and (3), the user does not have to provide the R reduce expression and can leave 
 this parameter empty. In situation (2), you need to provide the above code. Also, (2) is incompatible
