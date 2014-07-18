@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>No Title</title>
+    <title>RHIPE Tutorial</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -53,7 +53,7 @@
         <ul class="nav nav-pills pull-right">
            <li class='active'><a href='index.html'>Docs</a></li><li class=''><a href='functionref.html'>Function Ref</a></li><li><a href='https://github.com/tesseradata/RHIPE'>Github <i class='fa fa-github'></i></a></li>
         </ul>
-        <p class="myHeader">No Title</p>
+        <p class="myHeader">RHIPE Tutorial</p>
       </div>
 
       <hr>
@@ -63,12 +63,2189 @@
    
    <div class="col-md-3 well">
    <ul class = "nav nav-list" id="toc">
-   
+   <li class='nav-header unselectable' data-edit-href='02.intro.Rmd'>Introduction</li>
+      
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#hadoop'>Hadoop</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#hadoop-distributed-filesystem'>Hadoop Distributed Filesystem</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#hadoop-mapreduce'>Hadoop MapReduce</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#examples'>Examples</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#rhipe'>RHIPE</a>
+      </li>
+
+
+<li class='nav-header unselectable' data-edit-href='03.airline1.Rmd'>Airline Data </li>
+      
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#copying-the-data-to-the-hdfs'>Copying the Data to the HDFS</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#converting-to-r-objects'>Converting to R Objects</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#sorted-keys'>Sorted Keys</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#hadoop-as-a-queryable-database'>Hadoop as a Queryable Database</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#analysis'>Analysis</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#streaming-data'>Streaming Data</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#simple-debugging'>Simple Debugging</a>
+      </li>
+
+
+<li class='nav-header unselectable' data-edit-href='06.transforming.Rmd'>Transforming Text Data</li>
+      
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#subset'>Subset</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#transform'>Transform</a>
+      </li>
+
+
+<li class='nav-header unselectable' data-edit-href='07.simulate.Rmd'>Simulations</li>
+      
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#simulations-are-embarrassingly-parallel'>Simulations are Embarrassingly Parallel</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#medians-of-standard-normal-samples-example'>Medians of Standard Normal Samples Example</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#observing-location-of-median-hdfs-data'>Observing Location of Median HDFS Data</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#reading-median-hdfs-data-into-global-environment'>Reading Median HDFS Data into Global Environment</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#ar2-simulation-example'>AR(2) Simulation Example</a>
+      </li>
+
    </ul>
    </div>
 
 <div class="col-md-9 tab-content" id="main-content">
 
+<div class='tab-pane active' id='hadoop'>
+<h3>Hadoop</h3>
+
+<p>Hadoop is an open source programming framework for distributed computing with massive data sets using
+a cluster of networked computers. It has changed the way many web companies work, bringing cluster 
+computing to people with little knowledge of the intricacies of concurrent/distributed programming.
+Part of the reason for its success is that it has a fixed programming paradigm. It somewhat restricts 
+what the user can parallelize but once an algorithm has been written the &#39;MapReduce way&#39;, concurrency
+and distribution over a cluster comes for free.</p>
+
+<p>It consists of two components: the Hadoop Distributed Filesystem and Hadoop MapReduce. They are based
+on the Google Filesystem and Google MapReduce respectively. Companies using these include Amazon, 
+Ebay, New York Times, Facebook to name a few. The software can be downloaded from <a href="http://hadoop.apache.org/">here</a>.</p>
+
+</div>
+
+
+<div class='tab-pane' id='hadoop-distributed-filesystem'>
+<h3>Hadoop Distributed Filesystem</h3>
+
+<p>The Hadoop Distributed Filesystem (HDFS) sits on top of the file system of a computer (called the 
+local filesystem). It pools the hard drive space of a cluster or heterogenous computers (e.g. different
+hardware and operating systems) and provides a unified view to the user. For example, with a cluster
+of 10 computers each with 1TB hard drive space available to Hadoop, the HDFS provides a user 10 TB 
+of hard drive space. A single file can be bigger than maximum size on the local filesystem e.g. 2TB 
+files can be saved on the HDFS. The HDFS is catered to large files and high throughput reads. Appends
+to files are not allowed. Files written to the HDFS are chunked into blocks, each block is replicated
+and saved on different cluster computers. This provides a measure of safety in case of transient or 
+permanent computer failures. When a file is written to the HDFS, the client contacts the Namenode, a
+computer that serves as the gateway to the HDFS. It also performs a lot of administrative tasks, such
+as saving the mapping between a file and the location of its block across the cluster and so on. The 
+Namenode tells the client which Datanodes (the computers that make up the HDFS) to store the data onto.
+It also tells the client which Datanodes to read the data from when a read request is performed.</p>
+
+</div>
+
+
+<div class='tab-pane' id='hadoop-mapreduce'>
+<h3>Hadoop MapReduce</h3>
+
+<p>Concurrent programming is difficult to get right. As Herb Sutter put it:</p>
+
+<blockquote>
+<p>...humans are quickly overwhelmed by concurrency and find it much more difficult to reason about 
+concurrent than sequential code.</p>
+</blockquote>
+
+<p>A statistician attempting concurrent programming needs to be aware of race conditions, deadlocks and
+tools to prevent this: locks, semaphores, and mutually exclusive regions etc. An approach suggested 
+by Sutter et al <a href="http://www.datadr.org/doc/introduction.html#stla">[STLa]</a> is to provide programming
+models not functions that force the programmer to approach her algorithms differently. Once the 
+programmer constructs the algorithm using this model, concurrency comes for free. The MapReduce 
+programming model is one example. Correctly coded Condor DAGS are another example.</p>
+
+<blockquote>
+<p><a href="http://www.datadr.org/doc/introduction.html#id1">[STLa]</a> Software and the concurrency revolution,
+H.Sutter and J.Larus, <em>ACM Queue, Volume 3, Number 7 2005</em></p>
+</blockquote>
+
+<p>MapReduce <a href="http://www.datadr.org/doc/introduction.html#mapred">[MapRed]</a> consists of several 
+embarrassingly parallel splits which are evaluated in parallel. This is called the Map. There is a 
+synchronization guard where intermediate data created at the end of the Map is exchanged between nodes
+and another round of parallel computing starts, called the Reduce phase. In effect large scale 
+simulation trials in which the programmer launches several thousands of independent computations is
+an example of a Map. Retrieving and collating the results (usually done in the R console) is an 
+example of a manual reduce.</p>
+
+<blockquote>
+<p><a href="http://www.datadr.org/doc/introduction.html#id2">[MapRed]</a> MapReduce: Simplified Data Processing 
+on Large Clusters, Jeffrey Dean and Sanjay Ghemawat, <em>Communications of the ACM, 2008</em></p>
+</blockquote>
+
+<p>In detail, the input to a MapReduce computation is a set of <em>N</em> key,value pairs. The <em>N</em> pairs are 
+partitioned into <em>S</em> arbitrary splits. Each split is a unit of computation and is assigned to one 
+computing unit on the cluster. Thus the processing of the <em>S</em> splits occurs in parallel. Each split 
+is processed by a user given function <em>M</em>, that takes a sequence of input key,value pairs and outputs
+(one or many) intermediate key,value pairs. The Hadoop framework will partition the intermediate 
+values by the intermediate key. That is intermediate values sharing the same intermediate key are 
+grouped together. Once the map is complete, the if there are <em>M</em> distinct intermediate keys, a user 
+given function <em>R</em>, will be given an intermediate key and all intermediate values associated with the 
+same key. Each processing core is assigned a subset of intermediate keys to reduce and the reduction
+of the <em>M</em> intermediate keys occurs in parallel. The function <em>R</em>, takes an intermediate key, a stream 
+of associated intermediate values and returns a final key,value pair or pairs.</p>
+
+<p>The R programmer has used MapReduce ideas. For example, the <code>tapply</code> command splits a vector by a 
+list of factors. This the map equivalent: each row of the vector is the value and the keys are the 
+distinct levels of the list of factors. The reduce is the user given function applied to the partitions
+of the vector. The <code>xyplot</code> function in <code>lattice</code> takes a formula e.g. F\sim Y|A*B, subsets the the 
+data frame by the cartesian product of the levels of A and B (the map) and displays each subset (the 
+reduce). Hadoop MapReduce generalizes this to a distributed level.</p>
+
+</div>
+
+
+<div class='tab-pane' id='examples'>
+<h3>Examples</h3>
+
+<p>Two examples, one for quantiles and another for correlation will be described.</p>
+
+<h4>Approximate Quantile</h4>
+
+<p>Let X be a column of numbers. This can be arbitrarily large (e.g. hundreds of gigabytes). The objective
+is to find the quantiles of the X. Let each number be a key. For discrete data e.g. ages (rounded to
+years), count data, the number of unique numbers in a data set is generally not large. For continuous
+data it can be many billions. In this case, we need to discretize this. Care is needed before 
+discretization. Discretions is equivalent to binning and reduces the number of unique data points. 
+For example, do not round to the 5’th decimal place if the data points are the same for the first 5 
+decimal places!</p>
+
+<p>For this example, let us assume the data is discrete (so no need for rounding). The goal is to compute
+the frequency table of the data and use that to compute the quantiles (see <a href=".#hynfan">[HynFan]</a>)</p>
+
+<blockquote>
+<p><a href=".#id3">[HynFan]</a> Hyndman, R.J. and Fan, Y.(1996) &#39;Sample quantiles in statistical packages&#39;, 
+<em>American Statistician, 50, 361-365</em>.</p>
+</blockquote>
+
+<pre><code class="bash">for line in line_of_numbers:
+  for number in tokenize line by [[:space:]]:
+     write_key_value(number,1)
+</code></pre>
+
+<p>The input data is partitioned into a splits of many lines of numbers. The above code is applied to 
+these splits in parallel. The intermediate keys are the unique numbers and each has a list of 1‘s 
+associated with it. Hadoop will sort the keys by the number (not neccassirly by the quantity of the 
+number, it depends on the programming framework) and assign the aggregation computation of the 
+associated values for the different unique keys to different processing cores in the reduce phase. </p>
+
+<p>The reduce logic is as </p>
+
+<pre><code class="bash">for number in stream_of_unique_numbers:
+  sum=0
+  while has_more_values?()==TRUE:
+    sum=sum+get_new_value()
+  end while
+  write_key_value(number, sum)
+</code></pre>
+
+<p>Notice the intermediate keys (the value of the number) and the final key (see last line above) are 
+the same. The unique numbers are partitioned. Thus the stream in line 1 is stream of a subset. The 
+different subsets are processed on different compute cores. Note, the reduce code sums the 1‘s in a 
+while loop rather than loading them all into one gigantic array and adding the array. There can be 
+too many 1‘s to fit into core. This where the MapReduce implementation shines: big data. The algorithm 
+finally outputs the distinct numbers of X and the counts. This can be sorted and used to compute the 
+quantiles. This algorithm is also used to compute word frequencies for text document analysis.</p>
+
+<h4>Correlation</h4>
+
+<p>To compute the correlation of a text file of <em>N</em> rows and <em>C</em> columns, we need the sum, sums of squares
+of each column and sum of unique pairs of columns. The intermediate keys and final keys are the same:
+the column and column pair identifiers. The value will be the sum of columns, their sum of squares,
+the cross products and the number of entries.</p>
+
+<p>We need to iterate over lines, tokenize, and compute the relevant column sums and pairwise cross products.</p>
+
+<pre><code class="bash">for text_line in stream_of_text_lines
+   tokenized_line = tokenize text_line by [[:space:]]
+   for i=1 to C:
+      rhcollect( (i,i), (n=1,sum=tokenized_line[i],ssq=tokenized_line[i]^2))
+      for j=i+1 to C:
+          rhcollect( (i,j), (crossprod=
+                           tokenized_line[i]* tokenized_line[j]))
+      end for
+    end for
+end for
+
+</code></pre>
+
+<p>The intermediate keys produced at the end of the map nodes are pairs (i,j) where \( 1 \le i \le C\), 
+\( i \le j \le C \). The values are the original value (the value for row <em>i</em> and column <em>j</em>), its
+square and crossproduct. The <em>n</em> is just a <em>1</em>. By adding the values for this we obtain the total 
+number of rows. Inserting this <em>1</em> is wasteful, since it is redundantly being passed around for all 
+the keys - we could compute the number of rows in another MapReduce job.</p>
+
+<p>We need to sum this:</p>
+
+<pre><code class="bash">for identifier in stream_of_identifiers:
+    ## identifier is a colum pair
+    sum = empty tuple
+    while has_more_values?()==TRUE:
+        sum = sum + get_new_value()
+        # get_new_value() will return
+        # a tuple of length
+        #     = 3 (if identifier is (i,i)
+        #     = 1 (if identifier is (i,j) i &lt;&gt; j
+    end while
+    rhcollect(identifier, sum)
+</code></pre>
+
+<p>The output will be a set of pairs or triplets accordingly as the key is (i, i) or (i, j).</p>
+
+<h4>Computing an Inner Join</h4>
+
+<p>We have a text file <strong>A</strong> of <em>N</em> columns and <strong>B</strong> with <em>M</em> columns. Both have a common column 
+<strong>index</strong>. In <strong>A</strong>, it is unique, with one row per level of <strong>index</strong>. <strong>B</strong> is a repeated measurement
+data set, with the levels of <strong>index</strong> repeated many times. <strong>B</strong> also contains a column called <strong>weight</strong>.
+We need to compute the following operation, for every unique value of index in <strong>A</strong>, compute the 
+mean value of <strong>weight</strong>. We need to join the two data sets on <strong>index</strong> and compute the number of
+observations and sum of <strong>weight</strong> for unique values <strong>index</strong> and save a data set which consist of 
+only those values of <strong>index</strong> found in <strong>A</strong>.</p>
+
+<p>In SQL, this is</p>
+
+<pre><code class="sql">select
+       index,
+       mean(weight) as mweight
+from A inner join B
+on A.index=B.index
+group by A.index
+
+</code></pre>
+
+<ol>
+<li><p>Compute the number of observations and sum of weights aggregated by levels of <strong>index</strong> for <strong>B</strong>. 
+This computes the values for all levels of <strong>index</strong> in <strong>B</strong> not just those found in <strong>A</strong>. 
+Call this computed data set <strong>B&#39;</strong>.</p></li>
+<li><p>Merge <strong>B&#39;</strong> and <strong>A</strong> .This might be wasteful since we compute for all levels in <strong>B</strong>, however
+if the summarized data set <strong>B&#39;</strong> will be used often, then this is a one time cost.</p></li>
+</ol>
+
+<p>Summarizing <strong>B</strong> to <strong>B&#39;</strong></p>
+
+<pre><code class="bash">#map
+for line in lines:
+    index  =  get column corresponding to &quot;index&quot; from line
+    weight =  get column corresponding to &quot;weight&quot; from line
+    rhcollect(index,(1,weight))
+
+#reduce
+for index in stream_of_indices:
+    ## identifier is a colum pair
+    sum = empty tuple
+    while has_more_values?()==TRUE:
+        sum = sum + get_new_value()
+    rhcollect(index, sum) #total number of obs, sum of weight
+</code></pre>
+
+<p>To merge, we map each index value found in <strong>A</strong> to a TRUE value and each value found in <strong>B&#39;</strong> to a
+tuple (number of observations and sum of weights). If a value of <strong>index</strong> is found in both there 
+will be two intermediate values for that value of <strong>index</strong>. If instead the value of <strong>index</strong> exists
+in exactly one of <strong>A</strong> and <strong>B</strong> there will be exactly one intermediate value. If there are two values,
+one is a dummy (the TRUE) and the pseudo-code retains the value whose length is 2 (the tuple).</p>
+
+<pre><code class="bash">for index in stream_of_indices:
+    count = 0
+    information = NULL
+    while has_more_values?()==TRUE:
+        count = count + 1
+        temp = get_next_value()
+        if length of temp == 2:
+            information = temp
+    end while
+    if count == 2:
+        rhcollect(index, information)
+</code></pre>
+
+<h4>Combiners: An Optimization</h4>
+
+<p>The Hadoop framework, sends all the intermediate values for a given key to the reducer. The 
+intermediate values for a given key are located on several compute nodes and need to be shuffled 
+(sent across the network) to the node assigned the processing of that intermediate key. This involves
+a lot of network transfer. Some operations do not need access to all of the data (intermediate values)
+i.e they can compute on subsets and order does not matter i.e associative and commutative operations.
+For example, the minimum of 8 numbers </p>
+
+<p>\[
+min(x_1,x_2,\ldots,x_n) = min(min(x_1,x_2),min(x_3,\ldots,x_5),min(x_6,\ldots,x_8))
+\]</p>
+
+<p>The reduction occurs on just after the map phase on a subset of intermediate values for a given 
+intermediate keys. The output of this is sent to the reducer. This greatly reduces network transfer
+and accelerates the job speed.</p>
+
+<p>A MapReduce job using a combiner (the minimum operater). We consider intermediate values for a single 
+key:</p>
+
+<p><img src="./plots/combiner.png" alt="alt text"></p>
+
+<p>The examples in this section outlined some algorithms that work with MapReduce. Using RHIPE, there 
+are ways to optimize the above code e.g. instead of processing one line at a time use vector operations.
+Also, RHIPE calls the code with R lists containing the input the keys and values. The streams in the 
+Reduce are replaced by lists of intermediate values and the R code is called repeatedly with the list 
+filled with new elements. This will be explained in the Airline data example (see <em>Airline Dataset</em>)</p>
+
+</div>
+
+
+<div class='tab-pane' id='rhipe'>
+<h3>RHIPE</h3>
+
+<p>The R and Hadoop Integrated Programming Environment is R package to compute across massive data sets,
+create subsets, apply routines to subsets, produce displays on subsets across a cluster of computers
+using the Hadoop DFS and Hadoop MapReduce framework. This is accomplished from within the R 
+environment, using standard R programming idioms. For efficiency reasons, the programming style is 
+slightly different from that outlined in the previous section.</p>
+
+<p>The native language of Hadoop is Java. Java is not suitable for rapid development such as is needed 
+for a data analysis environment. <a href="http://hadoop.apache.org/docs/r1.2.1/streaming.html">Hadoop Streaming</a>
+bridges this gap. Users can write MapReduce programs in other languages e.g. Python, Ruby, Perl which
+is then deployed over the cluster. Hadoop Streaming then transfers the input data from Hadoop to the
+user program and vice versa.</p>
+
+<p>Data analysis from R does not involve the user writing code to be deployed from the command line. The
+analyst has massive data sitting in the background, she needs to create data, partition the data, 
+compute summaries or displays. This need to be evaluated from the R environment and the results 
+returned to R. Ideally not having to resort to the command line.</p>
+
+<p>RHIPE is just that.</p>
+
+<ul>
+<li>RHIPE consist of several functions to interact with the HDFS e.g. save data sets, read data created 
+by RHIPE MapReduce, delete files.</li>
+<li>Compose and launch MapReduce jobs from R using the command <code>rhwatch</code> and <code>rhex</code>. Monitor the status
+using <code>rhstatus</code> which returns an R object. Stop jobs using <code>rhkill</code>.</li>
+<li>Compute <em>side effect</em> files. The output of parallel computations may include the creation of PDF 
+files, R data sets, CVS files etc. These will be copied by RHIPE to a central location on the HDFS 
+removing the need for the user to copy them from the compute nodes or setting up a network file system.</li>
+<li>Data sets that are created by RHIPE can be read using other languages such as Java, Perl, Python 
+and C. The serialization format used by RHIPE (converting R objects to binary data) uses Googles
+<a href="https://code.google.com/p/protobuf/">Protocol Buffers</a> which is very fast and creates compact 
+representations for R objects. Ideal for massive data sets.</li>
+<li>Data sets created using RHIPE are <em>key-value</em> pairs. A key is mapped to a value. A MapReduce 
+computations iterates over the key,value pairs in parallel. If the output of a RHIPE job creates 
+unique keys the output can be treated as a external-memory associative dictionary. RHIPE can thus be
+used as a medium scale (millions of keys) disk based dictionary, which is useful for loading R 
+objects into R.</li>
+</ul>
+
+<p>In summary, the objective of RHIPE is to let the user focus on thinking about the data. The 
+difficulties in distributing computations and storing data across a cluster are automatically handled
+by RHIPE and Hadoop.</p>
+
+</div>
+
+
+<div class='tab-pane' id='copying-the-data-to-the-hdfs'>
+<h3>Copying the Data to the HDFS</h3>
+
+<p>The Airline data can be found <a href="http://stat-computing.org/dataexpo/2009/the-data.html">at this site</a>.
+In this example, we download the data sets for the individual years and save them on the HDFS with
+the following code (with limited error checks)</p>
+
+<pre><code class="r">library(Rhipe)
+rhinit()
+map &lt;- expression({
+  msys &lt;- function(on){
+    system(sprintf(&quot;wget  %s --directory-prefix ./tmp 2&gt; ./errors&quot;, on))
+    if(length(grep(&quot;(failed)|(unable)&quot;, readLines(&quot;./errors&quot;))) &gt; 0){
+      stop(paste(readLines(&quot;./errors&quot;), collapse=&quot;\n&quot;))
+    }
+  }
+  lapply(map.values, function(r){
+    x = 1986 + r
+    on &lt;- sprintf(&quot;http://stat-computing.org/dataexpo/2009/%s.csv.bz2&quot;, x)
+    fn &lt;- sprintf(&quot;./tmp/%s.csv.bz2&quot;, x)
+    rhstatus(sprintf(&quot;Downloading %s&quot;, on))
+    msys(on)
+    rhstatus(sprintf(&quot;Downloading %s&quot;, on))
+    system(sprintf(&#39;bunzip2 %s&#39;, fn))
+    rhstatus(sprintf(&quot;Unzipped %s&quot;, on))
+    rhcounter(&quot;FILES&quot;, x, 1)
+    rhcounter(&quot;FILES&quot;, &quot;_ALL_&quot;, 1)
+  })
+})
+z &lt;- rhwatch(
+  map       = map,
+  input     = rep(length(1987:2008), 2),
+  output    = &quot;/tmp/airline/data&quot;,
+  mapred    = list( mapred.reduce.tasks = 0, mapred.task.timeout = 0 ),
+  copyFiles = TRUE,
+  readback  = FALSE,
+  noeval    = TRUE
+)
+j &lt;- rhex(z, async = TRUE)
+</code></pre>
+
+<p>A lot is demonstrated in this code. <code>RHIPE</code> is loaded via the call in first line. A MapReduce job 
+takes a set of input keys, in this case the numbers 1987 to 2008. It also takes a corresponding set
+of values. The parameter <code>input</code> in <code>rhwatch</code> tells <code>RHIPE</code> how to convert the input the data to key, 
+value pairs. If the input file is a binary file but <code>input</code> specifies <code>text</code> as the <code>type</code>, <code>RHIPE</code>
+will not throw an error but provide very unexpected key/value pairs. <code>input</code> in this case is lapply,
+which treats the numbers 1 to <code>input[1]</code> as both keys and values.</p>
+
+<p>These key/value pairs are partitioned into splits. How they are partitioned depends on the <code>type</code> in
+<code>input</code> argument. For text files which specifies <code>type=&quot;text&quot;</code> in <code>input</code>, the data
+is split into roughly equi-length blocks of e.g. 128MB each. A CSV text file will have approximately
+equal number of lines per block (not necessarily). <code>RHIPE</code> will launch R across all the compute
+nodes. Each node is responsible for processing a the key/value pairs in its assigned splits.</p>
+
+<p>This processing is performed in the map argument to <code>rhwatch</code>. The map argument is an R expression.
+Hadoop will read key,value pairs, send them to RHIPE which in turn buffers them by storing them in 
+a R list: <code>map.values</code> and <code>map.keys</code> respectively. Once the buffer is full, RHIPE calls the map 
+expression. The default length of <code>map.values</code> (and <code>map.keys</code>) is 10,000 [1].</p>
+
+<p>In our example, <code>input[1]</code> is 22. The variables <code>map.values</code> and <code>map.keys</code> will be lists of numbers
+1 to 22 and number 1 to 22 respectively. The entries need not be in the order 1 to 22.</p>
+
+<p><code>rhwatch</code> is a call that packages the MapReduce job which is sent to Hadoop. It takes an input folder
+which can contain multiple files and subfolders. All the files will be given as input. If a 
+particular file cannot be understood by the input format (e.g. a text file given to <code>type=&quot;sequence&quot;</code>),
+<code>RHIPE</code> will throw an error.</p>
+
+<p>The expression downloads the CSV file, unzips its, and stores in the folder tmp located in the 
+current directory. No copying is performed. The current directory is a temporary directory on the
+local filesystem of the compute node, not on the HDFS. Upon successful completion of the split, 
+the files stored in tmp (of the current directory) will be copied to the output folder specified
+by ofolder in the call to rhmr. Files are copied only if copyFiles is set to <code>TRUE</code>.</p>
+
+<p>Once a file has been downloaded, we inform Hadoop of our change in status, via <code>rhstatus</code>. The 
+example of rhstatus displays the various status of each of the 22 splits (also called Tasks)</p>
+
+<p>Once a file has been downloaded, we increment a distributed count. Counts belong to families, a 
+single family contains many counters. The counter for group G and name N is incremented via a call
+to <code>rhcounter</code>. We increment a counter for each of the 22 files. Since each file is downloaded once, 
+this is essentially a flag to indicate successful download. A count of files downloaded is tracked 
+in Files/_ALL_ .</p>
+
+<p>The operation of Hadoop is affected by many options, some of which can be found in Options for 
+<code>RHIPE</code>. Hadoop will terminate splits (tasks) after 10 minutes if they do not invoke <code>rhstatus</code>
+or return. Since each download takes approximately 30 minutes (the minimum is 4 minutes, the 
+maximum is 42 minutes, the mean is 30 minutes), Hadoop will kill the tasks. We tell Hadoop to not
+kill long running tasks by setting <code>mapred.task.timeout</code> to 0. We do not to need to reduce our 
+results so we set <code>mapred.reduce.tasks</code> to 0. Output from the map is written directly to the output
+folder on the HDFS. We do not have any output. These options are passed in the mapred argument.</p>
+
+<p>The call to <code>rhex</code> launches the job across Hadoop. We use the async argument to return control of 
+the R console to the user. We can monitor the status by calling <code>rhstatus</code>, giving it the value 
+returned from <code>rhex</code> or the job ID (e.g. job_201007281701_0053)</p>
+
+<pre><code class="r">rhstatus(j)
+</code></pre>
+
+<pre><code>[Mon Jun 30 17:07:06 2014] Name:2014-06-30 17:06:11 Job: job_201406101143_0118  State: RUNNING Duration: 54.346
+URL: http://hadoop-01.rcac.purdue.edu:50030/jobdetails.jsp?jobid=job_201406101143_0118
+       pct numtasks pending running complete killed failed_attempts killed_attempts
+map      1       22       0       6       16      0               0               0
+reduce   0        0       0       0        0      0               0               0
+Waiting 5 seconds
+[Mon Jun 30 17:07:11 2014] Name:2014-06-30 17:06:11 Job: job_201406101143_0118  State: RUNNING Duration: 59.496
+URL: http://hadoop-01.rcac.purdue.edu:50030/jobdetails.jsp?jobid=job_201406101143_0118
+       pct numtasks pending running complete killed failed_attempts killed_attempts
+map      1       22       0       2       20      0               0               0
+reduce   0        0       0       0        0      0               0               0
+</code></pre>
+
+<p>Once the job is finished, calling of <code>rhstatus</code> will return a list with different information of a
+finished job.</p>
+
+<pre><code class="r">a &lt;- rhstatus(j)
+a$state
+</code></pre>
+
+<pre><code>[1] &quot;SUCCEEDED&quot;
+</code></pre>
+
+<pre><code class="r">a$duration
+</code></pre>
+
+<pre><code>[1] 156.52
+</code></pre>
+
+<pre><code class="r">a$counters
+</code></pre>
+
+<pre><code>$`Job Counters `
+                                                                     [,1]
+Launched map tasks                                                     22
+SLOTS_MILLIS_MAPS                                                  873813
+SLOTS_MILLIS_REDUCES                                                    0
+Total time spent by all maps waiting after reserving slots (ms)         0
+Total time spent by all reduces waiting after reserving slots (ms)      0
+...
+</code></pre>
+
+<p>This distributed download took 2 minutes to complete, 15 seconds more than the longest running 
+download (2007.csv.bz2). A sequential download would have taken several hours.</p>
+
+<p><strong>Note</strong><br>
+It is important to note that the above code is mostly boiler plate. There is almost no lines to 
+handle distribution across a cluster or task restart in case of transient node failure. The user
+of RHIPE need only consider how to frame her argument in the concepts of MapReduce.</p>
+
+<p><code>rhls</code> function can help us to list all files under a directory on HDFS.</p>
+
+<pre><code class="r">rhls(&quot;/tmp/airline/data&quot;)
+</code></pre>
+
+<pre><code>   permission owner      group        size          modtime                           file
+1  -rw-r--r-- tongx supergroup           0 2014-06-11 10:44     /tmp/airline/data/_SUCCESS
+2  drwxrwxrwt tongx supergroup           0 2014-06-11 10:43        /tmp/airline/data/_logs
+3  drwxr-xr-x tongx supergroup           0 2014-06-11 17:51     /tmp/airline/data/_outputs
+4  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00000
+5  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00001
+6  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00002
+7  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00003
+8  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00004
+9  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00005
+10 -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00006
+...
+</code></pre>
+
+<p>All &#39;part-m-...&#39; files are empty since we did not have real output content from the mapreduce 
+job. Downloaded files are actually coyied into a subdirectory named <code>_outputs</code></p>
+
+<pre><code class="r">rhls(&quot;/tmp/airline/data/_outputs&quot;)
+</code></pre>
+
+<pre><code>   permission owner      group     size          modtime                                file
+1  -rw-r--r-- tongx supergroup 121.3 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1987.csv
+2  -rw-r--r-- tongx supergroup 477.8 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1988.csv
+3  -rw-r--r-- tongx supergroup   464 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1989.csv
+4  -rw-r--r-- tongx supergroup 485.6 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1990.csv
+5  -rw-r--r-- tongx supergroup 468.5 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1991.csv
+6  -rw-r--r-- tongx supergroup 469.5 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1992.csv
+7  -rw-r--r-- tongx supergroup   468 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1993.csv
+8  -rw-r--r-- tongx supergroup 478.3 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1994.csv
+9  -rw-r--r-- tongx supergroup 506.2 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1995.csv
+10 -rw-r--r-- tongx supergroup 509.2 mb 2014-06-11 17:51 /tmp/airline/data/_outputs/1996.csv
+...
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='converting-to-r-objects'>
+<h3>Converting to R Objects</h3>
+
+<p>The data needs to be converted to R objects. Since we will be doing repeated analyses on the data,
+it is better to spend time converting them to R objects making subsequent computations faster, 
+rather than tokenizing strings and converting to R objects for every analysis.</p>
+
+<p>A sample of the text file</p>
+
+<pre><code>1987,10,14,3,741,730,912,849,PS,1451,NA,91,79,NA,23,11,SAN,SFO,447,NA,NA,0,NA,0,NA,NA,NA,NA,NA
+1987,10,15,4,729,730,903,849,PS,1451,NA,94,79,NA,14,-1,SAN,SFO,447,NA,NA,0,NA,0,NA,NA,NA,NA,NA
+1987,10,17,6,741,730,918,849,PS,1451,NA,97,79,NA,29,11,SAN,SFO,447,NA,NA,0,NA,0,NA,NA,NA,NA,NA
+...
+</code></pre>
+
+<p>The meaning of the columns can be found <a href="http://stat-computing.org/dataexpo/2009/the-data.html">here</a>
+. Rather than store the entire 120MM rows as one big data frame, it is efficient to store it as
+rectangular blocks of R rows and M columns. We will not store all the above columns only the 
+following:</p>
+
+<ul>
+<li>Dates: day of week, date, month and year (1,2,3, and 4)</li>
+<li>Arrival and departure times: actual and scheduled (5,6,7 and 8)</li>
+<li>Flight time: actual and scheduled (12 and 13)</li>
+<li>Origin and Destination: airport code, latitude and longitude (17 and 18)</li>
+<li>Distance (19)</li>
+<li>Carrier Name (9)
+Since latitude and longitude are not present in the data sets, we will compute them later as 
+required. Carrier names are located in a different R data set which will be used to do perform 
+carrier code to carrier name translation.</li>
+</ul>
+
+<p>Before we start any mapreduce job for converting, there is one thing we have to do. As we already
+seen previously, the real text files are located in <code>/tmp/airline/data/_outputs/</code> directory. The 
+underscore at the beginning of a directory/file on HDFS makes the system to treat the directory/file 
+as invisible. That&#39;s why when we read from a directory that is an output from a mapreduce job, those
+file &#39;_SUCCESS&#39; and &#39;_logs&#39;are skipped and only files &#39;part-m-...&#39; are read in. So in order to read 
+in those csv files, we have to change the name of directory to be without underscore.</p>
+
+<pre><code class="r">rhmv(&quot;/tmp/airline/data/_outputs&quot;, &quot;/tmp/airline/data/outputs&quot;)
+rhls(&quot;/tmp/airline/data&quot;)
+</code></pre>
+
+<pre><code>   permission owner      group        size          modtime                           file
+1  -rw-r--r-- tongx supergroup           0 2014-06-11 10:44     /tmp/airline/data/_SUCCESS
+2  drwxrwxrwt tongx supergroup           0 2014-06-11 10:43        /tmp/airline/data/_logs
+3  drwxr-xr-x tongx supergroup           0 2014-06-11 22:05      /tmp/airline/data/outputs
+4  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00000
+5  -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00001
+...
+</code></pre>
+
+<p>Now we are ready to go. First, we would like to store the data set as blocks of 5000 \(\times\) 12 
+rows and columns. These will be the values. The class of the values will be data.frame in R, and 
+every value must be mapped to a key. In this example, the keys (indices) to these blocks will not 
+have any meaning but will be unique. The key is the first scheduled departure time.</p>
+
+<p>The format of the data is a Sequence File, which can store binary representations of R objects.</p>
+
+<pre><code class="r">map &lt;- expression({
+  convertHHMM &lt;- function(s){
+    t(sapply(s, function(r){
+      l = nchar(r)
+      if(l == 4) c(substr(r, 1, 2), substr(r, 3, 4))
+      else if(l == 3) c(substr(r, 1, 1), substr(r, 2, 3))
+      else c(&#39;0&#39;, &#39;0&#39;)
+    })
+  )}
+  y &lt;- do.call(&quot;rbind&quot;, lapply(map.values, function(r) {
+    if(substr(r, 1, 4) != &#39;Year&#39;) strsplit(r, &quot;,&quot;)[[1]]
+  }))
+  mu &lt;- rep(1,nrow(y))
+  yr &lt;- y[, 1]
+  mn &lt;- y[, 2]
+  dy &lt;- y[, 3]
+  hr &lt;- convertHHMM(y[,5])
+  depart &lt;- ISOdatetime(
+    year  = yr,
+    month = mn,
+    day   = dy,
+    hour  = hr[,1],
+    min   = hr[,2],
+    sec   = mu
+  )
+  hr &lt;- convertHHMM(y[,6])
+  sdepart &lt;- ISOdatetime(
+    year  = yr,
+    month = mn,
+    day   = dy,
+    hour  = hr[,1],
+    min   = hr[,2],
+    sec   = mu
+  )
+  hr &lt;- convertHHMM(y[,7])
+  arrive &lt;- ISOdatetime(
+    year  = yr,
+    month = mn,
+    day   = dy,
+    hour  = hr[,1],
+    min   = hr[,2],
+    sec   = mu
+  )
+  hr &lt;- convertHHMM(y[,8])
+  sarrive &lt;- ISOdatetime(
+    year  = yr,
+    month = mn,
+    day   = dy,
+    hour  = hr[,1],
+    min   = hr[,2],
+    sec   = mu
+  )
+  d &lt;- data.frame(
+    depart = depart,
+    sdepart = sdepart,
+    arrive = arrive,
+    sarrive = sarrive,
+    carrier = y[, 9],
+    origin = y[, 17],
+    dest = y[, 18],
+    dist = as.numeric(y[, 19]),
+    year = as.numeric(yr),
+    month = as.numeric(mn),
+    day = as.numeric(dy),
+    cancelled = as.numeric(y[, 22]),
+    stringsAsFactors = FALSE
+  )
+  d &lt;- d[order(d$sdepart),]
+  rhcollect(d[c(1,nrow(d)), &quot;sdepart&quot;], d)
+})
+reduce &lt;- expression(
+  reduce = {
+    lapply(reduce.values, function(i) rhcollect(reduce.key, i))
+  }
+)
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  input    = rhfmt(&quot;/tmp/airline/data/outputs&quot;, type = &quot;text&quot;),
+  output   = rhfmt(&quot;/tmp/airline/output/blocks&quot;, type = &quot;sequence&quot;),
+  mapred   = list( rhipe_map_buff_size = 5000 ),
+  orderby  = &quot;numeric&quot;,
+  readback = FALSE
+)
+</code></pre>
+
+<pre><code>...
+[Thu Jun 12 10:43:12 2014] Name:2014-06-12 10:13:54 Job: job_201405301308_0878  State: RUNNING Duration: 1757.38
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_0878
+             pct numtasks pending running complete killed failed_attempts killed_attempts
+map    1.0000000       37       0       0       37      0               0               3
+reduce 0.9915602        1       0       1        0      0               0               0
+Waiting 5 seconds
+[Thu Jun 12 10:43:17 2014] Name:2014-06-12 10:13:54 Job: job_201405301308_0878  State: RUNNING Duration: 1762.414
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_0878
+             pct numtasks pending running complete killed failed_attempts killed_attempts
+map    1.0000000       37       0       0       37      0               0               3
+reduce 0.9936993        1       0       1        0      0               0               0
+Waiting 5 seconds
+...
+</code></pre>
+
+<p>There are 37 splits for the mapreduce job. A split can consist of many <code>map.values</code> that need to be 
+processed. For text files as input, a split is 128MB or whatever your Hadoop block size is. In map
+expression, we first define a R function <code>convertHHMM()</code>, which will be used to separate an input 
+of four digit time record (hhmm) to a vector with hour and minute separately. Then we iterate over
+the <code>map.values</code>, which are the lines in text files, and tokenizing them. The first line in each 
+downloaded file is about thevariable names. The first line starts with column year which must be 
+ignored. The lines of text are aggregated using <code>rbind</code> and time related columns converted to datetime
+objects. The data frame is sorted by scheduled departure and saved to disk indexed by the range of 
+scheduled departures in the data frame. The size of the value (data frame) is important. RHIPE will 
+can write any sized object but cannot read key/value pairs that are more than 256MB. A data frame 
+of 5000 rows and 12 columns fits very well into 256MB.</p>
+
+<p>Running R across massive data can be illuminating. Without the calls to <code>ISOdatetime</code>, it is much 
+faster to complete.</p>
+
+</div>
+
+
+<div class='tab-pane' id='sorted-keys'>
+<h3>Sorted Keys</h3>
+
+<p>A reduce is not needed in this example. The text data is blocked into data frames and written to 
+disk. With 128MB block sizes and each block a split, each split being mapped by one R session, 
+there 96 files each containing several data frames. The reduce expression writes each incoming 
+intermediate value (a data frame) to disk. This is called an identity reducer which can be used 
+for</p>
+
+<ol>
+<li><p>Map file indexing. The intermediate keys are sorted. In the identity reduce, these keys are
+written to disk in sorted order. If the <code>type</code> of output is <code>map</code>, the output can be used as
+an external memory hash table. Given a key, <code>RHIPE</code> can use Hadoop to very quickly discover the 
+location of the key in the sorted (by key) output data and return the associated value. Thus even
+when no reduce logic is required the user can provide the identity reduce to create a queryable 
+Map File from the map output.</p></li>
+<li><p>Intermediate keys are sorted. But they can be sorted in different ways. <code>RHIPE</code>’s default is byte
+ordering i.e the keys are serialized to bytes and sorted byte wise. However, byte ordering is very
+different from semantic ordering. Thus keys e.g. 10,-1,20 which might be byte ordered are certainly
+not numerically ordered. <code>RHIPE</code> can numerically order keys so that in the reduce expression the 
+user is guaranteed to receive the keys in sorted numeric order. In the above code, we request this 
+feature by using <code>orderby</code> argument. Numeric sorting is as follows: keys A and B are ordered if A &lt; B
+and of unit length or A[i] &lt; B[i], 1\(\le\) i \(\le\) min(length(A), length(B))[2]. For keys 1, (2,1), 
+(1,1), 5, (1, 3, 4), (2, 1), 4, (4, 9) the ordering is 1, (1, 1),(1, 3, 4), (2, 1), (2, 1), 4, (4, 9),
+5 Using this ordering, all the values in a given file will be ordered by the range of the scheduled 
+departures. Using this custom sorter can be slower than the default byte ordering. Bear in mind, the
+keys in a part file will be ordered but keys in one part file need not be less than those in another 
+part file.</p></li>
+</ol>
+
+<p>To achieve ordering of keys set <code>orderby</code> in the call to <code>rhwatch</code> to one of bytes (default), 
+integer, numeric (for doubles) or character (alphabetical sorting) in the mapred argument to 
+<code>rhwatch</code>. If the output format is sequence, you also need to provide a reducer which can be an 
+identity reducer. Note, if your keys are discrete, it is best to use integer ordering. Values of
+<code>NA</code> can throw of ordering and will send all key,values to one reducer causing a severe imbalance.</p>
+
+<pre><code class="r">reduce = expression({
+  reduce={ lapply(reduce.values,function(r) rhcollect(reduce.key,r)) }
+})
+</code></pre>
+
+<ol>
+<li>To decrease the number of files. In this case decreasing the number of files is hardly needed, 
+but it can be useful if one has more thousands of splits.</li>
+</ol>
+
+<p>In situations (1) and (3), the user does not have to provide the R reduce expression and can leave 
+this parameter empty. In situation (2), you need to provide the above code. Also, (2) is incompatible
+with Map File outputs (i.e <code>type</code> in <code>output</code> set to <code>map</code>). Case (2) is mostly useful for time 
+series algorithms in the reduce section e.g. keys of the form (identifier, i) where identifier is an 
+object and i ranges from 1 to n_{identifier}. For each key, the value is sorted time series data. 
+The reducer will receive the values for the keys (identifier, i) in the order of i for a given 
+identifier. This also assumes the user has partitioned the data on identifier (see the <code>partition</code> 
+parameter of <code>rhwatch</code>: for this to work, all the keys (identifier, i) with the same identifier 
+need to be sent to the same reducer).</p>
+
+<p>A sample data frame:</p>
+
+<pre><code>                  depart             sdepart              arrive             sarrive carrier origin dest dist year
+1497 1987-10-01 00:00:01 1987-10-01 00:00:01 1987-10-01 06:05:01 1987-10-01 06:06:01      AA    SEA  ORD 1721 1987
+3789 1987-10-01 00:00:01 1987-10-01 00:00:01 1987-10-01 01:07:01 1987-10-01 01:15:01      AA    SMF  OAK   75 1987
+3075 1987-10-01 00:00:01 1987-10-01 01:00:01 1987-10-01 06:25:01 1987-10-01 06:10:01      AA    PHX  ORD 1440 1987
+3697 1987-10-01 01:18:01 1987-10-01 01:22:01 1987-10-01 05:58:01 1987-10-01 06:00:01      AA    ONT  DFW 1189 1987
+3850 1987-10-01 03:35:01 1987-10-01 03:33:01 1987-10-01 06:01:01 1987-10-01 05:58:01      AA    ELP  DFW  551 1987
+2696 1987-10-01 06:16:01 1987-10-01 06:15:01 1987-10-01 07:21:01 1987-10-01 07:38:01      AA    EWR  ORD  719 1987
+     month day cancelled
+1497    10   1         0
+3789    10   1         0
+3075    10   1         0
+3697    10   1         0
+3850    10   1         0
+2696    10   1         0
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='hadoop-as-a-queryable-database'>
+<h3>Hadoop as a Queryable Database</h3>
+
+<p><em>Sightly artificial:</em> store all Southwest Airlines information indexed by year,month,and day.
+Each (year, month, day) triplet will have all flight entries that left on that day. Using the above
+data set as the source, the Southwest lines are selected and sent to the reducer with the (year, 
+month,day) key. All flights with the same (year, month) will belong to the same file. Given a (year
+, month,day) triplet, we can use the Map File output format to access the associated flight 
+information in seconds rather than subsetting using MapReduce.</p>
+
+<pre><code class="r">map &lt;- expression({
+  h &lt;- do.call(&quot;rbind&quot;, map.values)
+  d &lt;- h[h$carrier == &#39;WN&#39;, , drop = FALSE]
+  if(nrow(d) &gt; 0) {
+    e &lt;- split(d, list(d$year, d$month, d$mday))
+    lapply(e, function(r) {
+      k &lt;- as.vector(unlist(r[1, c(&quot;year&quot;, &quot;month&quot;, &quot;mday&quot;)]))  ## remove attributes
+      rhcollect(k, r)
+    })
+  }
+})
+reduce &lt;- expression(
+  pre = { 
+    collec &lt;- NULL 
+  },
+  reduce = {
+    collec &lt;- rbind(collec, do.call(&quot;rbind&quot;, reduce.values))
+    collec &lt;- collec[order(collec$depart), ]
+  },
+  post = {
+    rhcollect(k, collec)
+  }
+)
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt(&quot;/tmp/airline/output/blocks&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/tmp/airline/southwest&quot;, type = &quot;map&quot;),
+  mapred   = list(rhipe_map_buff_size = 10),
+  readback = FALSE
+)
+</code></pre>
+
+<p>Attributes are removed in line \[8\], for otherwise we have to retrieve a data frame with a data frame 
+with column names and row names instead of a more convenient numeric vector. The map expression 
+combines the individual data frames. Each data frame has \(5000\) rows, hence rhipe_map_buff_size is 
+set to 10 for a combined data frame of \(50000\) rows in line \(32\). This is crucial. The default value 
+for <em>rhipe_map_buff_size</em> is \(10,000\). Binding \(10,000\) data frames of \(5000\) rows each creates a data 
+frame of 50MN rows - too unwieldy to compute with in R (for many types of operations). Data frames 
+for Southwest Airlines (<em>carried code = WN</em>) are created and emitted with the call to rhcollect in line
+\(15\). These are combined in the reduce since data frames for the same (year, month,day) triplet can 
+be emitted from different map expressions. Since this is associative and commutative we use a 
+combiner. The output format (&#39;inout[[2]]&#39;) is map, so we can access the flights for any triplet with 
+a call to rhgetkey which returns a list of key,value lists.</p>
+
+</div>
+
+
+<div class='tab-pane' id='analysis'>
+<h3>Analysis</h3>
+
+<p>We compute some summaries and displays to understand the data.</p>
+
+<h4>Top 20 cities by total volume of flights</h4>
+
+<p>We compute some summaries and displays to understand the data.</p>
+
+<pre><code class="r">map &lt;- expression({
+  a &lt;- do.call(&quot;rbind&quot;, map.values)
+  inbound &lt;- table(a[, &#39;origin&#39;])
+  outbound &lt;- table(a[, &#39;dest&#39;])
+  total &lt;- table(unlist(c(a[, &#39;origin&#39;], a[&#39;dest&#39;])))
+  for(n in names(total)) {
+    inb &lt;- if(is.na(inbound[n])) 0 else inbound[n]
+    ob &lt;- if(is.na(outbound[n])) 0 else outbound[n]
+    rhcollect(n, c(inb, ob, total[n]))
+  }
+})
+reduce &lt;- expression(
+  pre = {
+    sums &lt;- c(0, 0, 0)
+  },
+  reduce = {
+    sums &lt;- sums + apply(do.call(&quot;rbind&quot;, reduce.values), 2, sum)
+  },
+  post = {
+    rhcollect(reduce.key, sums)
+  }
+)
+mapred &lt;- list(rhipe_map_buff_size = 15)
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt(&quot;/tmp/airline/output/blocks&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/tmp/airline/output/volume&quot;, type = &quot;sequence&quot;),
+  mapred   = mapred,
+  readback = FALSE
+)
+</code></pre>
+
+<p>The code is straightforward. We increased the value of <code>rhipe_map_buff_size</code> since we are doing 
+summaries of columns. The figure 
+<a href="./plots/rhipemapbuff.pdf">Log of time to complete vs log of rhipe_map_buff_size</a>. Plots the
+time of completion vs the mean of three trials for different values of <code>rhipe_map_buff_size</code>. The 
+trials set <code>rhipe_map_buff_size</code> to 5, 10, 15, 20, 25 and 125. All experiments (like the rest in the 
+manual) were performed on a 72 core cluster across 8 servers with RAM varying from 16 to 64 GB.</p>
+
+<p>Read the data into R and display them using the lattice library.</p>
+
+<pre><code class="r">counts &lt;- rhread(&quot;/airline/volume&quot;)
+aircode &lt;- unlist(lapply(counts, &quot;[[&quot;,1))
+count &lt;- do.call(&quot;rbind&quot;,lapply(counts,&quot;[[&quot;,2))
+results &lt;- data.frame(
+           aircode = aircode,
+               inb = count[, 1],
+               oub = count[, 2],
+               all = count[, 3],
+  stringsAsFactors = FALSE
+)
+results &lt;- results[order(results$all, decreasing = TRUE), ]
+library(lattice)
+r &lt;- results[1:20, ]
+af &lt;- reorder(r$aircode, r$all)
+trellis.device(postscript, file = &quot;volume.ps&quot;, color=TRUE, paper=&quot;letter&quot;)
+dotplot(af ~ log(r[, &#39;all&#39;], 10),
+  xlab = &#39;Log_10 Total Volume&#39;,
+  ylab = &#39;Airport&#39;,
+   col = &#39;black&#39;,
+  aspect = 1
+)
+dev.off()
+</code></pre>
+
+<p>There are 352 locations (airports) of which the top 20 serve 50% of the volume.
+<a href="./plots/volume.pdf">Dot plot of top 20 cities by total volume of flights</a></p>
+
+<h4>Carrier Popularity</h4>
+
+<p>Some carriers come and go, others demonstrate regular growth. In the following display, the log base
+10 volume (total flights) over years are displayed by carrier. The carriers are ranked by their 
+median volume (over the 10 year span).</p>
+
+<p>As mentioned before, RHIPE is mostly boilerplate. Notice the similarities between this and previous
+examples (on a side note, to do this for 12GB of data takes 1 minute and 32 seconds across 72 cores 
+and all the examples, except the download and conversion to R data frames, in the manual are less 
+than 10 minutes)</p>
+
+<pre><code class="r">map &lt;- expression({
+  a &lt;- do.call(&quot;rbind&quot;, map.values)
+  total &lt;- table(years = a[, &#39;year&#39;], a[, &#39;carrier&#39;])
+  ac &lt;- rownames(total)
+  ys &lt;- colnames(total)
+  for(yer in ac){
+    for(ca in ys){
+      if(total[yer, ca] &gt; 0) 
+        rhcollect(c(yer, ca), total[yer, ca])
+    }
+  }
+})
+reduce &lt;- expression(
+  pre = {
+    sums &lt;- 0
+  },
+  reduce = {
+    sums &lt;- sums + sum(do.call(&quot;rbind&quot;, reduce.values))
+  },
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+
+mapred &lt;- list()
+mapred$rhipe_map_buff_size &lt;- 5
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt(&quot;/tmp/airline/output/blocks/&quot;, type=&quot;sequence&quot;),
+  output   = rhfmt(&quot;/tmp/airline/output/carrier.pop/&quot;, type=&quot;sequence&quot;),
+  mapred   = mapred,
+  readback = FALSE
+)
+</code></pre>
+
+<p>This is the RHIPE code to create summaries. We need to extract the data from Hadoop and create a 
+display.
+<a href="./plots/carrier.pdf">Carrier Popularity</a></p>
+
+<pre><code class="r">a &lt;- rhread(&quot;/tmp/airline/output/carrier.pop&quot;)
+head(a, 3)
+</code></pre>
+
+<pre><code>[[1]]
+[[1]][[1]]
+[1] &quot;1987&quot; &quot;AA&quot;  
+
+[[1]][[2]]
+[1] 165121
+
+
+[[2]]
+[[2]][[1]]
+[1] &quot;1987&quot; &quot;AS&quot;  
+
+[[2]][[2]]
+[1] 21406
+
+
+[[3]]
+[[3]][[1]]
+[1] &quot;1987&quot; &quot;CO&quot;  
+
+[[3]][[2]]
+[1] 123002
+</code></pre>
+
+<pre><code class="r">yr &lt;- as.numeric(unlist(lapply(lapply(a, &quot;[[&quot;, 1), &quot;[[&quot;, 1)))
+carrier &lt;- unlist(lapply(lapply(a, &quot;[[&quot;, 1), &quot;[[&quot;, 2))
+count &lt;- unlist(lapply(a, &quot;[[&quot;, 2))
+results &lt;- data.frame(
+                yr = yr,
+           carcode = carrier,
+             count = count,
+  stringsAsFactors = FALSE
+)
+results &lt;- results[order(results$yr, results$count, decreasing = TRUE), ]
+carr &lt;- reorder(results$carcode, results$count, median)
+trellis.device(postscript, file = &quot;carrier.ps&quot;, color=TRUE, paper=&quot;letter&quot;)
+xyplot(log(count, 10) ~ yr | carr, 
+  data           = results,
+  xlab           = &quot;Years&quot;, 
+  ylab           = &quot;Log10 count&quot;,
+  col            = &#39;black&#39;,
+  scales         = list(scale = &#39;free&#39;,tck = 0.5,cex = 0.7),
+  layout         = c(4, 4),
+  aspect         = &quot; xy&quot;,
+  type           = &#39;b&#39;,
+  par.strip.text = list(lines = 0.8, cex = 0.7), 
+  cex            = 0.5,
+  panel          = function(...){
+    panel.grid(h = -1,v = -1)
+    panel.xyplot(...)
+  }
+)
+dev.off()
+</code></pre>
+
+<h4>Proportion of Flights Delayed</h4>
+
+<p>It is very likely in the future analysis, we want to study the flights information for a specific 
+day.So for this scenario we want to create new key/value pairs by using RHIPE. The input files are
+the blocks of data we created previously, and the ouput will be &#39;sequence&#39; file with key is the 
+date, and corresponding value is a data frame of data for that particular day. For example, we would
+like to know what is the delay rate on everyday.</p>
+
+<pre><code class="r">map &lt;- expression({
+  a &lt;- do.call(&quot;rbind&quot;, map.values)
+  a$delay.sec &lt;- as.vector(a[,&#39;arrive&#39;]) - as.vector(a[,&#39;sarrive&#39;])
+  a &lt;- a[!is.na(a$delay.sec),]
+  a$isdelayed &lt;- sapply(a$delay.sec, function(r) if(r &gt; 900) TRUE else FALSE)
+  e &lt;- split(a, list(a$year, a$month, a$day))
+  lapply(e, function(r){
+    n &lt;- nrow(r)
+    numdelayed &lt;- sum(r$isdelayed)
+    rhcollect(as.vector(unlist(c(r[1, c(&quot;year&quot;, &quot;month&quot;, &quot;day&quot;)]))), c(n, numdelayed))
+  })
+})
+reduce &lt;- expression(
+  pre = {
+    sums &lt;- c(0, 0)
+  },
+  reduce = {
+    sums &lt;- sums + apply(do.call(&quot;rbind&quot;, reduce.values), 2, sum)
+  },
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+mapred &lt;- list()
+mapred$rhipe_map_buff_size &lt;- 5
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt(&quot;/tmp/airline/output/blocks&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/tmp/airline/output/delaybyday&quot;, type = &quot;sequence&quot;),
+  mapred   = mapred,
+  readback = FALSE
+)
+</code></pre>
+
+<p>In map expression, we still iterate over the <code>map.values</code>, which are number <code>rhipe_map_buff_size</code> 
+of the data frame with 5000 rows and 12 columns flights information. we define the second of delay
+as <code>delay.sec</code>. Of course, we have to remove all <code>NA</code> in <code>delay.sec</code> since there are some records 
+of flight have <code>NA</code> as missing data of arriving time. Then create a flag variable <code>isdelayed</code> to 
+identify if the flight is delayed. Object <code>e</code> is a list which come from the calling of <code>split()</code> 
+function. What we get for <code>e</code> is a data frame for each day as elements of the list. At last, we
+collect the key which is the date, and value which is a vector with total number of flights and 
+number of delayed flights for each element of <code>e</code>.</p>
+
+<p>In reduce expression, we initialize the <code>sums</code> in <code>pre</code> of reduce, which will be the final total
+number of flights and number of delay for a given day. And in <code>reduce</code> of reduce, we just cumulate
+all two numbers for same key. Finally, in <code>post</code> of reduce, collect the final key/value pairs. 
+<code>reduce.key</code> here is one particular date of the day, and <code>reduce.values</code> is a list with all 
+<code>c(numberofflight, numberofdelay)</code> as elements.</p>
+
+<p>We read the output by using <code>rhread()</code>, and then grab all the keys assigned to <code>y1</code>, grab all the 
+values assigned to <code>y2</code>. Based on keys and values, we create a data frame named <code>results</code> with 6 
+columns. The delay rate is the number of delay divided by the number of total flights on that day. 
+Finally, the data frame is sorted by the day.</p>
+
+<pre><code class="r">b &lt;- rhread(&quot;/tmp/airline/output/delaybyday&quot;)
+y1 &lt;- do.call(&quot;rbind&quot;, lapply(b, &quot;[[&quot;, 1))
+y1 &lt;- y1[-1, ]
+y2 &lt;- do.call(&quot;rbind&quot;, lapply(b, &quot;[[&quot;, 2))
+y2 &lt;- y2[-1, ]
+results &lt;- data.frame(
+  year    = y1[, 1],
+  month   = y1[, 2],
+  day     = y1[, 3],
+  nflight = y2[, 1],
+  ndelay  = y2[, 2]
+)
+results$rate &lt;- results$ndelay/results$nflight
+results &lt;- results[order(results$year, results$month, results$day), ]
+head(results)
+</code></pre>
+
+<pre><code>   year month day nflight ndelay      rate
+1  1987    10   1   14759   9067 0.6143370
+10 1987    10  10   13417   7043 0.5249311
+11 1987    10  11   14016   7790 0.5557934
+12 1987    10  12   14792   8376 0.5662520
+13 1987    10  13   14859   8623 0.5803217
+14 1987    10  14   14799   8806 0.5950402
+</code></pre>
+
+<p>STL decomposition of proportion of flights delayed is the STL decomposition of p (the proportion of
+flights delayed). The seasonal panel clearly demonstrates the holiday effect of delays. They don’t 
+seem to be increasing with time (see trend panel).</p>
+
+<pre><code class="r">prop &lt;- results[,&#39;rate&#39;]
+prop &lt;- prop[!is.na(prop)]
+tprop &lt;- ts(log(prop/(1 - prop)), 
+  start     = c(1987, 273),
+  frequency = 365
+)
+tprop[is.infinite(tprop)] &lt;- 0
+trellis.device(postscript, file = &quot;propdelayedxyplot.ps&quot;, color=TRUE, paper=&quot;letter&quot;)
+plot(stl(tprop,s.window=&quot;periodic&quot;))
+dev.off()
+</code></pre>
+
+<p><a href="./plots/propdelayedxyplot.pdf">STL decomposition of proportion of flights delayed</a></p>
+
+<p>We can do very similar thing that calculating the delay rate, but for each hour, instead of doing 
+that for each day. We only need to change the key to be the hour variable in data.</p>
+
+<pre><code class="r">map &lt;- expression({
+  a &lt;- do.call(&quot;rbind&quot;,map.values)
+  a$delay.sec &lt;- as.vector(a[, &#39;arrive&#39;])-as.vector(a[, &#39;sarrive&#39;])
+  a &lt;- a[!is.na(a$delay.sec),]
+  a$isdelayed &lt;- sapply(a$delay.sec, function(r) if(r &gt; 900) TRUE else FALSE)
+  a$hrs &lt;- as.numeric(format(a[, &#39;sdepart&#39;], &quot;%H&quot;))
+  e &lt;- split(a,a$hrs)
+  lapply(e, function(r){
+    n &lt;- nrow(r) 
+    numdelayed &lt;- sum(r$isdelayed)
+    rhcollect(as.vector(unlist(c(r[1, c(&quot;hrs&quot;)]))), c(n, numdelayed))
+  })
+})
+reduce &lt;- expression(
+  pre = {
+    sums &lt;- c(0, 0)
+  },
+  reduce = {
+    sums &lt;- sums + apply(do.call(&quot;rbind&quot;, reduce.values), 2, sum)
+  },
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+mapred &lt;- list()
+mapred$rhipe_map_buff_size &lt;- 5
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt(&quot;/tmp/airline/output/blocks/&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/tmp/airline/output/delaybyhours&quot;, type = &quot;sequence&quot;),
+  mapred   = mapred,
+  readback = FALSE
+)
+</code></pre>
+
+<p>Does the delay proportion change with hour? It appears it does (see Proportion of flights delayed
+by hour of day). The hours are scheduled departure times. Why are so many flights leaving in the 
+hours (12-3) delayed?</p>
+
+<pre><code class="r">b &lt;- rhread(&quot;/tmp/airline/output/delaybyhours&quot;)
+y1 &lt;- do.call(&quot;rbind&quot;, lapply(b, &quot;[[&quot;, 1))
+y2 &lt;- do.call(&quot;rbind&quot;, lapply(b, &quot;[[&quot;, 2))
+results &lt;- data.frame(
+  hour = y1,
+  rate = y2[, 2] / y2[, 1]
+)
+trellis.device(postscript, file = &quot;delaybyhours.ps&quot;, color=TRUE, paper=&quot;letter&quot;)
+dotplot( hour ~ rate, 
+  data           = results,
+  xlab           = &quot;Proportion of Flights Delayed &gt; 15 minutes&quot;, 
+  ylab           = &quot;Hour of Day&quot;,
+  col            = &#39;black&#39;,
+  aspect         = &quot; xy&quot;
+)
+dev.off()
+</code></pre>
+
+<p><a href="./plots/delaybyhours.pdf">Proportion of flights delayed by hour of day</a></p>
+
+<h4>Distribution of Delays</h4>
+
+<p>Summaries are not enough and for any sort of modeling we need to look at the distribution of the 
+data. So onto the quantiles of the delays. We will look at delays greater than \(15\) minutes. To 
+compute approximate quantiles for the data, we simply discretize the delay and compute a frequency 
+count for the unique values of delay. This is equivalent to binning the data. Given this frequency 
+table we can compute the quantiles.</p>
+
+<p>The distribution of the delay in minutes does not change significantly over months.</p>
+
+<pre><code class="r">map &lt;- expression({
+  a &lt;- do.call(&quot;rbind&quot;, map.values)
+  a$delay.sec &lt;- as.vector(a[,&#39;arrive&#39;]) - as.vector(a[,&#39;sarrive&#39;])
+  a &lt;- a[!is.na(a$delay.sec), ]
+  a$isdelayed &lt;- sapply(a$delay.sec, function(r) if(r &gt;= 900) TRUE else FALSE)
+  a &lt;- a[a$isdelayed == TRUE, ] ## only look at delays greater than 15 minutes
+  apply(a[, c(&#39;month&#39;, &#39;delay.sec&#39;)], 1, function(r) {
+    k &lt;- as.vector(unlist(r))
+    if(!is.na(k[1])) rhcollect(k,1) # ignore cases where month is missing
+  })
+})
+reduce &lt;- expression(
+  pre = {
+    sums &lt;- 0
+  } ,
+  reduce = {
+    sums &lt;- sums + sum(unlist(reduce.values))
+  },
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+mapred &lt;- list()
+mapred$rhipe_map_buff_size &lt;- 5
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt(&quot;/tmp/airline/output/blocks/&quot;,type=&quot;sequence&quot;),
+  output   = rhfmt(&quot;/tmp/airline/quantiledelay&quot;,type=&quot;sequence&quot;),
+  mapred   = mapred
+  readback = FALSE
+)
+b &lt;- rhread(&quot;/tmp/airline/quantiledelay&quot;)
+y1 &lt;- do.call(&quot;rbind&quot;,lapply(b, &quot;[[&quot;, 1))
+count &lt;- do.call(&quot;rbind&quot;,lapply(b, &quot;[[&quot;, 2))
+results &lt;- data.frame(
+  month = y1[,1], 
+  n     = y1[,2], 
+  count = count
+)
+results &lt;- results[order(results$month, results$n), ]
+results.2 &lt;- split(results, results$month)
+
+discrete.quantile&lt;-function(x, n, prob = seq(0,1,0.25), type = 7) {
+  sum.n &lt;- sum(n)
+  cum.n &lt;- cumsum(n)
+  np &lt;- if(type==7) (sum.n-1)*prob + 1 else sum.n*prob + 0.5
+  np.fl &lt;- floor(np)
+  j1 &lt;- pmax(np.fl, 1)
+  j2 &lt;- pmin(np.fl+1, sum.n)
+  gamma &lt;- np-np.fl
+  id1 &lt;- unlist(lapply(j1, function(r) seq_along(cum.n)[r &lt;= cum.n][1]))
+  id2 &lt;- unlist(lapply(j2, function(r) seq_along(cum.n)[r &lt;= cum.n][1]))
+  x1 &lt;- x[id1]
+  x2 &lt;- x[id2]
+  qntl &lt;- (1 - gamma)*x1 + gamma*x2
+  qntl
+}
+
+DEL &lt;- 0.05
+results.3 &lt;- lapply(seq_along(results.2), function(i) {
+  r &lt;- results.2[[i]]
+  a &lt;- discrete.quantile(r[, 2], r[, 3], prob = seq(0, 1, DEL))/60
+  data.frame(
+    month = as.numeric(rep(names(results.2)[[i]], length(a))),
+    prop  = seq(0, 1, DEL),
+    qt    = a
+  )
+})
+results.3 &lt;- do.call(&quot;rbind&quot;,results.3)
+results.3$month &lt;- factor(
+  results.3$month,
+  label = c(&quot;Jan&quot;,&quot;Feb&quot;,&quot;March&quot;,&quot;Apr&quot;,&quot;May&quot;,&quot;June&quot;,
+    &quot;July&quot;,&quot;August&quot;,&quot;September&quot;,&quot;October&quot;,&quot;November&quot;,&quot;December&quot;)
+)
+xyplot(log(qt,2) ~ prop | month, 
+  data   = results.3,
+  cex    = 0.4,
+  col    = &#39;black&#39;,
+  scales = list(x = list(tick.number = 10), y = list(tick.number = 10)),
+  layout = c(4,3),
+  type   = &#39;l&#39;,
+  xlab   = &quot;Proportion&quot;,
+  ylab   = &quot;log_2 delay (minutes)&quot;,
+  panel  = function(x,y, ...){
+    panel.grid(h = -1, v = -1)
+    panel.xyplot(x, y, ...)
+  }
+)
+</code></pre>
+
+<p><a href="./plots/quantiles_by_month.pdf">Quantiles by month</a></p>
+
+<p>We can display the distribution by hour of day. The code is almost nearly the same. Differences are
+in line \(8\), where the hrs is used as the conditioning. But the results are more interesting. The 
+delay amounts increase in the wee hours (look at panel \(23,24,1,2\) and \(3\))</p>
+
+<pre><code class="r">map &lt;- expression({
+  a &lt;- do.call(&quot;rbind&quot;,map.values)
+  a$delay.sec &lt;- as.vector(a[, &#39;arrive&#39;]) - as.vector(a[, &#39;sarrive&#39;])
+  a &lt;- a[!is.na(a$delay.sec), ]
+  a$isdelayed &lt;- sapply(a$delay.sec, function(r) if(r &gt;= 900) TRUE else FALSE)
+  a &lt;- a[a$isdelayed == TRUE,] ## only look at delays greater than 15 minutes
+  a$hrs &lt;- as.numeric(format(a[, &#39;sdepart&#39;],&quot;%H&quot;))
+  apply(a[, c(&#39;hrs&#39;,&#39;delay.sec&#39;)], 1, function(r) {
+    k &lt;- as.vector(unlist(r))
+    if(!is.na(k[1])) rhcollect(k, 1)
+  })
+})
+reduce &lt;- expression(
+  pre = {
+    sums &lt;- 0
+  } ,
+  reduce = {
+    sums &lt;- sums + sum(unlist(reduce.values))
+  },  
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+mapred &lt;- list()
+mapred$rhipe_map_buff_size &lt;- 5
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt(&quot;/tmp/airline/output/blocks/&quot;,type=&quot;sequence&quot;),
+  output   = rhfmt(&quot;/tmp/airline/quantiledelaybyhour&quot;,type=&quot;sequence&quot;),
+  mapred   = mapred,
+  readback = FALSE
+)
+
+</code></pre>
+
+<p>The distribution of delay times by airports. This could be analyzed for several airports, but we 
+take the top 3 in terms of volumes. In this display, the quantiles of log_2 of the delay times 
+(in minutes) for inbound and outbound for 4 different airports is plotted. The airports are in 
+order of median delay time. Of note, the median delay time for Chicago (ORD) and San Francisco 
+(SFO) is greater flying in than out (approximately an hour). For both Chicago and Dallas Fort Worth
+(DFW), the 75th percentile of inbound delays is greater than that for outbound. Quantile of minute 
+delay for inbound and outbound for 4 different airports. Dotted red lines are 25%,50% and 75% 
+uniform proportions. displays these differences.</p>
+
+<pre><code class="r">map &lt;- expression({
+  cc &lt;- c(&quot;ORD&quot;,&quot;SEA&quot;,&quot;DFW&quot;,&quot;SFO&quot;)
+  a &lt;- do.call(&quot;rbind&quot;,map.values)
+  a &lt;- a[a$origin %in% cc| a$dest %in% cc,]
+  if(nrow(a)&gt;0){
+    a$delay.sec &lt;- as.vector(a[,&#39;arrive&#39;])-as.vector(a[,&#39;sarrive&#39;])
+    a &lt;- a[!is.na(a$delay.sec),]
+    a$isdelayed &lt;- sapply(a$delay.sec, function(r) if(r &gt;= 900) TRUE else FALSE)
+    a &lt;- a[a$isdelayed == TRUE,]
+    for(i in 1:nrow(a)){
+      dl &lt;- a[i, &quot;delay.sec&quot;]
+      if(a[i,&quot;origin&quot;] %in% cc) {
+        rhcollect(data.frame(dir = &quot;outbound&quot;, ap = a[i,&quot;origin&quot;], delay = dl, stringsAsFactors = FALSE), 1)
+      }
+      if(a[i,&quot;dest&quot;] %in% cc) {
+        rhcollect(data.frame(dir = &quot;inbound&quot;,ap = a[i,&quot;dest&quot;], delay = dl, stringsAsFactors = FALSE), 1)
+      }
+    }
+  }
+})
+reduce &lt;- expression(
+  pre = {
+    sums &lt;- 0
+  } ,
+  reduce = {
+    sums &lt;- sums + sum(unlist(reduce.values))
+  },
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+mapred &lt;- list()
+mapred$rhipe_map_buff_size &lt;- 5
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt(&quot;/tmp/airline/output/blocks/&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/tmp/airline/inoutboundelay&quot;, type = &quot;sequence&quot;),
+  mapred   = mapred,
+  readback = FALSE
+)
+</code></pre>
+
+<h4>Carrier Delays</h4>
+
+<p>Is there a difference in carrier delays? We display the time series of proportion of delayed 
+flights by carrier, ranked by carrier.</p>
+
+<pre><code class="r">## For proportions and volumes
+map &lt;- expression({
+  a &lt;- do.call(&quot;rbind&quot;, map.values)
+  a$delay.sec &lt;- as.vector(a[,&#39;arrive&#39;]) - as.vector(a[,&#39;sarrive&#39;])
+  a &lt;- a[!is.na(a$delay.sec),]
+  a$isdelayed &lt;- sapply(a$delay.sec,function(r) if(r &gt;= 900) TRUE else FALSE)
+  a$hrs &lt;- as.numeric(format(a[,&#39;sdepart&#39;],&quot;%H&quot;))
+  e &lt;- split(a,a$hrs)
+  lapply(e,function(r){
+    n &lt;- nrow(r) 
+    numdelayed &lt;- sum(r$isdelayed)
+    rhcollect(as.vector(unlist(c(r[1,c(&quot;carrier&quot;)]))), c(n, numdelayed))
+  })
+})
+reduce &lt;- expression(
+  pre = {
+    sums &lt;- c(0,0)
+  },
+  reduce = {
+    sums &lt;- sums + apply(do.call(&quot;rbind&quot;, reduce.values), 2, sum)
+  },
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+</code></pre>
+
+<p>Proportion of flights delayed by carrier. Compare this with the previous graph.</p>
+
+<h4>Busy Routes</h4>
+
+<p>Which are busy the routes? A simple first approach (for display purposed) is to create a frequency 
+table for the unordered pair (i,j) where i and j are distinct airport codes. Displays this over 
+the US map.</p>
+
+<pre><code class="r">map &lt;- expression({
+  a &lt;- do.call(&quot;rbind&quot;,map.values)
+  y &lt;- table(apply(a[,c(&quot;origin&quot;,&quot;dest&quot;)], 1, function(r){
+    paste(sort(r),collapse=&quot;,&quot;)
+  }))
+  for(i in 1:length(y)){
+    p &lt;- strsplit(names(y)[[i]], &quot;,&quot;)[[1]]
+    rhcollect(p, y[[1]])
+  }
+})
+reduce &lt;- expression(
+  pre = {
+    sums &lt;- 0
+  },
+  reduce = {
+    sums &lt;- sums + sum(unlist(reduce.values))
+  },
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+mapred &lt;- list()
+mapred$rhipe_map_buff_size &lt;- 5
+mapred$mapred.job.priority=&quot;VERY_LOW&quot;
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt(&quot;/tmp/airline/output/blocks/&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/tmp/airline/ijjoin&quot;, type = &quot;sequence&quot;),
+  mapred   = mapred,
+  readback = FALSE
+)
+
+##Merge results
+b &lt;- rhread(&quot;/tmp/airline/ijjoin&quot;)
+y &lt;- do.call(&quot;rbind&quot;, lapply(b, &quot;[[&quot;, 1))
+results &lt;- data.frame(
+  a                = y[, 1],
+  b                = y[, 2],
+  count            = do.call(&quot;rbind&quot;, lapply(b, &quot;[[&quot;, 2)),
+  stringsAsFactors = FALSE
+)
+results &lt;- results[order(results$count, decreasing=TRUE), ]
+results$cumprop &lt;- cumsum(results$count) / sum(results$count)
+a.lat &lt;- t(sapply(results$a, function(r) {
+  ap[ap$iata == r, c(&#39;lat&#39;, &#39;long&#39;)]
+}))
+results$a.lat &lt;- unlist(a.lat[, &#39;lat&#39;])
+results$a.long &lt;- unlist(a.lat[, &#39;long&#39;])
+b.lat &lt;- t(sapply(results$b,function(r) {
+  ap[ap$iata == r,c(&#39;lat&#39;, &#39;long&#39;)]
+}))
+b.lat[&quot;CBM&quot;, ] &lt;- c(0,0)
+results$b.lat &lt;- unlist(b.lat[,&#39;lat&#39;])
+results$b.long &lt;- unlist(b.lat[,&#39;long&#39;])
+head(results)
+</code></pre>
+
+<pre><code>   a   b  count     cumprop    a.lat     a.long    b.lat     b.long
+1 ATL ORD 145810 0.001637867 33.64044  -84.42694 41.97960  -87.90446
+2 LAS LAX 140722 0.003218581 36.08036 -115.15233 33.94254 -118.40807
+3 DEN DFW 140258 0.004794083 39.85841 -104.66700 32.89595  -97.03720
+4 LAX SFO 139427 0.006360250 33.94254 -118.40807 37.61900 -122.37484
+5 DFW IAH 137004 0.007899200 32.89595  -97.03720 29.98047  -95.33972
+6 DTW ORD 135772 0.009424311 42.21206  -83.34884 41.97960  -87.90446
+
+</code></pre>
+
+<p>Using the above data, the following figure draws lines from ORD (Chicago) to other destinations. 
+The black points are the airports that handle 90% of the total air traffic volume. The grey points 
+are the remaining airports. The flights from Chicago (ORD) are color coded based on volume carried 
+e.g. red implies those routes carry the top 25% of traffic in/out of ORD.</p>
+
+</div>
+
+
+<div class='tab-pane' id='streaming-data'>
+<h3>Streaming Data</h3>
+
+<p>Some algorithms are left associative in their operands \(t_1\), \(t_2\), \(\ldots\), \(t_n\) but not 
+commutative. For example a streaming update algorithm that computes the inter-arrival times 
+of time series data for different levels of a categorical variable. That is, the triangular 
+series \(t_{k,1}\), \(t_{k,2}\), \(\ldots\), \(t_{k,n_k}\) where k takes the levels of a categorical 
+variable C (which takes the values \(1, 2, 3, \ldots, m\)). The input are pairs (i, j), \(i\) \(\in\) 
+\(\{1, 2, \ldots, m\}\), \(j\) \(\in\) \(\{t_{ik}\}\). In the following code, the data structure F 
+is updated with the datastructure contained in the values (see the map). The datastructures
+are indexed in time by the timepoint - they need to be sent to the reducer (for a given level
+of the categorical variable catlevel) in time order. Thus the map sends the pair (catlevel, 
+timepoint) as the key. By using the part parameter all the data structures associated with the 
+catlevel are sent to the same R reduce process. This is vital since all the component R expressions
+in the reduce are run in the same process and namespace. To preserve numeric ordering we insist on
+the special map output key class. With this special key class, we cannot have a map output format. 
+In the reduce, the setup expression redsetup is run upon R startup (the process assigned to several 
+keys and their associated values). Then for each new intermediate key (catlevel, timepoint), it runs
+the pre, reduce and post. The lack of a post is because we have exactly one intermediate value for 
+a given key (assuming the time points for a category are unique). The redclose expression is run 
+when all keys and values have been processed by the reducer and R is about to quit.</p>
+
+<pre><code class="r">map &lt;- expression({
+  lapply(seq_along(map.values),function(r){
+    catlevel &lt;- map.keys[[r]] #numeric
+    timepoint &lt;- map.values[[r]]$timepoint #numeric
+    datastructure &lt;- map.values[[r]]$data
+    key &lt;- c(catlevel, timepoint)
+    rhcollect(key, datastructure)
+  })
+})
+redsetup &lt;- expression({
+  currentkey &lt;- NULL
+ })
+reduce &lt;- expression(
+  pre = {
+    catlevel &lt;- reduce.key[1]
+    time &lt;- reduce.key[2]
+    if(!identical(catlevel,currentkey)){
+    ## new categorical level
+    ## so finalize the computation for
+    ## the previous level e.g. use rhcollect
+    if(!identical(currentkey, NULL))
+      FINALIZE(F)
+      ## store current categorical level
+      currentkey &lt;- catlevel
+      ## initialize computation for new level
+      INITIALIZE(F)
+    }
+  },
+  reduce = {
+    F &lt;- UPDATE(F, reduce.values[[1]])
+  }
+)
+redclose &lt;- expression({
+  ## need to run this, otherwise the last catlevel
+  ## will not get finalized
+  FINALIZE(F)
+})
+mr &lt;- rhwatch(..., 
+  combiner    = FALSE,
+  setup       = list(reduce = redsetup),
+  cleanup     = list(reduce = redclose),
+  orderby     = &quot;numeric&quot;,
+  partitioner = list(lims = 1, type = &quot;numeric&quot;)
+)
+</code></pre>
+
+<h4>Concrete (but artifical) Example</h4>
+
+<p>We will create a data set with three columns: the level of a categorical variable A, a time variable
+B and a value C. For each level of A, we want the sum of differences of C ordered by B within A.</p>
+
+<p>Creating the Data set The column A is the key, but this is not important. There are 5000 levels of A,
+each level has 10,000 observations. By design the values of B are randomly written (sample), also for
+simplicity C is equal to B, though this need not be.</p>
+
+<pre><code class="r">map &lt;- expression({
+  N &lt;- 10000
+  for(first.col in map.values) {
+    w &lt;- sample(N, N, replace = FALSE)
+    for(i in w) {
+      rhcollect(first.col, c(i, i))
+    }
+  }
+})
+mapred &lt;- list(mapred.reduce.tasks = 0)
+mr &lt;- rhwatch(
+  map = map, 
+  input = c(5000, 10),
+  output = rhfmt(&quot;/tmp/airline/output/sort&quot;, type = &quot;sequence&quot;),
+  mapred = mapred,
+  readback = FALSE,
+  noeval = TRUE
+)
+rhex(mr)
+</code></pre>
+
+<p>Sum of Differences The key is the value of A and B, the value is C.</p>
+
+<pre><code class="r">map &lt;- expression({
+  lapply(seq_along(map.values),function(r){
+    f &lt;- map.values[[r]]
+    rhcollect(as.integer(c(map.keys[[r]], f[1])), f[2])
+  })
+})
+</code></pre>
+
+<p>Thus each output from a map is a key (assuming there are not any duplicates for B for a given level
+of A), thus reduce.values has only one observation. All keys sharing the same level of A will be 
+sent to one R process and the tuples as.integer(c(map.keys[[r]],f[1])) will be sorted. reduce.setup 
+is called once when the R process starts processing its assigned partition of keys and reduce.post 
+is called at the end (when all keys have been processed)</p>
+
+<pre><code class="r">reduce.setup &lt;- expression({
+  newp &lt;- -Inf
+  diffsum &lt;- NULL
+})
+reduce &lt;- expression(
+  pre = {
+    if(reduce.key[[1]][1] != newp) {
+      if(newp &gt; -Inf) rhcollect(newp, diffsum) #prevents -Inf from being collected
+      diffsum &lt;- 0
+      lastval &lt;- 0
+      newp &lt;- reduce.key[[1]][1]
+      skip &lt;- TRUE
+    }
+  },
+  reduce = {
+    current &lt;- unlist(reduce.values) #only one value!
+    if(!skip) {
+      diffsum &lt;- diffsum + (current-lastval) 
+    }else {
+      skip &lt;- FALSE
+    }
+    lastval &lt;- current
+  }
+)
+reduce.post &lt;- expression({
+  if(newp &gt; -Inf) rhcollect(newp, diffsum) #for the last key
+})
+mr &lt;- rhwatch(
+  map = map,
+  reduce = reduce, 
+  input = rhfmt(&quot;/tmp/airline/output/sort&quot;, type = &quot;sequence&quot;),
+  output = rhrmt(&quot;/tmp/airline/output/sort2&quot;, type =  &quot;sequence&quot;),
+  partitioner = list(lims = 1, type = &quot;integer&quot;),
+  orderby = &quot;integer&quot;,
+  cleanup = list(reduce = reduce.post),
+  setup = list(reduce = reduce.setup),
+  readback = FALSE
+)
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='simple-debugging'>
+<h3>Simple Debugging</h3>
+
+<p>Consider the example code used to compute the delay quantiles by month (see Delay Quantiles By 
+Month ). We can use tryCatch for some simple debugging. See the error in line 7, there is no such v
+ariable isdelayed</p>
+
+<pre><code class="r">map &lt;- expression({
+  tryCatch(
+    {
+      a &lt;- do.call(&quot;rbind&quot;,map.values)
+      a$delay.sec &lt;- as.vector(a[,&#39;arrive&#39;])-as.vector(a[,&#39;sarrive&#39;])
+      a &lt;- a[!is.na(a$delay.sec),]
+      a$isdelayed &lt;- sapply(a$delay.sec,function(r) if(r&gt;=900) TRUE else FALSE)
+      a &lt;- a[isdelayed==TRUE,] ## only look at delays greater than 15 minutes
+      apply(a[,c(&#39;month&#39;,&#39;delay.sec&#39;)],1,function(r){
+        k &lt;- as.vector(unlist(r))
+        if(!is.na(k[1])) rhcollect(k,1) # ignore cases where month is missing
+      })
+    },
+    error = function(e) {
+      e$message &lt;- sprintf(&quot;Input File:%s\nAttempt ID:%s\nR INFO:%s&quot;,
+        Sys.getenv(&quot;mapred.input.file&quot;),
+        Sys.getenv(&quot;mapred.task.id&quot;),
+        e$message
+      )
+      stop(e) ## WONT STOP OTHERWISE
+    }
+  )
+})
+reduce &lt;- expression(
+  pre = {
+    sums &lt;- 0
+  } ,
+  reduce = {
+    sums &lt;- sums + sum(unlist(reduce.values))
+  },
+  post = { 
+    rhcollect(reduce.key, sums) 
+  }
+)
+mapred &lt;- list()
+mapred$rhipe_map_buff_size &lt;- 5
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = rhfmt(&quot;/tmp/airline/output/blocks/&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/tmp/airline/output/quantiledelay&quot;, type = &quot;sequence&quot;),
+  mapred   = mapred,
+  readback = FALSE
+)
+</code></pre>
+
+<p>Produces a slew of errors like (output slightly modified to fit page)</p>
+
+<pre><code>03/07/14 00:41:20 INFO mapred.JobClient: Task Id :
+  attempt_201007281701_0273_m_000023_0, Status : FAILED
+java.io.IOException: MROutput/MRErrThread failed:java.lang.RuntimeException:
+R ERROR
+=======
+Error in `[.data.frame`(a, isdelayed == TRUE, ) : Input File:
+Attempt ID:attempt_201007281701_0273_m_000023_0
+R INFO:object &quot;isdelayed&quot; not found
+</code></pre>
+
+<p>It can be very useful to provide such debugging messages since R itself doesn’t provide much help. 
+Use this to provide context about variables, such printing the first few rows of relevant data 
+frames (if required). Moreover, some errors don’t come to the screen instead the job finishes 
+successfully (but very quickly since the R code is failing) but the error message is returned as a 
+counter. The splits succeed since Hadoop has finished sending its data to R and not listening to 
+for errors from the R code. Hence any errors sent from R do not trigger a failure condition in 
+Hadoop. This is a RHIPE design flaw. To compensate for this, the errors are stored in the counter 
+<code>R_ERROR</code>.</p>
+
+<p>Unfortunately, RHIPE does not offer much in the way of debugging. To run jobs locally that is, 
+Hadoop will execute the job in a single thread on one computer, set <code>mapred.job.tracker</code> to local in 
+the <code>mapred</code> argument of <code>rhwatch</code>. In this case, <code>shared</code> cannot be used and <code>copyFiles</code> will 
+not work.</p>
+
+</div>
+
+
+<div class='tab-pane' id='subset'>
+<h3>Subset</h3>
+
+<p>Recall that the airline data take the form</p>
+
+<pre><code>1995,1,6,5,657,645,952,937,UA,482,N7298U,115,112,83,15,12,ORD,PHL,678,7,25,0,NA,0,NA,NA,NA,NA,NA
+1995,1,7,6,648,645,938,937,UA,482,N7449U,110,112,88,1,3,ORD,PHL,678,5,17,0,NA,0,NA,NA,NA,NA,NA
+...
+</code></pre>
+
+<p>The carrier name is column 9. The carrier code for Southwest Airlines is WN, and the code for 
+Delta Airways is DL. Only those rows with column 9 equal to WN or DL will be saved.</p>
+
+<pre><code class="r">map &lt;- expression({
+  tkn  &lt;- strsplit(unlist(map.values), &quot;,&quot;)
+  text &lt;- do.call(&quot;rbind&quot;, tkn)
+  text &lt;- text[text[, 9] %in% c(&quot;WN&quot;, &quot;DL&quot;), , drop = FALSE]
+  if (nrow(text) &gt; 0)
+    apply(text, 1, function(r) rhcollect(r[9], r))
+})
+</code></pre>
+
+<p>Note that <code>rhcollect()</code> requires both a key and value. However, since the key is not used, 
+<code>NULL</code> is passed to the key argument and <code>mapred.textoutputformat.usekey</code> is set to 
+<code>FALSE</code> so that the key is not written to disk. By default RHIPE includes strings in 
+quotes, but since we do not wish to do so here, we set <code>rhipe_string_quote</code> to <code>&#39;&#39;</code> 
+and <code>mapred.field.separator</code> to <code>&quot;,&quot;</code> as the original data is comma separated. A 
+partitioner is used to send all the flight information belonging to Southwest Airlines to one 
+file and that belonging to Delta Airways to another.</p>
+
+<pre><code class="r">z &lt;- rhwatch(
+  map      = map,
+  reduce   = rhoptions()$templates$identity,
+  input    = rhfmt(&quot;/tmp/airline/data/outputs/1995.csv&quot;, type = &#39;text&#39;),
+  output   = rhfmt(&quot;/tmp/airline/output/transform&quot;, type = &#39;text&#39;),
+  orderby  = &quot;char&quot;,
+  part     = list(lims = 1, type = &quot;string&quot;),
+  mapred   = list(
+    mapred.reduce.tasks            = 2,
+    rhipe_string_quote             = &#39;&#39;,
+    mapred.field.separator         = &quot;,&quot;,
+    mapred.textoutputformat.usekey = FALSE),
+  readback = FALSE
+  )
+</code></pre>
+
+<p>The output, in one file is</p>
+
+<pre><code>1995,11,15,3,937,930,1016,1011,DL,2016,N319DL,39,41,33,5,7,FAT,RNO,188,5,1,0,NA,0,NA,NA,NA,NA,NA
+1995,11,16,4,927,930,1017,1011,DL,2016,N326DL,50,41,38,6,-3,FAT,RNO,188,4,8,0,NA,0,NA,NA,NA,NA,NA
+1995,11,17,5,931,930,1016,1011,DL,2016,N331DL,45,41,31,5,1,FAT,RNO,188,5,9,0,NA,0,NA,NA,NA,NA,NA
+1995,11,18,6,929,930,1012,1011,DL,2016,N237WA,43,41,32,1,-1,FAT,RNO,188,6,5,0,NA,0,NA,NA,NA,NA,NA
+1995,11,19,7,928,930,1008,1011,DL,2016,N318DL,40,41,31,-3,-2,FAT,RNO,188,4,5,0,NA,0,NA,NA,NA,NA,NA
+</code></pre>
+
+<p>and in the other is</p>
+
+<pre><code>1995,5,1,1,1706,1700,1750,1740,WN,1228,N105,164,160,154,10,6,MCI,PHX,1044,4,6,0,NA,0,NA,NA,NA,NA,NA
+1995,4,1,6,630,630,825,825,WN,308,N83,55,55,43,0,0,LAS,PHX,256,2,10,0,NA,0,NA,NA,NA,NA,NA
+1995,4,3,1,630,630,719,725,WN,308,N386,49,55,38,-6,0,LAS,PHX,256,3,8,0,NA,0,NA,NA,NA,NA,NA
+1995,4,4,2,630,630,720,725,WN,308,N27,50,55,42,-5,0,LAS,PHX,256,2,6,0,NA,0,NA,NA,NA,NA,NA
+1995,4,5,3,630,630,723,725,WN,308,N82,53,55,41,-2,0,LAS,PHX,256,3,9,0,NA,0,NA,NA,NA,NA,NA
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='transform'>
+<h3>Transform</h3>
+
+<p>In this example, we convert each airport code to their name equivalent. Airport codes can be 
+found at the <a href="http://stat-computing.org/dataexpo/2009/the-data.html">JSM website</a>. When 
+working with massive data, repeatedly used operations need to be as fast as possible. Thus we 
+will save the airport code to airport name as a hash table using the <code>new.env()</code> function. 
+Airport codes (origin and destination) are in columns 17 and 18. The setup expression loads 
+this data set and creates a function that does the mapping.</p>
+
+<pre><code class="r">airport &lt;- read.table(&quot;~/tmp/airports.csv&quot;,
+                      sep = &quot;,&quot;, header = TRUE, stringsAsFactors = FALSE)
+aton &lt;- new.env()
+for (i in 1:nrow(airport)) {
+  aton[[ airport[i, &quot;iata&quot;] ]] &lt;-
+    list(ap = airport[i, &quot;airport&quot;], latlong = airport[i, c(&quot;lat&quot;, &quot;long&quot;)])
+}
+rhsave(aton, file = &quot;/tmp/airline/airline.names/airports.RData&quot;)
+
+setup &lt;- expression(
+  map = {
+    load(&quot;airports.RData&quot;)
+    co &lt;- function(N) {
+      sapply(text[, N], function(r) {
+        o &lt;- aton[[ r[1] ]]$ap
+        if (is.null(o)) NA else sprintf(&#39;%s&#39;, o)
+        }
+      })
+    }
+  })
+</code></pre>
+
+<p>The map function will use the <code>aton</code> dictionary to get the complete names.</p>
+
+<pre><code class="r">map &lt;- expression({
+  tkn        &lt;- strsplit(unlist(map.values), &quot;,&quot;)
+  text       &lt;- do.call(&quot;rbind&quot;, tkn)
+  text[, 17] &lt;- co(17)
+  text[, 18] &lt;- co(18)
+  apply(text, 1, function(r) { rhcollect(NULL, r) })
+})
+
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = rhoptions()$templates$identity,
+  input    = rhfmt(&quot;/tmp/airline/data/outputs/1995.csv&quot;, type = &#39;text&#39;),
+  output   = rhfmt(&quot;/tmp/airline/output/transform&quot;, type = &#39;text&#39;),
+  shared   = c(&quot;/tmp/airline/airline.names/airports.RData&quot;),
+  setup    = setup,
+  mapred   = list(
+    mapred.reduce.tasks            = 0,
+    rhipe_string_quote             = &#39;&#39;,
+    mapred.field.separator         = &quot;,&quot;,
+    mapred.textoutputformat.usekey = FALSE),
+  readback = FALSE
+)
+</code></pre>
+
+<p>and this gives us</p>
+
+<pre><code>1995,1,6,5,657,645,952,937,UA,482,N7298U,115,112,83,15,12,Chicago O&#39;Hare International,Philadelphia Intl,678,7,25,0,NA,0,NA,NA,NA,NA,NA
+1995,1,7,6,648,645,938,937,UA,482,N7449U,110,112,88,1,3,Chicago O&#39;Hare International,Philadelphia Intl,678,5,17,0,NA,0,NA,NA,NA,NA,NA
+1995,1,8,7,649,645,932,937,UA,482,N7453U,103,112,83,-5,4,Chicago O&#39;Hare International,Philadelphia Intl,678,3,17,0,NA,0,NA,NA,NA,NA,NA
+1995,1,9,1,645,645,928,937,UA,482,N7288U,103,112,84,-9,0,Chicago O&#39;Hare International,Philadelphia Intl,678,3,16,0,NA,0,NA,NA,NA,NA,NA
+1995,1,10,2,645,645,931,937,UA,482,N7275U,106,112,82,-6,0,Chicago O&#39;Hare International,Philadelphia Intl,678,6,18,0,NA,0,NA,NA,NA,NA,NA
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='simulations-are-embarrassingly-parallel'>
+<h3>Simulations are Embarrassingly Parallel</h3>
+
+<p>Simulations are an example of task parallel routines in which a function is called repeatedly with 
+varying parameters. These computations are processor intensive and consume/produce little data. 
+The evaluation of these tasks are independent in that there is no communication between them. With 
+<code>N</code> tasks and <code>P</code> processors, if <code>P = N</code> we could run all N in parallel and collect the results. 
+However, often <code>P &lt;&lt; N</code> and thus we must either</p>
+
+<ul>
+<li>Create a queue of tasks and assign the top most task on the queue to the next free processor. 
+This works very well in an heterogeneous environment e.g. with varying processor capacities or 
+varying task characteristics - free resources will be automatically assigned pending tasks. The 
+cost in creating a new task can be much greater than the cost of evaluating the task.</li>
+<li>Partition the <code>N</code> tasks into <code>n</code> splits each containing \(\lceil N/n \rceil\) tasks (with the last 
+split containing the remainder). These splits are placed in a queue, each processor is assigned a 
+splits and the tasks in a split are evaluated sequentially.</li>
+</ul>
+
+<p>The second approach simplifies to the first when <code>n = N</code>. Creating one split per task is 
+inefficient since the time to create,assign launch the task contained in a split might be much 
+greater than the evaluation of the task. Moreover, with <code>N</code> in the millions, this will cause the 
+Jobtracker to run out of memory. It is recommended to divide the <code>N</code> tasks into fewer splits of 
+sequential tasks. Because of non uniform running times among tasks, processors can spend time in 
+the sequential execution of tasks in a split \(\sigma\) with other processors idle. Hadoop will 
+schedule the split \(\sigma\) to another processor (however it will not divide the split into smaller 
+splits), and the output of whichever completes first will be used.</p>
+
+<p>RHIPE provides two approaches to this sort of computation. To apply the function <code>F</code> to the set \(\lbrace 1, 2,\ldots, M \rbrace\), the pseudo code would follow as (here we assume <code>F</code> returns a data frame)</p>
+
+<pre><code class="r">FC &lt;- expression({
+  results &lt;- do.call(&quot;rbind&quot;, lapply(map.values, F))
+  rhcollect(1, results)
+})
+mrFC &lt;- rhwatch(
+  map    = FC,
+  input  = c(1000, 8),
+  output = &quot;/tmp/FC&quot;,
+  inout  = c(&#39;lapply&#39;, &#39;sequence&#39;),
+  mapred = list(mapred.map.tasks = 1000)
+  )
+do.call(&#39;rbind&#39;,lapply(rhread(&#39;/tempfolder&#39;, mc=TRUE),&#39;[[&#39;,2))
+</code></pre>
+
+<p>Here <code>F</code> is applied to the numbers \(1, 2,\ldots, M\). The job is decomposed into <code>1000</code> splits 
+(specified by <code>mapred.map.tasks</code>) each containing approximately \(\lceil M/1000 \rceil\) tasks. 
+The expression, <code>FC</code> sequentially applies <code>F</code> to the elements of <code>map.values</code> (which will 
+contain a subset of \(1, 2,\ldots ,M\)) and aggregate the returned data frames with a call to rbind. 
+In the last line, the results of the <code>1000</code> tasks (which is a list of data frames) are read from 
+the HDFS, the data frame are extracted from the list and combined using a call to rbind. Much of 
+this is boiler plate RHIPE code and the only varying portions are: the function <code>F</code>, the number of 
+iterations <code>M</code>, the number of groups (e.g. <code>mapred.map.tasks</code>) and the aggregation scheme (e.g. I 
+used the call to rbind). R lists can be written to a file on the HDFS (with <code>rhwrite</code>), which can 
+be used as input to a MapReduce job.</p>
+
+</div>
+
+
+<div class='tab-pane' id='medians-of-standard-normal-samples-example'>
+<h3>Medians of Standard Normal Samples Example</h3>
+
+<p>The following is example code for how to generate random deviates and store the medians of each 
+subset to the HDFS. This example will generate a total of <code>N &lt;- 2^18</code> standard normal deviates in 
+<code>R &lt;- 2^8</code> subsets of size <code>m &lt;- 2^10</code> and reduce to the median value of each subset:</p>
+
+<pre><code class="r">dir &lt;- &quot;tmp/rnorm/&quot;
+N &lt;- 2^18
+m &lt;- 2^10
+mapZ &lt;- expression({
+  m &lt;- 2^10
+  for(i in seq_along(map.values)){
+    Z &lt;- rnorm(m)
+    med &lt;- median(Z)
+    rhcollect(NULL, med)
+  }
+})
+reduceZ &lt;- expression({rhcollect(reduce.key, reduce.values)})
+mrZ &lt;- rhwatch(
+  map      = mapZ,
+  reduce   = reduceZ,
+  input    = c(N/m, 8), 
+  output   = paste(dir, &quot;Z&quot;, sep=&quot;&quot;),
+  mapred   = list(mapred.reduce.tasks = 1),
+  readback = FALSE
+  )
+</code></pre>
+
+<p>Observe the use of <code>NULL</code> in the key component of <code>rhcollect()</code> within the <code>mapZ</code> expression(). 
+This choice is, because there is no need to differentiate one simulation from another as being 
+unique or special. This makes it easier to work with this particular simulation when bringing this 
+data into your R Global Environment.</p>
+
+</div>
+
+
+<div class='tab-pane' id='observing-location-of-median-hdfs-data'>
+<h3>Observing Location of Median HDFS Data</h3>
+
+<p>A simple call to list the available files within your HDFS directory through R utilizing the RHIPE 
+library command <code>rhls()</code> will display where the random values are stored.</p>
+
+<pre><code class="r">rhls(&quot;/tmp/rnorm/Z&quot;)
+</code></pre>
+
+<pre><code>    permission   owner      group    size          modtime
+1   -rwr---r-- jtroisi supergroup       0 2014-06-30 13:53
+2   drwxrwxrwt jtroisi supergroup       0 2014-06-30 13:53
+3   -rw-r--r-- jtroisi supergroup 6.15 kb 2014-06-30 13:53
+                         file
+1       /tmp/rnorm/Z/_SUCCESS
+2          /tmp/rnorm/Z/_logs
+3   /tmp/rnorm/Z/part-r-00000
+</code></pre>
+
+<p>Files are list as above.</p>
+
+</div>
+
+
+<div class='tab-pane' id='reading-median-hdfs-data-into-global-environment'>
+<h3>Reading Median HDFS Data into Global Environment</h3>
+
+<p>To call any of these sets of random numbers into your local environment it is as simple as a call 
+to the RHIPE command <code>rhread()</code>.</p>
+
+<pre><code class="r">Zmedians &lt;- unlist(rhread(&quot;/tmp/rnorm/Z/part-r-00000&quot;))
+head(Zmedians)
+</code></pre>
+
+<pre><code>[1] -0.056089  0.004975  0.057015 -0.013640 -0.009852  0.063748
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='ar2-simulation-example'>
+<h3>AR(2) Simulation Example</h3>
+
+<p>Estimating the parameters of an Auto Regressive Integrated Moving Average (ARIMA) Model requires 
+numerous approximations that inevitably still leave us without a closed form solution. The 
+following code will step us through the task of a good way to use the HDFS to effectively estimate 
+an Auto Regressive Two (AR(2)) Model.</p>
+
+<pre><code class="r">dir &lt;- &quot;/tmp/advsim/&quot; 
+N &lt;- 2^18 
+m &lt;- 2^10
+maprho &lt;- expression({
+  m &lt;- 2^10
+  rho.true &lt;- c(2/3, -1/3)
+  w.vec &lt;- 2*pi*0:(m - 1)/m
+  ginv &lt;- function(lambda, rho1, rho2)
+    1 + rho1^2 + rho2^2 - 2*rho1*(1 - rho2)*cos(lambda) - 2*rho2*cos(2*lambda)
+  for(i in seq_along(map.values)){
+    AR2 &lt;- arima.sim(n = m, model = list(ar = rho.true)) #Random AR(2) Data
+    X &lt;- fft(AR2) #Fast Fourier Transform
+    per &lt;- Re(X)^2 + Im(X)^2 #Periodogram
+    #Whittle Approximate Likelihood Function for AR(2) Time Series Model
+    lW &lt;- function(rho)
+      m*log(sum(ginv(w.vec, rho[1], rho[2])*per)/m) + sum(log(1/ginv(w.vec, rho[1], rho[2])))
+    rho.argmin &lt;- optim(c(0, 0), lW)$par
+    rhcollect(NULL, rho.argmin)
+  }
+})
+reducerho &lt;- expression(reduce = {rhcollect(reduce.key, reduce.values)})
+mrrho &lt;- rhwatch(
+  map      = maprho,
+  reduce   = reducerho,
+  input    = c(N/m, 8),
+  output   = paste(dir, &quot;rho.argmin&quot;, sep=&quot;&quot;),
+  mapred   = list(mapred.reduce.tasks = 1),
+  readback = FALSE
+  )
+</code></pre>
+
+<p>At this point it is best to bring the values back into the R global environment. The code for this 
+is as follows:</p>
+
+<pre><code class="r">rho.est &lt;- matrix(unlist(rhread(dirrho)), ncol = 2, byrow = TRUE)
+</code></pre>
+
+<p>The first column are your <code>rho1</code> estimates and the second column are your <code>rho2</code> estimates.</p>
+
+</div>
 
    
    <ul class="pager">
