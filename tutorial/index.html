@@ -63,20 +63,13 @@
    
    <div class="col-md-3 well">
    <ul class = "nav nav-list" id="toc">
-   <li class='nav-header unselectable' data-edit-href='01.install.Rmd'>Installation</li>
+   <li class='nav-header unselectable' data-edit-href='02.intro.Rmd'>Introduction</li>
       
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#installation'>Installation</a>
+         <a target='_self' class='nav-not-header' href='#massive-data'>Massive Data</a>
       </li>
 
 
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#tests'>Tests</a>
-      </li>
-
-
-<li class='nav-header unselectable' data-edit-href='02.intro.Rmd'>Introduction</li>
-      
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#hadoop'>Hadoop</a>
       </li>
@@ -89,11 +82,6 @@
 
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#hadoop-mapreduce'>Hadoop MapReduce</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#examples'>Examples</a>
       </li>
 
 
@@ -182,109 +170,20 @@
 
 <div class="col-md-9 tab-content" id="main-content">
 
-<div class='tab-pane active' id='installation'>
-<h3>Installation</h3>
+<div class='tab-pane active' id='massive-data'>
+<h3>Massive Data</h3>
 
-<p>RHIPE is an R package, that can be downloaded at <a href="http://ml.stat.purdue.edu/rhipebin/Rhipe_0.73.1.tar.gz">this website</a>. 
-To install it the user needs to</p>
+<p>Massive data sets have become commonplace today. Powerful hardware is readily available with a terabyte
+of hard drive storage costing less than $150 and computers with many cores a norm. Today, the moderately 
+adventurous scientist can connect two computers to form a distributed computing platform. Languages 
+and software tools have made concurrent and distributed computing accessibly to the statistician.</p>
 
-<ul>
-<li>Set an environment variable <em>HADOOP</em> that points to the Hadoop installation directory. It is 
-expected that <em>HADOOP\bin</em> contains the Hadoop shell executable <em>hadoop</em>.</li>
-<li>A version of Google&#39;s Protocol Buffers <a href="https://code.google.com/p/protobuf/">here</a> greater than
-2.3.0</li>
-</ul>
-
-<p>Once the package has been downloaded the user can install it via</p>
-
-<pre><code class="r">R CMD INSTALL Rhipe_version.tar.gz
-</code></pre>
-
-<p>where <em>version</em> is the latest version of RHIPE. The source is under version control at <a href="https://github.com/tesseradata/RHIPE/">GitHub</a>.</p>
-
-<p>This needs to be installed on all the computers: the one you run your R environment and all the task
-computers. Use RHIPE is much easier if your filesystem layout (i.e location of R, Hadoop, libraries 
-etc) is identical across all computers.</p>
-
-</div>
-
-
-<div class='tab-pane' id='tests'>
-<h3>Tests</h3>
-
-<p>In R</p>
-
-<pre><code class="r">library(Rhipe)
-rhinit()
-</code></pre>
-
-<p>should work successfully.</p>
-
-<pre><code class="r">## a is a list consisting of 3 elements and each element is a list containing two elements
-a = list(list(1,c(1,2,3)),list(2,c(1,2,3)),list(3,c(1,2,3)))
-rhwrite(a,&quot;/tmp/xx&quot;)
-</code></pre>
-
-<p>should successfully write the list to the HDFS</p>
-
-<pre><code class="r">b = rhread(&quot;/tmp/xx&quot;)
-str(b)
-</code></pre>
-
-<p>Return a list of length 3 each element a list of 2 objects.</p>
-
-<pre><code>List of 3
- $ :List of 2
-  ..$ : num 1
-  ..$ : num [1:3] 1 2 3
- $ :List of 2
-  ..$ : num 2
-  ..$ : num [1:3] 1 2 3
- $ :List of 2
-  ..$ : num 3
-  ..$ : num [1:3] 1 2 3
-</code></pre>
-
-<p>And a quick run of this should also work</p>
-
-<pre><code class="r">map &lt;- expression({
-  lapply(seq_along(map.values),function(r){
-    x &lt;- runif(map.values[[r]])
-    rhcollect(map.keys[[r]],c(n = map.values[[r]],mean = mean(x),sd = sd(x)))
-  })
-})
-
-## Create a job object
-z &lt;- rhwatch(
-  map    = map, 
-  input  = c (10,10),
-  output = &quot;/tmp/xx&quot;, 
-  mapred = list(mapred.reduce.tasks=0),
-  noeval = TRUE
-  )
-
-## Submit the job
-rhex(z, async = FALSE )
-## Read the results
-res    &lt;- rhread(&#39;/tmp/xx&#39;)
-colres &lt;- do.call(&#39;rbind&#39;,lapply(res,&quot;[[&quot;,2))
-colres
-</code></pre>
-
-<pre><code>       n      mean        sd
- [1,]  1 0.4314606        NA
- [2,]  2 0.1920560 0.2477057
- [3,]  3 0.5399694 0.3059996
- [4,]  4 0.5103296 0.3543939
- [5,]  5 0.6566606 0.2697990
- [6,]  6 0.5678072 0.2698144
- [7,]  7 0.5696185 0.2967622
- [8,]  8 0.5207922 0.3553869
- [9,]  9 0.5791976 0.3101113
-[10,] 10 0.4795422 0.2394009
-
-
-</code></pre>
+<p>It is important to stress that a massive data set is not just a single massive entity that needs to be
+stored across multiple hard drivs but rather the size of the data created during the steps of an analysis.
+A &#39;small&#39; 14 GB data set can easily become 190 GB as new data structures are created, or where multiple 
+subsets/transformations are each saved as different data sets. Large data sets can come as they are 
+or grow big because of the nature of the analysis. No analyst wants her research to be restricted 
+because the computing infrastructure cannot keep up with the size or complexity.</p>
 
 </div>
 
@@ -301,7 +200,7 @@ and distribution over a cluster comes for free.</p>
 
 <p>It consists of two components: the Hadoop Distributed Filesystem and Hadoop MapReduce. They are based
 on the Google Filesystem and Google MapReduce respectively. Companies using these include Amazon, 
-Ebay, New York Times, Facebook to name a few. The software can be downloaded from <a href="http://hadoop.apache.org/">here</a>.</p>
+Ebay, New York Times, Facebook to name a few. </p>
 
 </div>
 
@@ -338,28 +237,18 @@ concurrent than sequential code.</p>
 
 <p>A statistician attempting concurrent programming needs to be aware of race conditions, deadlocks and
 tools to prevent this: locks, semaphores, and mutually exclusive regions etc. An approach suggested 
-by Sutter et al <a href="http://www.datadr.org/doc/introduction.html#stla">[STLa]</a> is to provide programming
+by Sutter et al is to provide programming
 models not functions that force the programmer to approach her algorithms differently. Once the 
 programmer constructs the algorithm using this model, concurrency comes for free. The MapReduce 
 programming model is one example. Correctly coded Condor DAGS are another example.</p>
 
-<blockquote>
-<p><a href="http://www.datadr.org/doc/introduction.html#id1">[STLa]</a> Software and the concurrency revolution,
-H.Sutter and J.Larus, <em>ACM Queue, Volume 3, Number 7 2005</em></p>
-</blockquote>
-
-<p>MapReduce <a href="http://www.datadr.org/doc/introduction.html#mapred">[MapRed]</a> consists of several 
+<p>MapReduce consists of several 
 embarrassingly parallel splits which are evaluated in parallel. This is called the Map. There is a 
 synchronization guard where intermediate data created at the end of the Map is exchanged between nodes
 and another round of parallel computing starts, called the Reduce phase. In effect large scale 
 simulation trials in which the programmer launches several thousands of independent computations is
 an example of a Map. Retrieving and collating the results (usually done in the R console) is an 
 example of a manual reduce.</p>
-
-<blockquote>
-<p><a href="http://www.datadr.org/doc/introduction.html#id2">[MapRed]</a> MapReduce: Simplified Data Processing 
-on Large Clusters, Jeffrey Dean and Sanjay Ghemawat, <em>Communications of the ACM, 2008</em></p>
-</blockquote>
 
 <p>In detail, the input to a MapReduce computation is a set of <em>N</em> key,value pairs. The <em>N</em> pairs are 
 partitioned into <em>S</em> arbitrary splits. Each split is a unit of computation and is assigned to one 
@@ -379,199 +268,6 @@ distinct levels of the list of factors. The reduce is the user given function ap
 of the vector. The <code>xyplot</code> function in <code>lattice</code> takes a formula e.g. F\sim Y|A*B, subsets the the 
 data frame by the cartesian product of the levels of A and B (the map) and displays each subset (the 
 reduce). Hadoop MapReduce generalizes this to a distributed level.</p>
-
-</div>
-
-
-<div class='tab-pane' id='examples'>
-<h3>Examples</h3>
-
-<p>Two examples, one for quantiles and another for correlation will be described.</p>
-
-<h4>Approximate Quantile</h4>
-
-<p>Let X be a column of numbers. This can be arbitrarily large (e.g. hundreds of gigabytes). The objective
-is to find the quantiles of the X. Let each number be a key. For discrete data e.g. ages (rounded to
-years), count data, the number of unique numbers in a data set is generally not large. For continuous
-data it can be many billions. In this case, we need to discretize this. Care is needed before 
-discretization. Discretions is equivalent to binning and reduces the number of unique data points. 
-For example, do not round to the 5’th decimal place if the data points are the same for the first 5 
-decimal places!</p>
-
-<p>For this example, let us assume the data is discrete (so no need for rounding). The goal is to compute
-the frequency table of the data and use that to compute the quantiles (see <a href=".#hynfan">[HynFan]</a>)</p>
-
-<blockquote>
-<p><a href=".#id3">[HynFan]</a> Hyndman, R.J. and Fan, Y.(1996) &#39;Sample quantiles in statistical packages&#39;, 
-<em>American Statistician, 50, 361-365</em>.</p>
-</blockquote>
-
-<pre><code class="bash">for line in line_of_numbers:
-  for number in tokenize line by [[:space:]]:
-     write_key_value(number,1)
-</code></pre>
-
-<p>The input data is partitioned into a splits of many lines of numbers. The above code is applied to 
-these splits in parallel. The intermediate keys are the unique numbers and each has a list of 1‘s 
-associated with it. Hadoop will sort the keys by the number (not neccassirly by the quantity of the 
-number, it depends on the programming framework) and assign the aggregation computation of the 
-associated values for the different unique keys to different processing cores in the reduce phase. </p>
-
-<p>The reduce logic is as </p>
-
-<pre><code class="bash">for number in stream_of_unique_numbers:
-  sum=0
-  while has_more_values?()==TRUE:
-    sum=sum+get_new_value()
-  end while
-  write_key_value(number, sum)
-</code></pre>
-
-<p>Notice the intermediate keys (the value of the number) and the final key (see last line above) are 
-the same. The unique numbers are partitioned. Thus the stream in line 1 is stream of a subset. The 
-different subsets are processed on different compute cores. Note, the reduce code sums the 1‘s in a 
-while loop rather than loading them all into one gigantic array and adding the array. There can be 
-too many 1‘s to fit into core. This where the MapReduce implementation shines: big data. The algorithm 
-finally outputs the distinct numbers of X and the counts. This can be sorted and used to compute the 
-quantiles. This algorithm is also used to compute word frequencies for text document analysis.</p>
-
-<h4>Correlation</h4>
-
-<p>To compute the correlation of a text file of <em>N</em> rows and <em>C</em> columns, we need the sum, sums of squares
-of each column and sum of unique pairs of columns. The intermediate keys and final keys are the same:
-the column and column pair identifiers. The value will be the sum of columns, their sum of squares,
-the cross products and the number of entries.</p>
-
-<p>We need to iterate over lines, tokenize, and compute the relevant column sums and pairwise cross products.</p>
-
-<pre><code class="bash">for text_line in stream_of_text_lines
-   tokenized_line = tokenize text_line by [[:space:]]
-   for i=1 to C:
-      rhcollect( (i,i), (n=1,sum=tokenized_line[i],ssq=tokenized_line[i]^2))
-      for j=i+1 to C:
-          rhcollect( (i,j), (crossprod=
-                           tokenized_line[i]* tokenized_line[j]))
-      end for
-    end for
-end for
-
-</code></pre>
-
-<p>The intermediate keys produced at the end of the map nodes are pairs (i,j) where \( 1 \le i \le C\), 
-\( i \le j \le C \). The values are the original value (the value for row <em>i</em> and column <em>j</em>), its
-square and crossproduct. The <em>n</em> is just a <em>1</em>. By adding the values for this we obtain the total 
-number of rows. Inserting this <em>1</em> is wasteful, since it is redundantly being passed around for all 
-the keys - we could compute the number of rows in another MapReduce job.</p>
-
-<p>We need to sum this:</p>
-
-<pre><code class="bash">for identifier in stream_of_identifiers:
-    ## identifier is a colum pair
-    sum = empty tuple
-    while has_more_values?()==TRUE:
-        sum = sum + get_new_value()
-        # get_new_value() will return
-        # a tuple of length
-        #     = 3 (if identifier is (i,i)
-        #     = 1 (if identifier is (i,j) i &lt;&gt; j
-    end while
-    rhcollect(identifier, sum)
-</code></pre>
-
-<p>The output will be a set of pairs or triplets accordingly as the key is (i, i) or (i, j).</p>
-
-<h4>Computing an Inner Join</h4>
-
-<p>We have a text file <strong>A</strong> of <em>N</em> columns and <strong>B</strong> with <em>M</em> columns. Both have a common column 
-<strong>index</strong>. In <strong>A</strong>, it is unique, with one row per level of <strong>index</strong>. <strong>B</strong> is a repeated measurement
-data set, with the levels of <strong>index</strong> repeated many times. <strong>B</strong> also contains a column called <strong>weight</strong>.
-We need to compute the following operation, for every unique value of index in <strong>A</strong>, compute the 
-mean value of <strong>weight</strong>. We need to join the two data sets on <strong>index</strong> and compute the number of
-observations and sum of <strong>weight</strong> for unique values <strong>index</strong> and save a data set which consist of 
-only those values of <strong>index</strong> found in <strong>A</strong>.</p>
-
-<p>In SQL, this is</p>
-
-<pre><code class="sql">select
-       index,
-       mean(weight) as mweight
-from A inner join B
-on A.index=B.index
-group by A.index
-
-</code></pre>
-
-<ol>
-<li><p>Compute the number of observations and sum of weights aggregated by levels of <strong>index</strong> for <strong>B</strong>. 
-This computes the values for all levels of <strong>index</strong> in <strong>B</strong> not just those found in <strong>A</strong>. 
-Call this computed data set <strong>B&#39;</strong>.</p></li>
-<li><p>Merge <strong>B&#39;</strong> and <strong>A</strong> .This might be wasteful since we compute for all levels in <strong>B</strong>, however
-if the summarized data set <strong>B&#39;</strong> will be used often, then this is a one time cost.</p></li>
-</ol>
-
-<p>Summarizing <strong>B</strong> to <strong>B&#39;</strong></p>
-
-<pre><code class="bash">#map
-for line in lines:
-    index  =  get column corresponding to &quot;index&quot; from line
-    weight =  get column corresponding to &quot;weight&quot; from line
-    rhcollect(index,(1,weight))
-
-#reduce
-for index in stream_of_indices:
-    ## identifier is a colum pair
-    sum = empty tuple
-    while has_more_values?()==TRUE:
-        sum = sum + get_new_value()
-    rhcollect(index, sum) #total number of obs, sum of weight
-</code></pre>
-
-<p>To merge, we map each index value found in <strong>A</strong> to a TRUE value and each value found in <strong>B&#39;</strong> to a
-tuple (number of observations and sum of weights). If a value of <strong>index</strong> is found in both there 
-will be two intermediate values for that value of <strong>index</strong>. If instead the value of <strong>index</strong> exists
-in exactly one of <strong>A</strong> and <strong>B</strong> there will be exactly one intermediate value. If there are two values,
-one is a dummy (the TRUE) and the pseudo-code retains the value whose length is 2 (the tuple).</p>
-
-<pre><code class="bash">for index in stream_of_indices:
-    count = 0
-    information = NULL
-    while has_more_values?()==TRUE:
-        count = count + 1
-        temp = get_next_value()
-        if length of temp == 2:
-            information = temp
-    end while
-    if count == 2:
-        rhcollect(index, information)
-</code></pre>
-
-<h4>Combiners: An Optimization</h4>
-
-<p>The Hadoop framework, sends all the intermediate values for a given key to the reducer. The 
-intermediate values for a given key are located on several compute nodes and need to be shuffled 
-(sent across the network) to the node assigned the processing of that intermediate key. This involves
-a lot of network transfer. Some operations do not need access to all of the data (intermediate values)
-i.e they can compute on subsets and order does not matter i.e associative and commutative operations.
-For example, the minimum of 8 numbers </p>
-
-<p>\[
-min(x_1,x_2,\ldots,x_n) = min(min(x_1,x_2),min(x_3,\ldots,x_5),min(x_6,\ldots,x_8))
-\]</p>
-
-<p>The reduction occurs on just after the map phase on a subset of intermediate values for a given 
-intermediate keys. The output of this is sent to the reducer. This greatly reduces network transfer
-and accelerates the job speed.</p>
-
-<p>A MapReduce job using a combiner (the minimum operater). We consider intermediate values for a single 
-key:</p>
-
-<p><img src="./plots/combiner.png" alt="alt text"></p>
-
-<p>The examples in this section outlined some algorithms that work with MapReduce. Using RHIPE, there 
-are ways to optimize the above code e.g. instead of processing one line at a time use vector operations.
-Also, RHIPE calls the code with R lists containing the input the keys and values. The streams in the 
-Reduce are replaced by lists of intermediate values and the R code is called repeatedly with the list 
-filled with new elements. This will be explained in the Airline data example (see <em>Airline Dataset</em>)</p>
 
 </div>
 
@@ -672,11 +368,11 @@ value pairs. If the input file is a binary file but <code>input</code> specifies
 will not throw an error but provide very unexpected key/value pairs. <code>input</code> in this case is lapply,
 which treats the numbers 1 to <code>input[1]</code> as both keys and values.</p>
 
-<p>These key/value pairs are partitioned into splits. How they are partitioned depends on the <code>type</code> in
+<p>These key/value pairs are partitioned into subsets. How they are partitioned depends on the <code>type</code> in
 <code>input</code> argument. For text files which specifies <code>type=&quot;text&quot;</code> in <code>input</code>, the data
-is split into roughly equi-length blocks of e.g. 128MB each. A CSV text file will have approximately
+is divided into roughly equi-length blocks of e.g. 128MB each. A CSV text file will have approximately
 equal number of lines per block (not necessarily). <code>RHIPE</code> will launch R across all the compute
-nodes. Each node is responsible for processing a the key/value pairs in its assigned splits.</p>
+nodes. Each node is responsible for processing a the key/value pairs in its assigned subsets.</p>
 
 <p>This processing is performed in the map argument to <code>rhwatch</code>. The map argument is an R expression.
 Hadoop will read key,value pairs, send them to RHIPE which in turn buffers them by storing them in 
@@ -693,12 +389,12 @@ particular file cannot be understood by the input format (e.g. a text file given
 
 <p>The expression downloads the CSV file, unzips its, and stores in the folder tmp located in the 
 current directory. No copying is performed. The current directory is a temporary directory on the
-local filesystem of the compute node, not on the HDFS. Upon successful completion of the split, 
+local filesystem of the compute node, not on the HDFS. Upon successful completion of the subset, 
 the files stored in tmp (of the current directory) will be copied to the output folder specified
 by ofolder in the call to rhmr. Files are copied only if copyFiles is set to <code>TRUE</code>.</p>
 
 <p>Once a file has been downloaded, we inform Hadoop of our change in status, via <code>rhstatus</code>. The 
-example of rhstatus displays the various status of each of the 22 splits (also called Tasks)</p>
+example of rhstatus displays the various status of each of the 22 subsets (also called Tasks)</p>
 
 <p>Once a file has been downloaded, we increment a distributed count. Counts belong to families, a 
 single family contains many counters. The counter for group G and name N is incremented via a call
@@ -707,7 +403,7 @@ this is essentially a flag to indicate successful download. A count of files dow
 in Files/_ALL_ .</p>
 
 <p>The operation of Hadoop is affected by many options, some of which can be found in Options for 
-<code>RHIPE</code>. Hadoop will terminate splits (tasks) after 10 minutes if they do not invoke <code>rhstatus</code>
+<code>RHIPE</code>. Hadoop will terminate subsets (tasks) after 10 minutes if they do not invoke <code>rhstatus</code>
 or return. Since each download takes approximately 30 minutes (the minimum is 4 minutes, the 
 maximum is 42 minutes, the mean is 30 minutes), Hadoop will kill the tasks. We tell Hadoop to not
 kill long running tasks by setting <code>mapred.task.timeout</code> to 0. We do not to need to reduce our 
@@ -974,8 +670,8 @@ Waiting 5 seconds
 ...
 </code></pre>
 
-<p>There are 37 splits for the mapreduce job. A split can consist of many <code>map.values</code> that need to be 
-processed. For text files as input, a split is 128MB or whatever your Hadoop block size is. In map
+<p>There are 37 subsets for the mapreduce job. A subset can consist of many <code>map.values</code> that need to be 
+processed. For text files as input, a subset is 128MB or whatever your Hadoop block size is. In map
 expression, we first define a R function <code>convertHHMM()</code>, which will be used to separate an input 
 of four digit time record (hhmm) to a vector with hour and minute separately. Then we iterate over
 the <code>map.values</code>, which are the lines in text files, and tokenizing them. The first line in each 
@@ -996,7 +692,7 @@ faster to complete.</p>
 <h3>Sorted Keys</h3>
 
 <p>A reduce is not needed in this example. The text data is blocked into data frames and written to 
-disk. With 128MB block sizes and each block a split, each split being mapped by one R session, 
+disk. With 128MB block sizes and each block a subset, each subset being mapped by one R session, 
 there 96 files each containing several data frames. The reduce expression writes each incoming 
 intermediate value (a data frame) to disk. This is called an identity reducer which can be used 
 for</p>
@@ -1035,7 +731,7 @@ identity reducer. Note, if your keys are discrete, it is best to use integer ord
 
 <ol>
 <li>To decrease the number of files. In this case decreasing the number of files is hardly needed, 
-but it can be useful if one has more thousands of splits.</li>
+but it can be useful if one has more thousands of subsets.</li>
 </ol>
 
 <p>In situations (1) and (3), the user does not have to provide the R reduce expression and can leave 
@@ -2311,7 +2007,7 @@ to the RHIPE command <code>rhread()</code>.</p>
 head(Zmedians)
 </code></pre>
 
-<pre><code>[1] -0.03730 -0.09384  0.02328 -0.03207 -0.01170  0.02788
+<pre><code>[1] -0.044622 -0.024073  0.072014 -0.003812  0.041178  0.061185
 </code></pre>
 
 </div>
