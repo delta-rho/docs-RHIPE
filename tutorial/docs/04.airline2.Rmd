@@ -42,7 +42,7 @@ z <- rhwatch(
 )
 ```
 
-Attributes are removed in line $$8$$, for otherwise we have to retrieve a data frame with a data frame 
+Attributes are removed in line $8$, for otherwise we have to retrieve a data frame with a data frame 
 with column names and row names instead of a more convenient numeric vector. The map expression 
 combines the individual data frames. Each data frame has $5000$ rows, hence rhipe_map_buff_size is 
 set to 10 for a combined data frame of $50000$ rows in line $32$. This is crucial. The default value 
