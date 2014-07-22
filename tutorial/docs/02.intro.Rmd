@@ -46,6 +46,7 @@ Namenode tells the client which Datanodes (the computers that make up the HDFS) 
 It also tells the client which Datanodes to read the data from when a read request is performed.
 
 ### Hadoop MapReduce ###
+
 Concurrent programming is difficult to get right. As Herb Sutter put it:
 > ...humans are quickly overwhelmed by concurrency and find it much more difficult to reason about 
 concurrent than sequential code.
