@@ -1,3 +1,4 @@
+<!--
 ### Streaming Data ###
 
 Some algorithms are left associative in their operands $t_1$, $t_2$, $\ldots$, $t_n$ but not 
@@ -155,6 +156,7 @@ mr <- rhwatch(
 )
 ```
 
+-->
 ### Simple Debugging ###
 
 Consider the example code used to compute the delay quantiles by month (see Delay Quantiles By 

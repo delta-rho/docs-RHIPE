@@ -58,7 +58,7 @@ programmer constructs the algorithm using this model, concurrency comes for free
 programming model is one example. Correctly coded Condor DAGS are another example.
 
 MapReduce consists of several 
-embarrassingly parallel splits which are evaluated in parallel. This is called the Map. There is a 
+embarrassingly parallel subsets which are evaluated in parallel. This is called the Map. There is a 
 synchronization guard where intermediate data created at the end of the Map is exchanged between nodes
 and another round of parallel computing starts, called the Reduce phase. In effect large scale 
 simulation trials in which the programmer launches several thousands of independent computations is
@@ -66,8 +66,8 @@ an example of a Map. Retrieving and collating the results (usually done in the R
 example of a manual reduce.
 
 In detail, the input to a MapReduce computation is a set of *N* key,value pairs. The *N* pairs are 
-partitioned into *S* arbitrary splits. Each split is a unit of computation and is assigned to one 
-computing unit on the cluster. Thus the processing of the *S* splits occurs in parallel. Each split 
+partitioned into *S* arbitrary subsets. Each subset is a unit of computation and is assigned to one 
+computing unit on the cluster. Thus the processing of the *S* subsets occurs in parallel. Each subset 
 is processed by a user given function *M*, that takes a sequence of input key,value pairs and outputs
 (one or many) intermediate key,value pairs. The Hadoop framework will partition the intermediate 
 values by the intermediate key. That is intermediate values sharing the same intermediate key are 
