@@ -1,0 +1,182 @@
+## Elapsed Timing Experiment ##
+
+### The Problem Description  ###
+
+Divide and Recombine (D & R) is a statistical framework for the analysis of large complex data. The Elapsed Timing Experiment is a very good example for embarrassingly parallel computing and it is designed to improve the perormance of D & R Computations on a Cluster. The time depends on many factors, so it presents an opportunity for optimizing the computation by making the best choice of the factors. However, this exmaple here mainly serve to illustrate the usage of RHIPE functions, so we will only consider two statistical factors that measure characteristics of the dataset and the subsets.
+
+The basic idea is to generate subsets first and then use logistic regression method to analyze each subset by R function `glm.fit` . There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. The first computation type is **O**, the elapsed time to read the subsets from the HDFS and make them available to `glm.fit` in memory as an R objects. The other type, **L**, starts when **O** ends and it consists of `glm.fit` computations on the subsets by **map**, plus **reduce** gathering the subset estimates and computing the means. However, we cannot measure **L** directly. So we measure **O** in one run and **T = O + L** in another.
+
+### Data Structure ###
+```{r createtable, results='asis', echo=FALSE}
+cat("Variables | Description |Values ","--- | --- |---", sep="\n")
+x = c("N","Sample size","2^21","V","Factor--Number of variables","2^4 , 2^5 , 2^6","M","Factor--Number of observations per subset","2^8 , 2^9 , 2^10 , ..., 2^17","O","Response variable--first type of elapsed time "," ","T","Response varibale--whole elapsed time"," ")
+x = matrix(x,ncol=3,byrow=TRUE)
+cat(apply(x,1,function(X) paste(X,collapse=" | ")),sep = "\n")
+```
+
+### R code -- Set Up ###
+```{r, eval=FALSE}
+## load libraries
+library(plyr)
+library(Rhipe)
+rhinit()
+rhoptions(readback = FALSE)
+rhoptions(zips = '/ln/share/RhipeLib.tar.gz')
+rhoptions(runner = 'sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh')
+
+# experiment name
+name <- "multi.factor_n21"
+# top level directory for experiment on HDFS
+dir = "/ln/song273/tmp"
+# directory for this experiment on HDFS
+dir.exp = file.path(dir, name)
+# directory for local file system
+dir.local = "/home/median/u41/song273/timetest/"
+# break time in seconds between jobs
+sleep = 10
+# number of replicate runs
+run.vec = 1:3
+
+## subset factors 
+# log2 number of observations
+n = 21
+# number of predictor variables
+p.vec = 2^(4:6) - 1
+# log2 number of observations per subset
+m.vec = seq(8, 16, by=1)
+```
+### R code -- Generate Dataset ###
+```{r,eval=FALSE}
+for (m in m.vec) {
+  for (p in p.vec) {
+    dir.dm = paste(dir.exp,"/dm/",'n',n,'p',p,'m',m, sep="")
+    
+    dm = list()
+    dm$map = expression({
+      for (r in map.values){
+        set.seed(r)
+        value = matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
+        rhcollect(r, value) # key is subset id
+      }
+    })
+    dm$input = c(2^(n-m), 12)
+    dm$output = dir.dm
+    dm$jobname = dm$output
+    dm$mapred = list( 
+      mapred.task.timeout=0
+      , mapred.reduce.tasks=0 
+    )
+    dm$parameters = list(m=2^m, p=p)
+    dm$noeval = TRUE
+    dm.mr = do.call('rhwatch', dm)
+    t = as.numeric(system.time({rhex(dm.mr, async=FALSE)})[3])
+    Sys.sleep(time=sleep)
+}}
+
+
+Sys.sleep(time=sleep*10)
+```
+
+### R code -- Timing ###
+```{r,eval= FALSE}
+## initialize timing
+timing = list()
+
+for (run in run.vec) {
+  
+  ## timing for O
+  compute = "O"
+  for (m in m.vec) {
+    for (p in p.vec) {
+      dir.dm = paste(dir.exp,"/dm/",'n',n,'p',p,"m",m, sep="")
+      dir.nf = paste(dir.exp,"/nf/","run",run,'n',n,'p',p,"m",m, sep="")
+      
+      nf = list()
+      nf$map = expression({})
+      nf$mapred = list(
+        mapred.reduce.tasks=1
+        , rhipe_map_buff_size=2^15
+      )
+      nf$parameters = list(p=p)
+      nf$input = dir.dm
+      nf$output = dir.nf
+      nf$jobname = nf$output
+      nf$noeval = TRUE
+      nf.mr = do.call('rhwatch', nf)
+      t = as.numeric(system.time({rhex(nf.mr, async=FALSE)})[3])
+      timing[[length(timing)+1]] = list(compute=compute, n=n, p=p, m=m, run=run, t=t)
+      
+      Sys.sleep(time=sleep)
+    }}  # end of loop of m and p
+  
+  
+  ## timing for T
+  compute = "T"
+  for (m in m.vec) {
+    for (p in p.vec) {
+      dir.dm = paste(dir.exp,"/dm/",'n',n,'p',p,"m",m, sep="")
+      dir.gf = paste(dir.exp,"/gf/","run",run,'n',n,'p',p,"m",m, sep="")
+      
+      gf = list()
+      gf$map = expression({
+        for (v in map.values) {
+          value = glm.fit(v[,1:p],v[,p+1],family=binomial())$coef
+          rhcollect(1, value)
+        }
+      })
+      gf$reduce = expression(
+        pre = { 
+          v = rep(0,p) 
+          nsub = 0
+        },
+        reduce = { 
+          v = v + colSums(matrix(unlist(reduce.values), ncol=p, byrow=TRUE)) 
+          nsub = nsub + length(reduce.values)
+        },
+        post = { rhcollect(reduce.key, v/nsub) }
+      )
+      gf$mapred = list(
+        mapred.reduce.tasks=1
+        , rhipe_map_buff_size=2^15
+      )
+      gf$parameters = list(p=p)
+      gf$input = dir.dm
+      gf$output = dir.gf
+      gf$jobname = gf$output
+      gf$noeval = TRUE
+      gf.mr = do.call('rhwatch', gf)
+      t = as.numeric(system.time({rhex(gf.mr, async=FALSE)})[3])
+      timing[[length(timing)+1]] = list(compute=compute, n=n, p=p, m=m, run=run, t=t)
+      
+      Sys.sleep(time=sleep)
+    }}  # end of loop of m and p
+  
+}   # end of loop of run
+```
+
+### R code -- Save the Results ###
+
+
+```{r,eval=FALSE}
+timing = ldply(timing, as.data.frame)
+rhsave(timing, file=paste(dir, "/save/", name, ".RData", sep=""))
+save(timing, file=paste(dir.local, name, ".RData", sep=""))
+
+```
+
+### Results ###
+
+```{r,eval=FALSE}
+head(timing)
+```
+```
+  compute  n  p m run      t
+1       O 21 15 8   1 20.644
+2       O 21 31 8   1 19.601
+3       O 21 63 8   1 21.530
+4       O 21 15 9   1 19.581
+5       O 21 31 9   1 19.521
+6       O 21 63 9   1 21.493
+```
+
+### Visualize the Results ###
