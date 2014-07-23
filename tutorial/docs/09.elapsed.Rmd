@@ -2,9 +2,21 @@
 
 ### The Problem Description  ###
 
-Divide and Recombine (D & R) is a statistical framework for the analysis of large complex data. The Elapsed Timing Experiment is a very good example for embarrassingly parallel computing and it is designed to improve the perormance of D & R Computations on a Cluster. The time depends on many factors, so it presents an opportunity for optimizing the computation by making the best choice of the factors. However, this exmaple here mainly serve to illustrate the usage of RHIPE functions, so we will only consider two statistical factors that measure characteristics of the dataset and the subsets.
+Divide and Recombine (D & R) is a statistical framework for the analysis of large complex data. The 
+Elapsed Timing Experiment is a very good example for embarrassingly parallel computing and it is 
+designed to improve the perormance of D & R Computations on a Cluster. The time depends on many 
+factors, so it presents an opportunity for optimizing the computation by making the best choice of 
+the factors. However, this exmaple here mainly serve to illustrate the usage of RHIPE functions, so 
+we will only consider two statistical factors that measure characteristics of the dataset and the 
+subsets.
 
-The basic idea is to generate subsets first and then use logistic regression method to analyze each subset by R function `glm.fit` . There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. The first computation type is **O**, the elapsed time to read the subsets from the HDFS and make them available to `glm.fit` in memory as an R objects. The other type, **L**, starts when **O** ends and it consists of `glm.fit` computations on the subsets by **map**, plus **reduce** gathering the subset estimates and computing the means. However, we cannot measure **L** directly. So we measure **O** in one run and **T = O + L** in another.
+The basic idea is to generate subsets first and then use logistic regression method to analyze each 
+subset by R function `glm.fit` . There are two types of elapsed-time computation. The subsets are 
+stored on the HDFS as R objects. The first computation type is **O**, the elapsed time to read the 
+subsets from the HDFS and make them available to `glm.fit` in memory as an R objects. The other type,
+**L**, starts when **O** ends and it consists of `glm.fit` computations on the subsets by **map**, 
+plus **reduce** gathering the subset estimates and computing the means. However, we cannot measure 
+**L** directly. So we measure **O** in one run and **T = O + L** in another.
 
 ### Data Structure ###
 ```{r createtable, results='asis', echo=FALSE}
@@ -15,6 +27,10 @@ cat(apply(x,1,function(X) paste(X,collapse=" | ")),sep = "\n")
 ```
 
 ### R code -- Set Up ###
+
+In the Set-Up session, we will load the "plyr" package and "RHIPE" package. The "plyr" package allows the user to split a data set apart into smaller subsets,
+apply methods to the subsets, and combine the results. The next five lines of code will initialize the "RHIPE" package.
+
 ```{r, eval=FALSE}
 ## load libraries
 library(plyr)
@@ -45,7 +61,9 @@ p.vec = 2^(4:6) - 1
 # log2 number of observations per subset
 m.vec = seq(8, 16, by=1)
 ```
+
 ### R code -- Generate Dataset ###
+
 ```{r,eval=FALSE}
 for (m in m.vec) {
   for (p in p.vec) {
@@ -76,7 +94,49 @@ for (m in m.vec) {
 
 Sys.sleep(time=sleep*10)
 ```
+```
+Saving 3 parameters to /tmp/rhipe-temp-params-5ae555c2b8940867b796593ca841496e (use rhclean to delete all temp files)
+Saving 3 parameters to /tmp/rhipe-temp-params-e612430fd38382fa2aee6c5384cbe0b7 (use rhclean to delete all temp files)
+Saving 3 parameters to /tmp/rhipe-temp-params-0f3b7a329b9cfd61873cb2967855354b (use rhclean to delete all temp files)
+Saving 3 parameters to /tmp/rhipe-temp-params-a78396e6bfc84205466ed6bdee72d0c0 (use rhclean to delete all temp files)
 
+```
+```{r,eval=FALSE}
+ rhls("/ln/song273/tmp/multi.factor_n21/dm/n21p15m8")
+```
+```
+   permission   owner      group     size          modtime
+1  -rw-r--r-- song273 supergroup        0 2014-07-23 13:11
+2  drwxrwxrwt song273 supergroup        0 2014-07-23 13:10
+3  -rw-r--r-- song273 supergroup  21.6 mb 2014-07-23 13:11
+4  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+5  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+6  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+7  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+8  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+9  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+10 -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+11 -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+12 -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+13 -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+14 -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+                                                        file
+1      /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/_SUCCESS
+2         /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/_logs
+3  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00000
+4  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00001
+5  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00002
+6  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00003
+7  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00004
+8  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00005
+9  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00006
+10 /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00007
+11 /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00008
+12 /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00009
+13 /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00010
+14 /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00011
+
+```
 ### R code -- Timing ###
 ```{r,eval= FALSE}
 ## initialize timing
@@ -178,5 +238,10 @@ head(timing)
 5       O 21 31 9   1 19.521
 6       O 21 63 9   1 21.493
 ```
+#### Visualize the Result ####
+We use the `xyplot` function to visualize the result.
+![alt text](./plots/elapsed.pdf)
 
-### Visualize the Results ###
+
+
+
