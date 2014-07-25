@@ -9,7 +9,7 @@
 ## load the pacakge
 library(buildDocs)
 
-files <- list.files("/home/tongx/Github/docs-RHIPE/tutorial/docs")
+files <- list.files("~/Github/docs-RHIPE/tutorial/docs")
 files <- grep('01', files, invert=T, value=T)
 ## function to build the docs
 #   assuming your working directory is 
