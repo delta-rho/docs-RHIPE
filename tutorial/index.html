@@ -160,6 +160,48 @@
          <a target='_self' class='nav-not-header' href='#ar2-simulation-example'>AR(2) Simulation Example</a>
       </li>
 
+
+<li class='nav-header unselectable' data-edit-href='09.elapsed.Rmd'>Elapsed Timing Experiment</li>
+      
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#the-problem-description-'>The Problem Description </a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#data-structure'>Data Structure</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#r-code----set-up'>R code -- Set Up</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#r-code----generate-dataset'>R code -- Generate Dataset</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#r-code----timing'>R code -- Timing</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#r-code----save-the-results'>R code -- Save the Results</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#results'>Results</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#visualize-the-results'>Visualize the Results</a>
+      </li>
+
    </ul>
    </div>
 
@@ -1845,7 +1887,7 @@ to the RHIPE command <code>rhread()</code>.</p>
 head(Zmedians)
 </code></pre>
 
-<pre><code>[1]  0.01095 -0.04317 -0.00458 -0.02499  0.07940 -0.02252
+<pre><code>[1] -0.011115 -0.006451  0.009090  0.077143 -0.000808 -0.002054
 </code></pre>
 
 </div>
@@ -1897,6 +1939,245 @@ is as follows:</p>
 </code></pre>
 
 <p>The first column are your <code>rho1</code> estimates and the second column are your <code>rho2</code> estimates.</p>
+
+</div>
+
+
+<div class='tab-pane' id='the-problem-description-'>
+<h3>The Problem Description</h3>
+
+<p>Divide and Recombine (D &amp; R) is a statistical framework for the analysis of large complex data. The Elapsed Timing Experiment is a very good example for embarrassingly parallel computing and it is designed to improve the perormance of D &amp; R Computations on a Cluster. The time depends on many factors, so it presents an opportunity for optimizing the computation by making the best choice of the factors. However, this exmaple here mainly serve to illustrate the usage of RHIPE functions, so we will only consider two statistical factors that measure characteristics of the dataset and the subsets.</p>
+
+<p>The basic idea is to generate subsets first and then use logistic regression method to analyze each subset by R function <code>glm.fit</code> . There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. The first computation type is <strong>O</strong>, the elapsed time to read the subsets from the HDFS and make them available to <code>glm.fit</code> in memory as an R objects. The other type, <strong>L</strong>, starts when <strong>O</strong> ends and it consists of <code>glm.fit</code> computations on the subsets by <strong>map</strong>, plus <strong>reduce</strong> gathering the subset estimates and computing the means. However, we cannot measure <strong>L</strong> directly. So we measure <strong>O</strong> in one run and <strong>T = O + L</strong> in another.</p>
+
+</div>
+
+
+<div class='tab-pane' id='data-structure'>
+<h3>Data Structure</h3>
+
+<table><thead>
+<tr>
+<th>Variables</th>
+<th>Description</th>
+<th>Values</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>N</td>
+<td>Sample size</td>
+<td>2<sup>21</sup></td>
+</tr>
+<tr>
+<td>V</td>
+<td>Factor--Number of variables</td>
+<td>2<sup>4</sup> , 2<sup>5</sup> , 2<sup>6</sup></td>
+</tr>
+<tr>
+<td>M</td>
+<td>Factor--Number of observations per subset</td>
+<td>2<sup>8</sup> , 2<sup>9</sup> , 2<sup>10</sup> , ..., 2<sup>17</sup></td>
+</tr>
+<tr>
+<td>O</td>
+<td>Response variable--first type of elapsed time</td>
+<td></td>
+</tr>
+<tr>
+<td>T</td>
+<td>Response varibale--whole elapsed time</td>
+<td></td>
+</tr>
+</tbody></table>
+
+</div>
+
+
+<div class='tab-pane' id='r-code----set-up'>
+<h3>R code -- Set Up</h3>
+
+<pre><code class="r">## load libraries
+library(plyr)
+library(Rhipe)
+rhinit()
+rhoptions(readback = FALSE)
+rhoptions(zips = &#39;/ln/share/RhipeLib.tar.gz&#39;)
+rhoptions(runner = &#39;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&#39;)
+
+# experiment name
+name &lt;- &quot;multi.factor_n21&quot;
+# top level directory for experiment on HDFS
+dir = &quot;/ln/song273/tmp&quot;
+# directory for this experiment on HDFS
+dir.exp = file.path(dir, name)
+# directory for local file system
+dir.local = &quot;/home/median/u41/song273/timetest/&quot;
+# break time in seconds between jobs
+sleep = 10
+# number of replicate runs
+run.vec = 1:3
+
+## subset factors 
+# log2 number of observations
+n = 21
+# number of predictor variables
+p.vec = 2^(4:6) - 1
+# log2 number of observations per subset
+m.vec = seq(8, 16, by=1)
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='r-code----generate-dataset'>
+<h3>R code -- Generate Dataset</h3>
+
+<pre><code class="r">for (m in m.vec) {
+  for (p in p.vec) {
+    dir.dm = paste(dir.exp,&quot;/dm/&quot;,&#39;n&#39;,n,&#39;p&#39;,p,&#39;m&#39;,m, sep=&quot;&quot;)
+
+    dm = list()
+    dm$map = expression({
+      for (r in map.values){
+        set.seed(r)
+        value = matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
+        rhcollect(r, value) # key is subset id
+      }
+    })
+    dm$input = c(2^(n-m), 12)
+    dm$output = dir.dm
+    dm$jobname = dm$output
+    dm$mapred = list( 
+      mapred.task.timeout=0
+      , mapred.reduce.tasks=0 
+    )
+    dm$parameters = list(m=2^m, p=p)
+    dm$noeval = TRUE
+    dm.mr = do.call(&#39;rhwatch&#39;, dm)
+    t = as.numeric(system.time({rhex(dm.mr, async=FALSE)})[3])
+    Sys.sleep(time=sleep)
+}}
+
+
+Sys.sleep(time=sleep*10)
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='r-code----timing'>
+<h3>R code -- Timing</h3>
+
+<pre><code class="r">## initialize timing
+timing = list()
+
+for (run in run.vec) {
+
+  ## timing for O
+  compute = &quot;O&quot;
+  for (m in m.vec) {
+    for (p in p.vec) {
+      dir.dm = paste(dir.exp,&quot;/dm/&quot;,&#39;n&#39;,n,&#39;p&#39;,p,&quot;m&quot;,m, sep=&quot;&quot;)
+      dir.nf = paste(dir.exp,&quot;/nf/&quot;,&quot;run&quot;,run,&#39;n&#39;,n,&#39;p&#39;,p,&quot;m&quot;,m, sep=&quot;&quot;)
+
+      nf = list()
+      nf$map = expression({})
+      nf$mapred = list(
+        mapred.reduce.tasks=1
+        , rhipe_map_buff_size=2^15
+      )
+      nf$parameters = list(p=p)
+      nf$input = dir.dm
+      nf$output = dir.nf
+      nf$jobname = nf$output
+      nf$noeval = TRUE
+      nf.mr = do.call(&#39;rhwatch&#39;, nf)
+      t = as.numeric(system.time({rhex(nf.mr, async=FALSE)})[3])
+      timing[[length(timing)+1]] = list(compute=compute, n=n, p=p, m=m, run=run, t=t)
+
+      Sys.sleep(time=sleep)
+    }}  # end of loop of m and p
+
+
+  ## timing for T
+  compute = &quot;T&quot;
+  for (m in m.vec) {
+    for (p in p.vec) {
+      dir.dm = paste(dir.exp,&quot;/dm/&quot;,&#39;n&#39;,n,&#39;p&#39;,p,&quot;m&quot;,m, sep=&quot;&quot;)
+      dir.gf = paste(dir.exp,&quot;/gf/&quot;,&quot;run&quot;,run,&#39;n&#39;,n,&#39;p&#39;,p,&quot;m&quot;,m, sep=&quot;&quot;)
+
+      gf = list()
+      gf$map = expression({
+        for (v in map.values) {
+          value = glm.fit(v[,1:p],v[,p+1],family=binomial())$coef
+          rhcollect(1, value)
+        }
+      })
+      gf$reduce = expression(
+        pre = { 
+          v = rep(0,p) 
+          nsub = 0
+        },
+        reduce = { 
+          v = v + colSums(matrix(unlist(reduce.values), ncol=p, byrow=TRUE)) 
+          nsub = nsub + length(reduce.values)
+        },
+        post = { rhcollect(reduce.key, v/nsub) }
+      )
+      gf$mapred = list(
+        mapred.reduce.tasks=1
+        , rhipe_map_buff_size=2^15
+      )
+      gf$parameters = list(p=p)
+      gf$input = dir.dm
+      gf$output = dir.gf
+      gf$jobname = gf$output
+      gf$noeval = TRUE
+      gf.mr = do.call(&#39;rhwatch&#39;, gf)
+      t = as.numeric(system.time({rhex(gf.mr, async=FALSE)})[3])
+      timing[[length(timing)+1]] = list(compute=compute, n=n, p=p, m=m, run=run, t=t)
+
+      Sys.sleep(time=sleep)
+    }}  # end of loop of m and p
+
+}   # end of loop of run
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='r-code----save-the-results'>
+<h3>R code -- Save the Results</h3>
+
+<pre><code class="r">timing = ldply(timing, as.data.frame)
+rhsave(timing, file=paste(dir, &quot;/save/&quot;, name, &quot;.RData&quot;, sep=&quot;&quot;))
+save(timing, file=paste(dir.local, name, &quot;.RData&quot;, sep=&quot;&quot;))
+
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='results'>
+<h3>Results</h3>
+
+<pre><code class="r">head(timing)
+</code></pre>
+
+<pre><code>  compute  n  p m run      t
+1       O 21 15 8   1 20.644
+2       O 21 31 8   1 19.601
+3       O 21 63 8   1 21.530
+4       O 21 15 9   1 19.581
+5       O 21 31 9   1 19.521
+6       O 21 63 9   1 21.493
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='visualize-the-results'>
+<h3>Visualize the Results</h3>
 
 </div>
 
