@@ -1,12 +1,11 @@
 ## Elapsed Timing Experiment ##
 
-### The Problem Description  ###
+### Description  ###
 
-Divide and Recombine (D & R) is a statistical framework for the analysis of large complex data. The 
-Elapsed Timing Experiment is a very good example for embarrassingly parallel computing and it is 
+The Elapsed Timing Experiment is a very good example for embarrassingly parallel computing and it is 
 designed to improve the perormance of D & R Computations on a Cluster. The time depends on many 
 factors, so it presents an opportunity for optimizing the computation by making the best choice of 
-the factors. However, this exmaple here mainly serve to illustrate the usage of RHIPE functions, so 
+the factors. However, this exmaple here mainly serves to illustrate the usage of RHIPE functions, so 
 we will only consider two statistical factors that measure characteristics of the dataset and the 
 subsets.
 
@@ -19,6 +18,13 @@ plus **reduce** gathering the subset estimates and computing the means. However,
 **L** directly. So we measure **O** in one run and **T = O + L** in another.
 
 ### Data Structure ###
+
+The number of the response varibale *N* is 2^21 , and the number of the varibales *V* has three
+diffrent values as 2^4 , 2^5 , and 2^6 . *V* is the number of dependent varibale and independent variables.
+*M* is the number of observations per subset and it takes 10 diffrent values as 2^8 , 2^9, ... , 2^17. 
+By varying the values for *V* and *M*, we take records of diffrent elapsed time and explore the best 
+choice of our factors to optimize the computation.
+
 ```{r createtable, results='asis', echo=FALSE}
 cat("Variables | Description |Values ","--- | --- |---", sep="\n")
 x = c("N","Sample size","2^21","V","Factor--Number of variables","2^4 , 2^5 , 2^6","M","Factor--Number of observations per subset","2^8 , 2^9 , 2^10 , ..., 2^17","O","Response variable--first type of elapsed time "," ","T","Response varibale--whole elapsed time"," ")
@@ -26,7 +32,7 @@ x = matrix(x,ncol=3,byrow=TRUE)
 cat(apply(x,1,function(X) paste(X,collapse=" | ")),sep = "\n")
 ```
 
-### R code -- Set Up ###
+### Set Up ###
 
 In the Set-Up session, we will load the "plyr" package and "RHIPE" package. The "plyr" package allows the user to split a data set apart into smaller subsets,
 apply methods to the subsets, and combine the results. The next five lines of code will initialize the "RHIPE" package.
@@ -36,9 +42,9 @@ apply methods to the subsets, and combine the results. The next five lines of co
 library(plyr)
 library(Rhipe)
 rhinit()
-rhoptions(readback = FALSE)
-rhoptions(zips = '/ln/share/RhipeLib.tar.gz')
-rhoptions(runner = 'sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh')
+#rhoptions(readback = FALSE)
+#rhoptions(zips = '/ln/share/RhipeLib.tar.gz')
+#rhoptions(runner = 'sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh')
 
 # experiment name
 name <- "multi.factor_n21"
@@ -62,8 +68,11 @@ p.vec = 2^(4:6) - 1
 m.vec = seq(8, 16, by=1)
 ```
 
-### R code -- Generate Dataset ###
+### Generate Dataset ###
 
+The first part is to generate the dataset and the whole structure of the R code is a for-loop. Inside
+the for-loop, we define a list called "dm" and it contains 7 components as "map", "input", "output", 
+"jobname", "mapred", "parameters" and "noeval".
 ```{r,eval=FALSE}
 for (m in m.vec) {
   for (p in p.vec) {
@@ -137,7 +146,7 @@ Saving 3 parameters to /tmp/rhipe-temp-params-a78396e6bfc84205466ed6bdee72d0c0 (
 14 /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00011
 
 ```
-### R code -- Timing ###
+### Timing ###
 ```{r,eval= FALSE}
 ## initialize timing
 timing = list()
@@ -214,7 +223,7 @@ for (run in run.vec) {
 }   # end of loop of run
 ```
 
-### R code -- Save the Results ###
+### Save the Results ###
 
 
 ```{r,eval=FALSE}
