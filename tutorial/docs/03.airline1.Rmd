@@ -9,7 +9,7 @@ for the Visualization Poster Competition, JSM 2009. The winning entries can be f
 This is intentionally vague in order to allow different entries to focus on different aspects of the
 data, but here are a few ideas to get you started:
 
-- When is the best time of day/day of week/time of year to fly to minimise delays?
+- When is the best time of day/day of week/time of year to fly to minimize delays?
 - Do older planes suffer more delays?
 - How does the number of people flying between different locations change over time?
 - How well does weather predict plane delays?
@@ -19,7 +19,7 @@ critical links in the system?”
 In this chapter, we will demonstrate RHIPE code samples to create similar graphics found in the 
 winning entries [SAS] and [FLUSA].
 
-[SAS] Congestion in the Sky: Vizualising Domestic Airline Traffic with SAS, Rick Wicklin and Robert 
+[SAS] Congestion in the Sky: Visualizing Domestic Airline Traffic with SAS, Rick Wicklin and Robert 
 Allison, SAS Institute. http://stat-computing.org/dataexpo/2009/posters/wicklin-allison.pdf
 
 [FLUSA]	Delayed, Cancelled, On-Time, Boarding ... Flying in the USA, Heike Hofmann, Di Cook, 
@@ -68,7 +68,7 @@ z <- rhwatch(
 j <- rhex(z, async = TRUE)
 ```
 
-A lot is demonstrated in this code. `RHIPE` is loaded via the call in first line. A MapReduce job 
+A lot is demonstrated in this code. `RHIPE` is loaded via the call in first line. A Map-reduce job 
 takes a set of input keys, in this case the numbers 1987 to 2008. It also takes a corresponding set
 of values. The parameter `input` in `rhwatch` tells `RHIPE` how to convert the input the data to key, 
 value pairs. If the input file is a binary file but `input` specifies `text` as the `type`, `RHIPE`
@@ -77,7 +77,7 @@ which treats the numbers 1 to `input[1]` as both keys and values.
 
 These key/value pairs are partitioned into subsets. How they are partitioned depends on the `type` in
 `input` argument. For text files which specifies `type="text"` in `input`, the data
-is divided into roughly equi-length blocks of e.g. 128MB each. A CSV text file will have approximately
+is divided into roughly equal-length blocks of e.g. 128MB each. A CSV text file will have approximately
 equal number of lines per block (not necessarily). `RHIPE` will launch R across all the compute
 nodes. Each node is responsible for processing a the key/value pairs in its assigned subsets.
 
@@ -89,19 +89,19 @@ expression. The default length of `map.values` (and `map.keys`) is 10,000 [1].
 In our example, `input[1]` is 22. The variables `map.values` and `map.keys` will be lists of numbers
 1 to 22 and number 1 to 22 respectively. The entries need not be in the order 1 to 22.
 
-`rhwatch` is a call that packages the MapReduce job which is sent to Hadoop. It takes an input folder
-which can contain multiple files and subfolders. All the files will be given as input. If a 
+`rhwatch` is a call that packages the Map-reduce job which is sent to Hadoop. It takes an input folder
+which can contain multiple files and sub-folders. All the files will be given as input. If a 
 particular file cannot be understood by the input format (e.g. a text file given to `type="sequence"`),
 `RHIPE` will throw an error.
 
-The expression downloads the CSV file, unzips its, and stores in the folder tmp located in the 
+The expression downloads the CSV file, unzips its, and stores in the folder `/tmp` located in the 
 current directory. No copying is performed. The current directory is a temporary directory on the
-local filesystem of the compute node, not on the HDFS. Upon successful completion of the subset, 
-the files stored in tmp (of the current directory) will be copied to the output folder specified
-by ofolder in the call to rhmr. Files are copied only if copyFiles is set to `TRUE`.
+local file system of the compute node, not on the HDFS. Upon successful completion of the subset, 
+the files stored in `/tmp` (of the current directory) will be copied to the output folder specified
+by `output` in the call to `rhwatch`. Files are copied only if `copyFiles` is set to `TRUE`.
 
 Once a file has been downloaded, we inform Hadoop of our change in status, via `rhstatus`. The 
-example of rhstatus displays the various status of each of the 22 subsets (also called Tasks)
+example of `rhstatus` displays the various status of each of the 22 subsets (also called Tasks)
 
 Once a file has been downloaded, we increment a distributed count. Counts belong to families, a 
 single family contains many counters. The counter for group G and name N is incremented via a call
@@ -115,9 +115,9 @@ or return. Since each download takes approximately 30 minutes (the minimum is 4 
 maximum is 42 minutes, the mean is 30 minutes), Hadoop will kill the tasks. We tell Hadoop to not
 kill long running tasks by setting `mapred.task.timeout` to 0. We do not to need to reduce our 
 results so we set `mapred.reduce.tasks` to 0. Output from the map is written directly to the output
-folder on the HDFS. We do not have any output. These options are passed in the mapred argument.
+folder on the HDFS. We do not have any output. These options are passed in the `mapred` argument.
 
-The call to `rhex` launches the job across Hadoop. We use the async argument to return control of 
+The call to `rhex` launches the job across Hadoop. We use the `async` argument to return control of 
 the R console to the user. We can monitor the status by calling `rhstatus`, giving it the value 
 returned from `rhex` or the job ID (e.g. job_201007281701_0053)
 
@@ -173,7 +173,7 @@ download (2007.csv.bz2). A sequential download would have taken several hours.
 **Note**  
 It is important to note that the above code is mostly boiler plate. There is almost no lines to 
 handle distribution across a cluster or task restart in case of transient node failure. The user
-of RHIPE need only consider how to frame her argument in the concepts of MapReduce.
+of RHIPE need only consider how to frame her argument in the concepts of Map-reduce.
 
 `rhls` function can help us to list all files under a directory on HDFS.
 
@@ -194,8 +194,8 @@ rhls("/tmp/airline/data")
 10 -rw-r--r-- tongx supergroup    94 bytes 2014-06-11 10:44 /tmp/airline/data/part-m-00006
 ...
 ```
-All 'part-m-...' files are empty since we did not have real output content from the mapreduce 
-job. Downloaded files are actually coyied into a subdirectory named `_outputs`
+All 'part-m-...' files are empty since we did not have real output content from the map-reduce 
+job. Downloaded files are actually copied into a sub-directory named `_outputs`
 
 ```{r eval=FALSE, tidy=FALSE}
 rhls("/tmp/airline/data/_outputs")
@@ -243,10 +243,10 @@ Since latitude and longitude are not present in the data sets, we will compute t
 required. Carrier names are located in a different R data set which will be used to do perform 
 carrier code to carrier name translation.
 
-Before we start any mapreduce job for converting, there is one thing we have to do. As we already
+Before we start any map-reduce job for converting, there is one thing we have to do. As we already
 seen previously, the real text files are located in `/tmp/airline/data/_outputs/` directory. The 
 underscore at the beginning of a directory/file on HDFS makes the system to treat the directory/file 
-as invisible. That's why when we read from a directory that is an output from a mapreduce job, those
+as invisible. That's why when we read from a directory that is an output from a map-reduce job, those
 file '_SUCCESS' and '_logs'are skipped and only files 'part-m-...' are read in. So in order to read 
 in those csv files, we have to change the name of directory to be without underscore.
 
@@ -373,13 +373,13 @@ Waiting 5 seconds
 ...
 ```
 
-There are 37 subsets for the mapreduce job. A subset can consist of many `map.values` that need to be 
+There are 37 subsets for the map-reduce job. A subset can consist of many `map.values` that need to be 
 processed. For text files as input, a subset is 128MB or whatever your Hadoop block size is. In map
 expression, we first define a R function `convertHHMM()`, which will be used to separate an input 
 of four digit time record (hhmm) to a vector with hour and minute separately. Then we iterate over
 the `map.values`, which are the lines in text files, and tokenizing them. The first line in each 
-downloaded file is about thevariable names. The first line starts with column year which must be 
-ignored. The lines of text are aggregated using `rbind` and time related columns converted to datetime
+downloaded file is about the variable names. The first line starts with column year which must be 
+ignored. The lines of text are aggregated using `rbind` and time related columns converted to date-time
 objects. The data frame is sorted by scheduled departure and saved to disk indexed by the range of 
 scheduled departures in the data frame. The size of the value (data frame) is important. RHIPE will 
 can write any sized object but cannot read key/value pairs that are more than 256MB. A data frame 
@@ -417,7 +417,7 @@ keys in a part file will be ordered but keys in one part file need not be less t
 part file.
 
 To achieve ordering of keys set `orderby` in the call to `rhwatch` to one of bytes (default), 
-integer, numeric (for doubles) or character (alphabetical sorting) in the mapred argument to 
+integer, numeric (for doubles) or character (alphabetical sorting) in the `mapred` argument to 
 `rhwatch`. If the output format is sequence, you also need to provide a reducer which can be an 
 identity reducer. Note, if your keys are discrete, it is best to use integer ordering. Values of
 `NA` can throw of ordering and will send all key,values to one reducer causing a severe imbalance.
