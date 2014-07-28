@@ -216,7 +216,7 @@ adventurous scientist can connect two computers to form a distributed computing 
 and software tools have made concurrent and distributed computing accessibly to the statistician.</p>
 
 <p>It is important to stress that a massive data set is not just a single massive entity that needs to be
-stored across multiple hard drivs but rather the size of the data created during the steps of an analysis.
+stored across multiple hard drives but rather the size of the data created during the steps of an analysis.
 A &#39;small&#39; 14 GB data set can easily become 190 GB as new data structures are created, or where multiple 
 subsets/transformations are each saved as different data sets. Large data sets can come as they are 
 or grow big because of the nature of the analysis. No analyst wants her research to be restricted 
@@ -232,11 +232,11 @@ because the computing infrastructure cannot keep up with the size or complexity.
 a cluster of networked computers. It has changed the way many web companies work, bringing cluster 
 computing to people with little knowledge of the intricacies of concurrent/distributed programming.
 Part of the reason for its success is that it has a fixed programming paradigm. It somewhat restricts 
-what the user can parallelize but once an algorithm has been written the &#39;MapReduce way&#39;, concurrency
+what the user can parallelize but once an algorithm has been written the &#39;Map-reduce way&#39;, concurrency
 and distribution over a cluster comes for free.</p>
 
-<p>It consists of two components: the Hadoop Distributed Filesystem and Hadoop MapReduce. They are based
-on the Google Filesystem and Google MapReduce respectively. Companies using these include Amazon, 
+<p>It consists of two components: the Hadoop Distributed File System and Hadoop Map-reduce. They are based
+on the Google File System and Google Map-reduce respectively. Companies using these include Amazon, 
 Ebay, New York Times, Facebook to name a few. </p>
 
 </div>
@@ -245,11 +245,11 @@ Ebay, New York Times, Facebook to name a few. </p>
 <div class='tab-pane' id='hadoop-distributed-filesystem'>
 <h3>Hadoop Distributed Filesystem</h3>
 
-<p>The Hadoop Distributed Filesystem (HDFS) sits on top of the file system of a computer (called the 
-local filesystem). It pools the hard drive space of a cluster or heterogenous computers (e.g. different
+<p>The Hadoop Distributed File System (HDFS) sits on top of the file system of a computer (called the 
+local file system). It pools the hard drive space of a cluster or heterogeneous computers (e.g. different
 hardware and operating systems) and provides a unified view to the user. For example, with a cluster
 of 10 computers each with 1TB hard drive space available to Hadoop, the HDFS provides a user 10 TB 
-of hard drive space. A single file can be bigger than maximum size on the local filesystem e.g. 2TB 
+of hard drive space. A single file can be bigger than maximum size on the local file system e.g. 2TB 
 files can be saved on the HDFS. The HDFS is catered to large files and high throughput reads. Appends
 to files are not allowed. Files written to the HDFS are chunked into blocks, each block is replicated
 and saved on different cluster computers. This provides a measure of safety in case of transient or 
@@ -276,10 +276,10 @@ concurrent than sequential code.</p>
 tools to prevent this: locks, semaphores, and mutually exclusive regions etc. An approach suggested 
 by Sutter et al is to provide programming
 models not functions that force the programmer to approach her algorithms differently. Once the 
-programmer constructs the algorithm using this model, concurrency comes for free. The MapReduce 
+programmer constructs the algorithm using this model, concurrency comes for free. The Map-reduce 
 programming model is one example. Correctly coded Condor DAGS are another example.</p>
 
-<p>MapReduce consists of several 
+<p>Map-reduce consists of several 
 embarrassingly parallel subsets which are evaluated in parallel. This is called the Map. There is a 
 synchronization guard where intermediate data created at the end of the Map is exchanged between nodes
 and another round of parallel computing starts, called the Reduce phase. In effect large scale 
@@ -287,7 +287,7 @@ simulation trials in which the programmer launches several thousands of independ
 an example of a Map. Retrieving and collating the results (usually done in the R console) is an 
 example of a manual reduce.</p>
 
-<p>In detail, the input to a MapReduce computation is a set of <em>N</em> key,value pairs. The <em>N</em> pairs are 
+<p>In detail, the input to a Map-reduce computation is a set of <em>N</em> key,value pairs. The <em>N</em> pairs are 
 partitioned into <em>S</em> arbitrary subsets. Each subset is a unit of computation and is assigned to one 
 computing unit on the cluster. Thus the processing of the <em>S</em> subsets occurs in parallel. Each subset 
 is processed by a user given function <em>M</em>, that takes a sequence of input key,value pairs and outputs
@@ -299,12 +299,12 @@ same key. Each processing core is assigned a subset of intermediate keys to redu
 of the <em>M</em> intermediate keys occurs in parallel. The function <em>R</em>, takes an intermediate key, a stream 
 of associated intermediate values and returns a final key,value pair or pairs.</p>
 
-<p>The R programmer has used MapReduce ideas. For example, the <code>tapply</code> command splits a vector by a 
+<p>The R programmer has used Map-reduce ideas. For example, the <code>tapply</code> command splits a vector by a 
 list of factors. This the map equivalent: each row of the vector is the value and the keys are the 
 distinct levels of the list of factors. The reduce is the user given function applied to the partitions
 of the vector. The <code>xyplot</code> function in <code>lattice</code> takes a formula e.g. F\sim Y|A*B, subsets the the 
-data frame by the cartesian product of the levels of A and B (the map) and displays each subset (the 
-reduce). Hadoop MapReduce generalizes this to a distributed level.</p>
+data frame by the Cartesian product of the levels of A and B (the map) and displays each subset (the 
+reduce). Hadoop Map-reduce generalizes this to a distributed level.</p>
 
 </div>
 
@@ -314,15 +314,15 @@ reduce). Hadoop MapReduce generalizes this to a distributed level.</p>
 
 <p>The R and Hadoop Integrated Programming Environment is R package to compute across massive data sets,
 create subsets, apply routines to subsets, produce displays on subsets across a cluster of computers
-using the Hadoop DFS and Hadoop MapReduce framework. This is accomplished from within the R 
+using the Hadoop DFS and Hadoop Map-reduce framework. This is accomplished from within the R 
 environment, using standard R programming idioms. For efficiency reasons, the programming style is 
 slightly different from that outlined in the previous section.</p>
 
 <p>The native language of Hadoop is Java. Java is not suitable for rapid development such as is needed 
 for a data analysis environment. <a href="http://hadoop.apache.org/docs/r1.2.1/streaming.html">Hadoop Streaming</a>
-bridges this gap. Users can write MapReduce programs in other languages e.g. Python, Ruby, Perl which
+bridges this gap. Users can write Map-reduce programs in other languages e.g. Python, Ruby, Perl which
 is then deployed over the cluster. Hadoop Streaming then transfers the input data from Hadoop to the
-user program and vice versa.</p>
+user program.</p>
 
 <p>Data analysis from R does not involve the user writing code to be deployed from the command line. The
 analyst has massive data sitting in the background, she needs to create data, partition the data, 
@@ -333,8 +333,8 @@ returned to R. Ideally not having to resort to the command line.</p>
 
 <ul>
 <li>RHIPE consist of several functions to interact with the HDFS e.g. save data sets, read data created 
-by RHIPE MapReduce, delete files.</li>
-<li>Compose and launch MapReduce jobs from R using the command <code>rhwatch</code> and <code>rhex</code>. Monitor the status
+by RHIPE Map-reduce, delete files.</li>
+<li>Compose and launch Map-reduce jobs from R using the command <code>rhwatch</code> and <code>rhex</code>. Monitor the status
 using <code>rhstatus</code> which returns an R object. Stop jobs using <code>rhkill</code>.</li>
 <li>Compute <em>side effect</em> files. The output of parallel computations may include the creation of PDF 
 files, R data sets, CVS files etc. These will be copied by RHIPE to a central location on the HDFS 
@@ -343,7 +343,7 @@ removing the need for the user to copy them from the compute nodes or setting up
 and C. The serialization format used by RHIPE (converting R objects to binary data) uses Googles
 <a href="https://code.google.com/p/protobuf/">Protocol Buffers</a> which is very fast and creates compact 
 representations for R objects. Ideal for massive data sets.</li>
-<li>Data sets created using RHIPE are <em>key-value</em> pairs. A key is mapped to a value. A MapReduce 
+<li>Data sets created using RHIPE are <em>key-value</em> pairs. A key is mapped to a value. A Map-reduce 
 computations iterates over the key,value pairs in parallel. If the output of a RHIPE job creates 
 unique keys the output can be treated as a external-memory associative dictionary. RHIPE can thus be
 used as a medium scale (millions of keys) disk based dictionary, which is useful for loading R 
@@ -1887,7 +1887,7 @@ to the RHIPE command <code>rhread()</code>.</p>
 head(Zmedians)
 </code></pre>
 
-<pre><code>[1] -0.011115 -0.006451  0.009090  0.077143 -0.000808 -0.002054
+<pre><code>[1]  0.008186  0.022369  0.009512  0.023790  0.071502 -0.026238
 </code></pre>
 
 </div>
