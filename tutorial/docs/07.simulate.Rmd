@@ -12,18 +12,18 @@ However, often `P << N` and thus we must either
 This works very well in an heterogeneous environment e.g. with varying processor capacities or 
 varying task characteristics - free resources will be automatically assigned pending tasks. The 
 cost in creating a new task can be much greater than the cost of evaluating the task.
-* Partition the `N` tasks into `n` splits each containing $\lceil N/n \rceil$ tasks (with the last 
-split containing the remainder). These splits are placed in a queue, each processor is assigned a 
-splits and the tasks in a split are evaluated sequentially.
+* Partition the `N` tasks into `n` subsets each containing $\lceil N/n \rceil$ tasks (with the last 
+subset containing the remainder). These subsets are placed in a queue, each processor is assigned a 
+subset and the tasks in a subset are evaluated sequentially.
 
-The second approach simplifies to the first when `n = N`. Creating one split per task is 
-inefficient since the time to create,assign launch the task contained in a split might be much 
+The second approach simplifies to the first when `n = N`. Creating one subset per task is 
+inefficient since the time to create,assign launch the task contained in a subset might be much 
 greater than the evaluation of the task. Moreover, with `N` in the millions, this will cause the 
-Jobtracker to run out of memory. It is recommended to divide the `N` tasks into fewer splits of 
+Jobtracker to run out of memory. It is recommended to divide the `N` tasks into fewer subsets of 
 sequential tasks. Because of non uniform running times among tasks, processors can spend time in 
-the sequential execution of tasks in a split $\sigma$ with other processors idle. Hadoop will 
-schedule the split $\sigma$ to another processor (however it will not divide the split into smaller 
-splits), and the output of whichever completes first will be used.
+the sequential execution of tasks in a subset $\sigma$ with other processors idle. Hadoop will 
+schedule the subset $\sigma$ to another processor (however it will not divide the subset into smaller 
+subsets), and the output of whichever completes first will be used.
 
 RHIPE provides two approaches to this sort of computation. To apply the function `F` to the set $\lbrace 1, 2,\ldots, M \rbrace$, the pseudo code would follow as (here we assume `F` returns a data frame)
 ```{r eval=FALSE, tidy=FALSE}
@@ -40,7 +40,7 @@ mrFC <- rhwatch(
   )
 do.call('rbind',lapply(rhread('/tempfolder', mc=TRUE),'[[',2))
 ```
-Here `F` is applied to the numbers $1, 2,\ldots, M$. The job is decomposed into `1000` splits 
+Here `F` is applied to the numbers $1, 2,\ldots, M$. The job is decomposed into `1000` subsets 
 (specified by `mapred.map.tasks`) each containing approximately $\lceil M/1000 \rceil$ tasks. 
 The expression, `FC` sequentially applies `F` to the elements of `map.values` (which will 
 contain a subset of $1, 2,\ldots ,M$) and aggregate the returned data frames with a call to rbind. 
@@ -49,7 +49,7 @@ the HDFS, the data frame are extracted from the list and combined using a call t
 this is boiler plate RHIPE code and the only varying portions are: the function `F`, the number of 
 iterations `M`, the number of groups (e.g. `mapred.map.tasks`) and the aggregation scheme (e.g. I 
 used the call to rbind). R lists can be written to a file on the HDFS (with `rhwrite`), which can 
-be used as input to a MapReduce job.
+be used as input to a Map-reduce job.
 
 ### Medians of Standard Normal Samples Example ###
 
