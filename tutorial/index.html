@@ -805,20 +805,20 @@ need to be sent to the same reducer).</p>
 <div class='tab-pane' id='hadoop-as-a-queryable-database'>
 <h3>Hadoop as a Queryable Database</h3>
 
-<p><em>Sightly artificial:</em> store all Southwest Airlines information indexed by year,month,and day.
+<p><em>Sightly artificial:</em> store all American Airlines information indexed by year, month, and day.
 Each (year, month, day) triplet will have all flight entries that left on that day. Using the above
 data set as the source, the Southwest lines are selected and sent to the reducer with the (year, 
 month,day) key. All flights with the same (year, month) will belong to the same file. Given a (year
 , month,day) triplet, we can use the Map File output format to access the associated flight 
-information in seconds rather than subsetting using MapReduce.</p>
+information in seconds rather than subsetting using Map-reduce.</p>
 
 <pre><code class="r">map &lt;- expression({
   h &lt;- do.call(&quot;rbind&quot;, map.values)
-  d &lt;- h[h$carrier == &#39;WN&#39;, , drop = FALSE]
+  d &lt;- h[h$carrier == &#39;AA&#39;, , drop = FALSE]
   if(nrow(d) &gt; 0) {
-    e &lt;- split(d, list(d$year, d$month, d$mday))
+    e &lt;- split(d, list(d$year, d$month, d$day))
     lapply(e, function(r) {
-      k &lt;- as.vector(unlist(r[1, c(&quot;year&quot;, &quot;month&quot;, &quot;mday&quot;)]))  ## remove attributes
+      k &lt;- as.vector(unlist(r[1, c(&quot;year&quot;, &quot;month&quot;, &quot;day&quot;)]))  ## remove attributes
       rhcollect(k, r)
     })
   }
@@ -832,7 +832,7 @@ reduce &lt;- expression(
     collec &lt;- collec[order(collec$depart), ]
   },
   post = {
-    rhcollect(k, collec)
+    rhcollect(reduce.key, collec)
   }
 )
 z &lt;- rhwatch(
@@ -840,7 +840,7 @@ z &lt;- rhwatch(
   reduce   = reduce,
   combiner = TRUE,
   input    = rhfmt(&quot;/tmp/airline/output/blocks&quot;, type = &quot;sequence&quot;),
-  output   = rhfmt(&quot;/tmp/airline/southwest&quot;, type = &quot;map&quot;),
+  output   = rhfmt(&quot;/tmp/airline/output/southwest&quot;, type = &quot;map&quot;),
   mapred   = list(rhipe_map_buff_size = 10),
   readback = FALSE
 )
@@ -848,15 +848,19 @@ z &lt;- rhwatch(
 
 <p>Attributes are removed in line \(8\), for otherwise we have to retrieve a data frame with a data frame 
 with column names and row names instead of a more convenient numeric vector. The map expression 
-combines the individual data frames. Each data frame has \(5000\) rows, hence rhipe_map_buff_size is 
+combines the individual data frames. Each data frame has \(5000\) rows, hence <code>rhipe_map_buff_size</code> is 
 set to 10 for a combined data frame of \(50000\) rows in line \(32\). This is crucial. The default value 
-for <em>rhipe_map_buff_size</em> is \(10,000\). Binding \(10,000\) data frames of \(5000\) rows each creates a data 
+for <code>rhipe_map_buff_size</code> is \(10,000\). Binding \(10,000\) data frames of \(5000\) rows each creates a data 
 frame of 50MN rows - too unwieldy to compute with in R (for many types of operations). Data frames 
-for Southwest Airlines (<em>carried code = WN</em>) are created and emitted with the call to rhcollect in line
-\(15\). These are combined in the reduce since data frames for the same (year, month,day) triplet can 
+for American Airlines (<em>carried code = AA</em>) are created and emitted with the call to rhcollect in line
+\(15\). These are combined in the reduce since data frames for the same (year, month, day) triplet can 
 be emitted from different map expressions. Since this is associative and commutative we use a 
-combiner. The output format (&#39;inout[[2]]&#39;) is map, so we can access the flights for any triplet with 
-a call to rhgetkey which returns a list of key,value lists.</p>
+combiner. The output format (<code>inout[[2]]</code>) is map, so we can access the flights for any triplet with 
+a call to <code>rhmapfile</code> which returns a list of key,value lists.</p>
+
+<pre><code class="r">x &lt;- rhmapfile(&quot;/tmp/airline/output/southwest&quot;)
+x[[c(1987,10,2)]]
+</code></pre>
 
 </div>
 
@@ -1055,7 +1059,7 @@ dev.off()
 
 <p>It is very likely in the future analysis, we want to study the flights information for a specific 
 day.So for this scenario we want to create new key/value pairs by using RHIPE. The input files are
-the blocks of data we created previously, and the ouput will be &#39;sequence&#39; file with key is the 
+the blocks of data we created previously, and the output will be &#39;sequence&#39; file with key is the 
 date, and corresponding value is a data frame of data for that particular day. For example, we would
 like to know what is the delay rate on everyday.</p>
 
@@ -1105,7 +1109,7 @@ collect the key which is the date, and value which is a vector with total number
 number of delayed flights for each element of <code>e</code>.</p>
 
 <p>In reduce expression, we initialize the <code>sums</code> in <code>pre</code> of reduce, which will be the final total
-number of flights and number of delay for a given day. And in <code>reduce</code> of reduce, we just cumulate
+number of flights and number of delay for a given day. And in <code>reduce</code> of reduce, we just accumulate
 all two numbers for same key. Finally, in <code>post</code> of reduce, collect the final key/value pairs. 
 <code>reduce.key</code> here is one particular date of the day, and <code>reduce.values</code> is a list with all 
 <code>c(numberofflight, numberofdelay)</code> as elements.</p>
@@ -1542,8 +1546,8 @@ e.g. red implies those routes carry the top 25% of traffic in/out of ORD.</p>
 <h3>Simple Debugging</h3>
 
 <p>Consider the example code used to compute the delay quantiles by month (see Delay Quantiles By 
-Month ). We can use tryCatch for some simple debugging. See the error in line 7, there is no such v
-ariable isdelayed</p>
+Month ). We can use tryCatch for some simple debugging. See the error in line 7, there is no such 
+variable is delayed</p>
 
 <pre><code class="r">map &lt;- expression({
   tryCatch(
@@ -1608,7 +1612,7 @@ R INFO:object &quot;isdelayed&quot; not found
 Use this to provide context about variables, such printing the first few rows of relevant data 
 frames (if required). Moreover, some errors don’t come to the screen instead the job finishes 
 successfully (but very quickly since the R code is failing) but the error message is returned as a 
-counter. The splits succeed since Hadoop has finished sending its data to R and not listening to 
+counter. The subsets succeed since Hadoop has finished sending its data to R and not listening to 
 for errors from the R code. Hence any errors sent from R do not trigger a failure condition in 
 Hadoop. This is a RHIPE design flaw. To compensate for this, the errors are stored in the counter 
 <code>R_ERROR</code>.</p>
@@ -1772,19 +1776,19 @@ However, often <code>P &lt;&lt; N</code> and thus we must either</p>
 This works very well in an heterogeneous environment e.g. with varying processor capacities or 
 varying task characteristics - free resources will be automatically assigned pending tasks. The 
 cost in creating a new task can be much greater than the cost of evaluating the task.</li>
-<li>Partition the <code>N</code> tasks into <code>n</code> splits each containing \(\lceil N/n \rceil\) tasks (with the last 
-split containing the remainder). These splits are placed in a queue, each processor is assigned a 
-splits and the tasks in a split are evaluated sequentially.</li>
+<li>Partition the <code>N</code> tasks into <code>n</code> subsets each containing \(\lceil N/n \rceil\) tasks (with the last 
+subset containing the remainder). These subsets are placed in a queue, each processor is assigned a 
+subset and the tasks in a subset are evaluated sequentially.</li>
 </ul>
 
-<p>The second approach simplifies to the first when <code>n = N</code>. Creating one split per task is 
-inefficient since the time to create,assign launch the task contained in a split might be much 
+<p>The second approach simplifies to the first when <code>n = N</code>. Creating one subset per task is 
+inefficient since the time to create,assign launch the task contained in a subset might be much 
 greater than the evaluation of the task. Moreover, with <code>N</code> in the millions, this will cause the 
-Jobtracker to run out of memory. It is recommended to divide the <code>N</code> tasks into fewer splits of 
+Jobtracker to run out of memory. It is recommended to divide the <code>N</code> tasks into fewer subsets of 
 sequential tasks. Because of non uniform running times among tasks, processors can spend time in 
-the sequential execution of tasks in a split \(\sigma\) with other processors idle. Hadoop will 
-schedule the split \(\sigma\) to another processor (however it will not divide the split into smaller 
-splits), and the output of whichever completes first will be used.</p>
+the sequential execution of tasks in a subset \(\sigma\) with other processors idle. Hadoop will 
+schedule the subset \(\sigma\) to another processor (however it will not divide the subset into smaller 
+subsets), and the output of whichever completes first will be used.</p>
 
 <p>RHIPE provides two approaches to this sort of computation. To apply the function <code>F</code> to the set \(\lbrace 1, 2,\ldots, M \rbrace\), the pseudo code would follow as (here we assume <code>F</code> returns a data frame)</p>
 
@@ -1802,7 +1806,7 @@ mrFC &lt;- rhwatch(
 do.call(&#39;rbind&#39;,lapply(rhread(&#39;/tempfolder&#39;, mc=TRUE),&#39;[[&#39;,2))
 </code></pre>
 
-<p>Here <code>F</code> is applied to the numbers \(1, 2,\ldots, M\). The job is decomposed into <code>1000</code> splits 
+<p>Here <code>F</code> is applied to the numbers \(1, 2,\ldots, M\). The job is decomposed into <code>1000</code> subsets 
 (specified by <code>mapred.map.tasks</code>) each containing approximately \(\lceil M/1000 \rceil\) tasks. 
 The expression, <code>FC</code> sequentially applies <code>F</code> to the elements of <code>map.values</code> (which will 
 contain a subset of \(1, 2,\ldots ,M\)) and aggregate the returned data frames with a call to rbind. 
@@ -1811,7 +1815,7 @@ the HDFS, the data frame are extracted from the list and combined using a call t
 this is boiler plate RHIPE code and the only varying portions are: the function <code>F</code>, the number of 
 iterations <code>M</code>, the number of groups (e.g. <code>mapred.map.tasks</code>) and the aggregation scheme (e.g. I 
 used the call to rbind). R lists can be written to a file on the HDFS (with <code>rhwrite</code>), which can 
-be used as input to a MapReduce job.</p>
+be used as input to a Map-reduce job.</p>
 
 </div>
 
@@ -1887,7 +1891,7 @@ to the RHIPE command <code>rhread()</code>.</p>
 head(Zmedians)
 </code></pre>
 
-<pre><code>[1] -0.006687  0.002214  0.020775 -0.059031  0.047483  0.093871
+<pre><code>[1] -0.042067 -0.052748  0.029278 -0.013224  0.022809 -0.007785
 </code></pre>
 
 </div>
