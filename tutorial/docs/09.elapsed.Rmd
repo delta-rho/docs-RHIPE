@@ -72,7 +72,11 @@ m.vec = seq(8, 16, by=1)
 
 The first part is to generate the dataset and the whole structure of the R code is a for-loop. Inside
 the for-loop, we define a list called "dm" and it contains 7 components as "map", "input", "output", 
-"jobname", "mapred", "parameters" and "noeval".
+"jobname", "mapred", "parameters" and "noeval". The R function `do.call` will pass the argument "dim"
+to RHIPE function `rhwatch`. The `rhwatch` function will create the R object that contains all the 
+information required by RHIPE to run a MapReduce job via a call to `rhex`. The argument of "dim$input" in `rhwatch` tells RHIPE how to convert the data to key, value pairs. In this case, the type of input is numeric and it is a lapply input which of both key and values range from 1,...2^(n-m) .
+
+
 ```{r,eval=FALSE}
 for (m in m.vec) {
   for (p in p.vec) {
@@ -103,6 +107,8 @@ for (m in m.vec) {
 
 Sys.sleep(time=sleep*10)
 ```
+
+
 ```
 Saving 3 parameters to /tmp/rhipe-temp-params-5ae555c2b8940867b796593ca841496e (use rhclean to delete all temp files)
 Saving 3 parameters to /tmp/rhipe-temp-params-e612430fd38382fa2aee6c5384cbe0b7 (use rhclean to delete all temp files)
@@ -110,6 +116,8 @@ Saving 3 parameters to /tmp/rhipe-temp-params-0f3b7a329b9cfd61873cb2967855354b (
 Saving 3 parameters to /tmp/rhipe-temp-params-a78396e6bfc84205466ed6bdee72d0c0 (use rhclean to delete all temp files)
 
 ```
+We can use `rhls()` function to list the files we created as following command. So it created 14 files
+and the first two files are documents. The rest 12 files are the block files.
 ```{r,eval=FALSE}
  rhls("/ln/song273/tmp/multi.factor_n21/dm/n21p15m8")
 ```
@@ -147,6 +155,8 @@ Saving 3 parameters to /tmp/rhipe-temp-params-a78396e6bfc84205466ed6bdee72d0c0 (
 
 ```
 ### Timing ###
+
+We will read the data we generated from HDFS to R local working environment third times and record the two diffrent time seperatly : *O* and *T*.
 ```{r,eval= FALSE}
 ## initialize timing
 timing = list()
@@ -235,6 +245,8 @@ save(timing, file=paste(dir.local, name, ".RData", sep=""))
 
 ### Results ###
 
+The "timing" is a dataframe and contains 6 components. The "timing$compute" is a facor consisting of two levels "O" and "T". The "timing$p" is the number of independent varibales. The "timing$t" is the elapsed-time.
+
 ```{r,eval=FALSE}
 head(timing)
 ```
@@ -249,7 +261,8 @@ head(timing)
 ```
 #### Visualize the Result ####
 We use the `xyplot` function to visualize the result.
-![alt text](./plots/elapsed.pdf)
+
+![alt text](./plots/elapsed.png)
 
 
 
