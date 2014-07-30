@@ -1919,7 +1919,7 @@ to the RHIPE command <code>rhread()</code>.</p>
 head(Zmedians)
 </code></pre>
 
-<pre><code>[1] -0.05643  0.01302 -0.00218 -0.04108 -0.07522 -0.03060
+<pre><code>[1] -0.045405 -0.004035 -0.025443  0.047506  0.045911  0.031596
 </code></pre>
 
 </div>
@@ -2078,9 +2078,6 @@ the results. The next five lines of code will initialize the &quot;RHIPE&quot; p
 library(plyr)
 library(Rhipe)
 rhinit()
-#rhoptions(readback = FALSE)
-#rhoptions(zips = &#39;/ln/share/RhipeLib.tar.gz&#39;)
-#rhoptions(runner = &#39;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&#39;)
 
 # experiment name
 name &lt;- &quot;multi.factor_n21&quot;
@@ -2206,14 +2203,14 @@ block files.</p>
 <p>We will read the data we generated from HDFS to R local working environment third times and record 
 the two diffrent time seperatly : <em>O</em> and <em>T</em>.</p>
 
-<p>Inside the for-loop, we defined two lists called &quot;nf&quot; and &quot;gf&quot; seperately. The list &quot;nf&quot; contains 7 
-components as &quot;map&quot;, &quot;input&quot;, &quot;output&quot;, &quot;jobname&quot;, &quot;mapred&quot;, &quot;parameters&quot; and &quot;noeval&quot;. The R function
-<code>do.call</code> will pass the argument &quot;nf&quot; to RHIPE function <code>rhwatch</code>. The <code>rhwatch</code> function will create
+<p>Inside the for-loop, we defined two lists called <code>nf</code> and <code>gf</code> seperately. The list <code>nf</code> contains 7 
+components as <code>map</code>, <code>input</code>, <code>output</code>, <code>jobname</code>, <code>mapred</code>, <code>parameters</code> and <code>noeval</code>. The R function
+<code>do.call</code> will pass the argument <code>nf</code> to RHIPE function <code>rhwatch</code>. The <code>rhwatch</code> function will create
 the R object that contains all the information required by RHIPE to run a MapReduce job via a call 
 to <code>rhex</code>. The R function <code>system.time</code> will calculate the elapsed time of the reading process and its
 value is <em>O</em>.</p>
 
-<p>The list &quot;gf&quot; contains 8 components and it has one more component than the list &quot;nf&quot;, which is &quot;reduce&quot;.</p>
+<p>The list <code>gf</code> contains 8 components and it has one more component than the list <code>nf</code>, which is <code>reduce</code>.</p>
 
 <pre><code class="r">## initialize timing
 timing = list()
@@ -2297,8 +2294,8 @@ for (run in run.vec) {
 <div class='tab-pane' id='save-the-results'>
 <h3>Save the Results</h3>
 
-<p>In the last step, we created a list called &quot;timing&quot; and now we use R function <code>ldply</code> to transform 
-list &quot;timing&quot; to a dataframe.</p>
+<p>In the last step, we created a list called <code>timing</code> and now we use R function <code>ldply</code> to transform 
+list <code>timing</code> to a dataframe.</p>
 
 <pre><code class="r">timing = ldply(timing, as.data.frame)
 rhsave(timing, file=paste(dir, &quot;/save/&quot;, name, &quot;.RData&quot;, sep=&quot;&quot;))
@@ -2312,8 +2309,8 @@ save(timing, file=paste(dir.local, name, &quot;.RData&quot;, sep=&quot;&quot;))
 <div class='tab-pane' id='results'>
 <h3>Results</h3>
 
-<p>The &quot;timing&quot; is a dataframe and contains 6 components. The &quot;timing$compute&quot; is a facor consisting of
-two levels &quot;O&quot; and &quot;T&quot;. The &quot;timing$p&quot; is the number of independent varibales. The &quot;timing$t&quot; is the
+<p>The <code>timing</code> is a dataframe and contains 6 components. The <code>compute</code> is a facor consisting of
+two levels &quot;O&quot; and &quot;T&quot;. The <code>p</code> is the number of independent varibales. The <code>t</code> is the
 elapsed-time.</p>
 
 <pre><code class="r">head(timing)
