@@ -157,7 +157,12 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#ar2-simulation-example'>AR(2) Simulation Example</a>
+         <a target='_self' class='nav-not-header' href='#nonparametric-spectrum-estimation'>Nonparametric Spectrum Estimation</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#plotting-loess-in-r-global-environment'>Plotting LOESS in R Global Environment</a>
       </li>
 
 
@@ -819,7 +824,7 @@ information in seconds rather than subsetting using Map-reduce.</p>
     e &lt;- split(d, list(d$year, d$month, d$day))
     lapply(e, function(r) {
       k &lt;- as.vector(unlist(r[1, c(&quot;year&quot;, &quot;month&quot;, &quot;day&quot;)]))  ## remove attributes
-      rhcollect(k, r)
+      rhcollect(paste(k, collapse=&quot;&quot;), r)
     })
   }
 })
@@ -832,7 +837,8 @@ reduce &lt;- expression(
     collec &lt;- collec[order(collec$depart), ]
   },
   post = {
-    rhcollect(reduce.key, collec)
+    a &lt;- collec[1,]
+    rhcollect(reduce.key, a)
   }
 )
 z &lt;- rhwatch(
@@ -841,7 +847,34 @@ z &lt;- rhwatch(
   combiner = TRUE,
   input    = rhfmt(&quot;/tmp/airline/output/blocks&quot;, type = &quot;sequence&quot;),
   output   = rhfmt(&quot;/tmp/airline/output/southwest&quot;, type = &quot;map&quot;),
-  mapred   = list(rhipe_map_buff_size = 10),
+  mapred   = list(rhipe_map_buff_size = 10, mapred.reduce.tasks = 1),
+  readback = FALSE
+)
+</code></pre>
+
+<pre><code class="r">map&lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    rhcollect(&quot;x&quot;, map.values[[r]])
+  })
+})
+reduce &lt;- expression(
+  pre = {
+    s = 0
+  },
+  reduce = {
+    s = s + unlist(reduce.values)
+  },
+  post = {
+    rhcollect(reduce.key, s)
+  }
+)
+z &lt;- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = c(100, 10) ,
+  output   = rhfmt(&quot;/tmp/airline/tmp&quot;, type = &quot;map&quot;),
+  mapred   = list(rhipe_map_buff_size = 10, mapred.reduce.tasks = 1),
   readback = FALSE
 )
 </code></pre>
@@ -1891,58 +1924,83 @@ to the RHIPE command <code>rhread()</code>.</p>
 head(Zmedians)
 </code></pre>
 
-<pre><code>[1] -0.005788 -0.024543 -0.037589 -0.005155  0.016108 -0.071398
+<pre><code>[1] -0.03280  0.01919 -0.01218 -0.02144 -0.08452  0.01446
 </code></pre>
 
 </div>
 
 
-<div class='tab-pane' id='ar2-simulation-example'>
-<h3>AR(2) Simulation Example</h3>
+<div class='tab-pane' id='nonparametric-spectrum-estimation'>
+<h3>Nonparametric Spectrum Estimation</h3>
 
-<p>Estimating the parameters of an Auto Regressive Integrated Moving Average (ARIMA) Model requires 
-numerous approximations that inevitably still leave us without a closed form solution. The 
-following code will step us through the task of a good way to use the HDFS to effectively estimate 
-an Auto Regressive Two (AR(2)) Model.</p>
+<p>Averaging Transformation Smoothing (ATS) Methods is a general nonparametric approach that can be utilized on a multitude of data forms. RHIPE is the optimum platform to utilize ATS methods for spectrum estimation.</p>
 
-<pre><code class="r">dir &lt;- &quot;/tmp/advsim/&quot; 
-N &lt;- 2^18 
-m &lt;- 2^10
-maprho &lt;- expression({
-  m &lt;- 2^10
+<p>Below is a toy example, seeing as it is estimating AR(2) simulated data, which would not require such advanced methods. However, the code is functional and would be utilized to provide a nonparametric estimate to univariate time series data of any unknown form.</p>
+
+<pre><code class="r">N &lt;- 2^20
+m &lt;- 2^15
+rho.true &lt;- c(2/3, -1/3)
+mapA &lt;- expression({
+  m &lt;- 2^15
   rho.true &lt;- c(2/3, -1/3)
-  w.vec &lt;- 2*pi*0:(m - 1)/m
-  ginv &lt;- function(lambda, rho1, rho2)
-    1 + rho1^2 + rho2^2 - 2*rho1*(1 - rho2)*cos(lambda) - 2*rho2*cos(2*lambda)
   for(i in seq_along(map.values)){
-    AR2 &lt;- arima.sim(n = m, model = list(ar = rho.true)) #Random AR(2) Data
-    X &lt;- fft(AR2) #Fast Fourier Transform
-    per &lt;- Re(X)^2 + Im(X)^2 #Periodogram
-    #Whittle Approximate Likelihood Function for AR(2) Time Series Model
-    lW &lt;- function(rho)
-      m*log(sum(ginv(w.vec, rho[1], rho[2])*per)/m) + sum(log(1/ginv(w.vec, rho[1], rho[2])))
-    rho.argmin &lt;- optim(c(0, 0), lW)$par
-    rhcollect(NULL, rho.argmin)
+    AR2 &lt;- arima.sim(n = m, model = list(ar = rho.true))
+    X &lt;- fft(AR2)
+    X &lt;- X[2:(m/2)]
+    per &lt;- Mod(X)^2
+    rhcollect(NULL, per)
   }
 })
-reducerho &lt;- expression(reduce = {rhcollect(reduce.key, reduce.values)})
-mrrho &lt;- rhwatch(
-  map      = maprho,
-  reduce   = reducerho,
+reduceA &lt;- expression(
+  pre    = {A &lt;- rep(0, m/2 - 1)},
+  reduce = {A &lt;- A + apply(do.call(&quot;rbind&quot;, reduce.values), 2, sum)},
+  post   = {rhcollect(NULL, A)}
+  )
+mrA &lt;- rhwatch(
+  map      = mapA,
+  reduce   = reduceA,
   input    = c(N/m, 8),
-  output   = paste(dir, &quot;rho.argmin&quot;, sep=&quot;&quot;),
+  output   = paste(dir, &quot;A&quot;, sep=&quot;&quot;),
   mapred   = list(mapred.reduce.tasks = 1),
+  readback = FALSE
+  )
+mapT &lt;- expression({
+  for(i in seq_along(map.values)){
+    A &lt;- map.values[[i]]
+    T &lt;- log(A)
+    rhcollect(NULL, T)
+  }
+})
+mrT &lt;- rhwatch(
+  map = mapT,
+  input = paste(dir, &quot;A&quot;, sep=&quot;&quot;),
+  output = paste(dir, &quot;T&quot;, sep=&quot;&quot;),
+  mapred = list(mapred.reduce.tasks = 0),
   readback = FALSE
   )
 </code></pre>
 
-<p>At this point it is best to bring the values back into the R global environment. The code for this 
-is as follows:</p>
+</div>
 
-<pre><code class="r">rho.est &lt;- matrix(unlist(rhread(dirrho)), ncol = 2, byrow = TRUE)
+
+<div class='tab-pane' id='plotting-loess-in-r-global-environment'>
+<h3>Plotting LOESS in R Global Environment</h3>
+
+<pre><code class="r">dirT &lt;- &quot;/ln/jtroisi/T/part-m-00000&quot;
+T &lt;- unlist(rhread(dirT))
+freq &lt;- time(T)/(m + 1)
+library(lattice)
+trellis.device(postscript, file = &quot;S.ps&quot;)
+xyplot(T ~ freq,
+       panel = function(x, y){
+         panel.loess(x, y, span = 101/(m + 1), degree = 2, col = &quot;red&quot;)
+         panel.xyplot(x, y, pch = &quot;.&quot;)
+       }
+       )
+dev.off()
 </code></pre>
 
-<p>The first column are your <code>rho1</code> estimates and the second column are your <code>rho2</code> estimates.</p>
+<p>Another useful plot would be a residuals plot, but it is not necessary to demonstrate the R coding for such a task here.</p>
 
 </div>
 

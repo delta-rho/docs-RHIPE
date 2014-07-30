@@ -15,7 +15,7 @@ map <- expression({
     e <- split(d, list(d$year, d$month, d$day))
     lapply(e, function(r) {
       k <- as.vector(unlist(r[1, c("year", "month", "day")]))  ## remove attributes
-      rhcollect(k, r)
+      rhcollect(paste(k, collapse=""), r)
     })
   }
 })
@@ -28,7 +28,8 @@ reduce <- expression(
     collec <- collec[order(collec$depart), ]
   },
   post = {
-    rhcollect(reduce.key, collec)
+    a <- collec[1,]
+    rhcollect(reduce.key, a)
   }
 )
 z <- rhwatch(
@@ -37,11 +38,38 @@ z <- rhwatch(
   combiner = TRUE,
   input    = rhfmt("/tmp/airline/output/blocks", type = "sequence"),
   output   = rhfmt("/tmp/airline/output/southwest", type = "map"),
-  mapred   = list(rhipe_map_buff_size = 10),
+  mapred   = list(rhipe_map_buff_size = 10, mapred.reduce.tasks = 1),
   readback = FALSE
 )
 ```
 
+```{r eval=FALSE, tidy=FALSE}
+map<- expression({
+  lapply(seq_along(map.keys), function(r) {
+    rhcollect("x", map.values[[r]])
+  })
+})
+reduce <- expression(
+  pre = {
+    s = 0
+  },
+  reduce = {
+    s = s + unlist(reduce.values)
+  },
+  post = {
+    rhcollect(reduce.key, s)
+  }
+)
+z <- rhwatch(
+  map      = map,
+  reduce   = reduce,
+  combiner = TRUE,
+  input    = c(100, 10) ,
+  output   = rhfmt("/tmp/airline/tmp", type = "map"),
+  mapred   = list(rhipe_map_buff_size = 10, mapred.reduce.tasks = 1),
+  readback = FALSE
+)
+```
 Attributes are removed in line $8$, for otherwise we have to retrieve a data frame with a data frame 
 with column names and row names instead of a more convenient numeric vector. The map expression 
 combines the individual data frames. Each data frame has $5000$ rows, hence `rhipe_map_buff_size` is 
