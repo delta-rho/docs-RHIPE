@@ -169,7 +169,7 @@
 <li class='nav-header unselectable' data-edit-href='09.elapsed.Rmd'>Elapsed Timing Experiment</li>
       
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#the-problem-description-'>The Problem Description </a>
+         <a target='_self' class='nav-not-header' href='#description-'>Description </a>
       </li>
 
 
@@ -179,32 +179,27 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#r-code----set-up'>R code -- Set Up</a>
+         <a target='_self' class='nav-not-header' href='#set-up'>Set Up</a>
       </li>
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#r-code----generate-dataset'>R code -- Generate Dataset</a>
+         <a target='_self' class='nav-not-header' href='#generate-dataset'>Generate Dataset</a>
       </li>
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#r-code----timing'>R code -- Timing</a>
+         <a target='_self' class='nav-not-header' href='#timing'>Timing</a>
       </li>
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#r-code----save-the-results'>R code -- Save the Results</a>
+         <a target='_self' class='nav-not-header' href='#save-the-results'>Save the Results</a>
       </li>
 
 
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#results'>Results</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#visualize-the-results'>Visualize the Results</a>
       </li>
 
    </ul>
@@ -1924,7 +1919,7 @@ to the RHIPE command <code>rhread()</code>.</p>
 head(Zmedians)
 </code></pre>
 
-<pre><code>[1] -0.03280  0.01919 -0.01218 -0.02144 -0.08452  0.01446
+<pre><code>[1] -0.05643  0.01302 -0.00218 -0.04108 -0.07522 -0.03060
 </code></pre>
 
 </div>
@@ -2005,18 +2000,35 @@ dev.off()
 </div>
 
 
-<div class='tab-pane' id='the-problem-description-'>
-<h3>The Problem Description</h3>
+<div class='tab-pane' id='description-'>
+<h3>Description</h3>
 
-<p>Divide and Recombine (D &amp; R) is a statistical framework for the analysis of large complex data. The Elapsed Timing Experiment is a very good example for embarrassingly parallel computing and it is designed to improve the perormance of D &amp; R Computations on a Cluster. The time depends on many factors, so it presents an opportunity for optimizing the computation by making the best choice of the factors. However, this exmaple here mainly serve to illustrate the usage of RHIPE functions, so we will only consider two statistical factors that measure characteristics of the dataset and the subsets.</p>
+<p>The Elapsed Timing Experiment is a very good example for embarrassingly parallel computing and it is 
+designed to improve the perormance of D &amp; R Computations on a Cluster. The time depends on many 
+factors, so it presents an opportunity for optimizing the computation by making the best choice of 
+the factors. However, this exmaple here mainly serves to illustrate the usage of RHIPE functions, so 
+we will only consider two statistical factors that measure characteristics of the dataset and the 
+subsets.</p>
 
-<p>The basic idea is to generate subsets first and then use logistic regression method to analyze each subset by R function <code>glm.fit</code> . There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. The first computation type is <strong>O</strong>, the elapsed time to read the subsets from the HDFS and make them available to <code>glm.fit</code> in memory as an R objects. The other type, <strong>L</strong>, starts when <strong>O</strong> ends and it consists of <code>glm.fit</code> computations on the subsets by <strong>map</strong>, plus <strong>reduce</strong> gathering the subset estimates and computing the means. However, we cannot measure <strong>L</strong> directly. So we measure <strong>O</strong> in one run and <strong>T = O + L</strong> in another.</p>
+<p>The basic idea is to generate subsets first and then use logistic regression method to analyze each 
+subset by R function <code>glm.fit</code> . There are two types of elapsed-time computation. The subsets are 
+stored on the HDFS as R objects. The first computation type is <strong>O</strong>, the elapsed time to read the 
+subsets from the HDFS and make them available to <code>glm.fit</code> in memory as an R objects. The other type,
+<strong>L</strong>, starts when <strong>O</strong> ends and it consists of <code>glm.fit</code> computations on the subsets by <strong>map</strong>, 
+plus <strong>reduce</strong> gathering the subset estimates and computing the means. However, we cannot measure 
+<strong>L</strong> directly. So we measure <strong>O</strong> in one run and <strong>T = O + L</strong> in another.</p>
 
 </div>
 
 
 <div class='tab-pane' id='data-structure'>
 <h3>Data Structure</h3>
+
+<p>The number of the response varibale <em>N</em> is 2<sup>21</sup> , and the number of the varibales <em>V</em> has three
+diffrent values as 2<sup>4</sup> , 2<sup>5</sup> , and 2<sup>6</sup> . <em>V</em> is the number of dependent varibale and independent variables.
+<em>M</em> is the number of observations per subset and it takes 10 diffrent values as 2<sup>8</sup> , 2<sup>9,</sup> ... , 2<sup>17.</sup> 
+By varying the values for <em>V</em> and <em>M</em>, we take records of diffrent elapsed time and explore the best 
+choice of our factors to optimize the computation.</p>
 
 <table><thead>
 <tr>
@@ -2055,16 +2067,20 @@ dev.off()
 </div>
 
 
-<div class='tab-pane' id='r-code----set-up'>
-<h3>R code -- Set Up</h3>
+<div class='tab-pane' id='set-up'>
+<h3>Set Up</h3>
+
+<p>In the Set-Up session, we will load the &quot;plyr&quot; package and &quot;RHIPE&quot; package. The &quot;plyr&quot; package allows
+the user to split a data set apart into smaller subsets, apply methods to the subsets, and combine 
+the results. The next five lines of code will initialize the &quot;RHIPE&quot; package.</p>
 
 <pre><code class="r">## load libraries
 library(plyr)
 library(Rhipe)
 rhinit()
-rhoptions(readback = FALSE)
-rhoptions(zips = &#39;/ln/share/RhipeLib.tar.gz&#39;)
-rhoptions(runner = &#39;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&#39;)
+#rhoptions(readback = FALSE)
+#rhoptions(zips = &#39;/ln/share/RhipeLib.tar.gz&#39;)
+#rhoptions(runner = &#39;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&#39;)
 
 # experiment name
 name &lt;- &quot;multi.factor_n21&quot;
@@ -2091,8 +2107,16 @@ m.vec = seq(8, 16, by=1)
 </div>
 
 
-<div class='tab-pane' id='r-code----generate-dataset'>
-<h3>R code -- Generate Dataset</h3>
+<div class='tab-pane' id='generate-dataset'>
+<h3>Generate Dataset</h3>
+
+<p>The first part is to generate the dataset and the whole structure of the R code is a for-loop. Inside
+the for-loop, we define a list called &quot;dm&quot; and it contains 7 components as &quot;map&quot;, &quot;input&quot;, &quot;output&quot;, 
+&quot;jobname&quot;, &quot;mapred&quot;, &quot;parameters&quot; and &quot;noeval&quot;. The R function <code>do.call</code> will pass the argument &quot;dim&quot;
+to RHIPE function <code>rhwatch</code>. The <code>rhwatch</code> function will create the R object that contains all the 
+information required by RHIPE to run a MapReduce job via a call to <code>rhex</code>. The argument of &quot;dim$input&quot;
+in <code>rhwatch</code> tells RHIPE how to convert the data to key, value pairs. In this case, the type of input
+is numeric and it is a lapply input which of both key and values range from 1,...2<sup>n-m</sup> . </p>
 
 <pre><code class="r">for (m in m.vec) {
   for (p in p.vec) {
@@ -2124,11 +2148,72 @@ m.vec = seq(8, 16, by=1)
 Sys.sleep(time=sleep*10)
 </code></pre>
 
+<p>The following output will appear in your R working console:</p>
+
+<pre><code>Saving 3 parameters to /tmp/rhipe-temp-params-5ae555c2b8940867b796593ca841496e (use rhclean to delete all temp files)
+Saving 3 parameters to /tmp/rhipe-temp-params-e612430fd38382fa2aee6c5384cbe0b7 (use rhclean to delete all temp files)
+Saving 3 parameters to /tmp/rhipe-temp-params-0f3b7a329b9cfd61873cb2967855354b (use rhclean to delete all temp files)
+Saving 3 parameters to /tmp/rhipe-temp-params-a78396e6bfc84205466ed6bdee72d0c0 (use rhclean to delete all temp files)
+
+</code></pre>
+
+<p>We can use <code>rhls()</code> function to list the files we created as following command. For example, when 
+&quot;p = 15, m =8 &quot;, it created 14 files and the first two files are documents. The rest 12 files are the
+block files.</p>
+
+<pre><code class="r"> rhls(&quot;/ln/song273/tmp/multi.factor_n21/dm/n21p15m8&quot;)
+</code></pre>
+
+<pre><code>   permission   owner      group     size          modtime
+1  -rw-r--r-- song273 supergroup        0 2014-07-23 13:11
+2  drwxrwxrwt song273 supergroup        0 2014-07-23 13:10
+3  -rw-r--r-- song273 supergroup  21.6 mb 2014-07-23 13:11
+4  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+5  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+6  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+7  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+8  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+9  -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+10 -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+11 -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+12 -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+13 -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+14 -rw-r--r-- song273 supergroup 21.35 mb 2014-07-23 13:11
+                                                        file
+1      /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/_SUCCESS
+2         /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/_logs
+3  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00000
+4  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00001
+5  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00002
+6  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00003
+7  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00004
+8  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00005
+9  /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00006
+10 /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00007
+11 /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00008
+12 /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00009
+13 /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00010
+14 /ln/song273/tmp/multi.factor_n21/dm/n21p15m8/part-m-00011
+
+</code></pre>
+
 </div>
 
 
-<div class='tab-pane' id='r-code----timing'>
-<h3>R code -- Timing</h3>
+<div class='tab-pane' id='timing'>
+<h3>Timing</h3>
+
+<p>We will read the data we generated from HDFS to R local working environment third times and record 
+the two diffrent time seperatly : <em>O</em> and <em>T</em>.</p>
+
+<p>Inside the for-loop, we defined two lists called &quot;nf&quot; and &quot;gf&quot; seperately. The list &quot;nf&quot; contains 7 
+components as &quot;map&quot;, &quot;input&quot;, &quot;output&quot;, &quot;jobname&quot;, &quot;mapred&quot;, &quot;parameters&quot; and &quot;noeval&quot;. The R function
+<code>do.call</code> will pass the argument &quot;nf&quot; to RHIPE function <code>rhwatch</code>. The <code>rhwatch</code> function will create
+the R object that contains all the information required by RHIPE to run a MapReduce job via a call 
+to <code>rhex</code>. The R function <code>system.time</code> will calculate the elapsed time of the reading process and its
+value is <em>O</em>.</p>
+
+<p>The list &quot;gf&quot; contains 8 components and it has one more component than the list &quot;nf&quot;, which is &quot;reduce&quot;.</p>
 
 <pre><code class="r">## initialize timing
 timing = list()
@@ -2145,6 +2230,7 @@ for (run in run.vec) {
       nf = list()
       nf$map = expression({})
       nf$mapred = list(
+
         mapred.reduce.tasks=1
         , rhipe_map_buff_size=2^15
       )
@@ -2208,8 +2294,11 @@ for (run in run.vec) {
 </div>
 
 
-<div class='tab-pane' id='r-code----save-the-results'>
-<h3>R code -- Save the Results</h3>
+<div class='tab-pane' id='save-the-results'>
+<h3>Save the Results</h3>
+
+<p>In the last step, we created a list called &quot;timing&quot; and now we use R function <code>ldply</code> to transform 
+list &quot;timing&quot; to a dataframe.</p>
 
 <pre><code class="r">timing = ldply(timing, as.data.frame)
 rhsave(timing, file=paste(dir, &quot;/save/&quot;, name, &quot;.RData&quot;, sep=&quot;&quot;))
@@ -2223,6 +2312,10 @@ save(timing, file=paste(dir.local, name, &quot;.RData&quot;, sep=&quot;&quot;))
 <div class='tab-pane' id='results'>
 <h3>Results</h3>
 
+<p>The &quot;timing&quot; is a dataframe and contains 6 components. The &quot;timing$compute&quot; is a facor consisting of
+two levels &quot;O&quot; and &quot;T&quot;. The &quot;timing$p&quot; is the number of independent varibales. The &quot;timing$t&quot; is the
+elapsed-time.</p>
+
 <pre><code class="r">head(timing)
 </code></pre>
 
@@ -2235,11 +2328,11 @@ save(timing, file=paste(dir.local, name, &quot;.RData&quot;, sep=&quot;&quot;))
 6       O 21 63 9   1 21.493
 </code></pre>
 
-</div>
+<h4>Visualize the Result</h4>
 
+<p>We use the <code>xyplot</code> function to visualize the result.</p>
 
-<div class='tab-pane' id='visualize-the-results'>
-<h3>Visualize the Results</h3>
+<p><img src="./plots/elapsed.png" alt="alt text"></p>
 
 </div>
 
