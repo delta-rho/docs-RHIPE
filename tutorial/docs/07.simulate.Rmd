@@ -115,3 +115,69 @@ Zmedians <- 1:6
 for(i in 1:6) Zmedians[i] <- median(rnorm(2^10))
 Zmedians
 ```
+### Nonparametric Spectrum Estimation ###
+
+Averaging Transformation Smoothing (ATS) Methods is a general nonparametric approach that can be utilized on a multitude of data forms. RHIPE is the optimum platform to utilize ATS methods for spectrum estimation.
+
+Below is a toy example, seeing as it is estimating AR(2) simulated data, which would not require such advanced methods. However, the code is functional and would be utilized to provide a nonparametric estimate to univariate time series data of any unknown form.
+```{r eval=FALSE, tidy=FALSE}
+N <- 2^20
+m <- 2^15
+rho.true <- c(2/3, -1/3)
+mapA <- expression({
+  m <- 2^15
+  rho.true <- c(2/3, -1/3)
+  for(i in seq_along(map.values)){
+    AR2 <- arima.sim(n = m, model = list(ar = rho.true))
+    X <- fft(AR2)
+    X <- X[2:(m/2)]
+    per <- Mod(X)^2
+    rhcollect(NULL, per)
+  }
+})
+reduceA <- expression(
+  pre    = {A <- rep(0, m/2 - 1)},
+  reduce = {A <- A + apply(do.call("rbind", reduce.values), 2, sum)},
+  post   = {rhcollect(NULL, A)}
+  )
+mrA <- rhwatch(
+  map      = mapA,
+  reduce   = reduceA,
+  input    = c(N/m, 8),
+  output   = paste(dir, "A", sep=""),
+  mapred   = list(mapred.reduce.tasks = 1),
+  readback = FALSE
+  )
+mapT <- expression({
+  for(i in seq_along(map.values)){
+    A <- map.values[[i]]
+    T <- log(A)
+    rhcollect(NULL, T)
+  }
+})
+mrT <- rhwatch(
+  map = mapT,
+  input = paste(dir, "A", sep=""),
+  output = paste(dir, "T", sep=""),
+  mapred = list(mapred.reduce.tasks = 0),
+  readback = FALSE
+  )
+```
+
+### Plotting LOESS in R Global Environment ###
+
+```{r eval=FALSE, tidy=FALSE}
+dirT <- "/ln/jtroisi/T/part-m-00000"
+T <- unlist(rhread(dirT))
+freq <- time(T)/(m + 1)
+library(lattice)
+trellis.device(postscript, file = "S.ps")
+xyplot(T ~ freq,
+       panel = function(x, y){
+         panel.loess(x, y, span = 101/(m + 1), degree = 2, col = "red")
+         panel.xyplot(x, y, pch = ".")
+       }
+       )
+dev.off()
+```
+Another useful plot would be a residuals plot, but it is not necessary to demonstrate the R coding for such a task here.
