@@ -43,9 +43,6 @@ the results. The next five lines of code will initialize the "RHIPE" package.
 library(plyr)
 library(Rhipe)
 rhinit()
-#rhoptions(readback = FALSE)
-#rhoptions(zips = '/ln/share/RhipeLib.tar.gz')
-#rhoptions(runner = 'sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh')
 
 # experiment name
 name <- "multi.factor_n21"
@@ -165,15 +162,15 @@ block files.
 We will read the data we generated from HDFS to R local working environment third times and record 
 the two diffrent time seperatly : *O* and *T*.
 
-Inside the for-loop, we defined two lists called "nf" and "gf" seperately. The list "nf" contains 7 
-components as "map", "input", "output", "jobname", "mapred", "parameters" and "noeval". The R function
-`do.call` will pass the argument "nf" to RHIPE function `rhwatch`. The `rhwatch` function will create
+Inside the for-loop, we defined two lists called `nf` and `gf` seperately. The list `nf` contains 7 
+components as `map`, `input`, `output`, `jobname`, `mapred`, `parameters` and `noeval`. The R function
+`do.call` will pass the argument `nf` to RHIPE function `rhwatch`. The `rhwatch` function will create
 the R object that contains all the information required by RHIPE to run a MapReduce job via a call 
 to `rhex`. The R function `system.time` will calculate the elapsed time of the reading process and its
 value is *O*.
 
 
-The list "gf" contains 8 components and it has one more component than the list "nf", which is "reduce".
+The list `gf` contains 8 components and it has one more component than the list `nf`, which is `reduce`.
 
 ```{r,eval= FALSE}
 ## initialize timing
@@ -253,8 +250,8 @@ for (run in run.vec) {
 ```
 
 ### Save the Results ###
-In the last step, we created a list called "timing" and now we use R function `ldply` to transform 
-list "timing" to a dataframe.
+In the last step, we created a list called `timing` and now we use R function `ldply` to transform 
+list `timing` to a dataframe.
 
 ```{r,eval=FALSE}
 timing = ldply(timing, as.data.frame)
@@ -265,8 +262,8 @@ save(timing, file=paste(dir.local, name, ".RData", sep=""))
 
 ### Results ###
 
-The "timing" is a dataframe and contains 6 components. The "timing$compute" is a facor consisting of
-two levels "O" and "T". The "timing$p" is the number of independent varibales. The "timing$t" is the
+The `timing` is a dataframe and contains 6 components. The `compute` is a facor consisting of
+two levels "O" and "T". The `p` is the number of independent varibales. The `t` is the
 elapsed-time.
 
 ```{r,eval=FALSE}
