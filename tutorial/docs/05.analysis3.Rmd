@@ -1,165 +1,9 @@
-### Streaming Data ###
-
-Some algorithms are left associative in their operands $t_1$, $t_2$, $\ldots$, $t_n$ but not 
-commutative. For example a streaming update algorithm that computes the inter-arrival times 
-of time series data for different levels of a categorical variable. That is, the triangular 
-series $t_{k,1}$, $t_{k,2}$, $\ldots$, $t_{k,n_k}$ where k takes the levels of a categorical 
-variable C (which takes the values $1, 2, 3, \ldots, m$). The input are pairs (i, j), $i$ $\in$ 
-$\{1, 2, \ldots, m\}$, $j$ $\in$ $\{t_{ik}\}$. In the following code, the data structure F 
-is updated with the datastructure contained in the values (see the map). The datastructures
-are indexed in time by the timepoint - they need to be sent to the reducer (for a given level
-of the categorical variable catlevel) in time order. Thus the map sends the pair (catlevel, 
-timepoint) as the key. By using the part parameter all the data structures associated with the 
-catlevel are sent to the same R reduce process. This is vital since all the component R expressions
-in the reduce are run in the same process and namespace. To preserve numeric ordering we insist on
-the special map output key class. With this special key class, we cannot have a map output format. 
-In the reduce, the setup expression redsetup is run upon R startup (the process assigned to several 
-keys and their associated values). Then for each new intermediate key (catlevel, timepoint), it runs
-the pre, reduce and post. The lack of a post is because we have exactly one intermediate value for 
-a given key (assuming the time points for a category are unique). The redclose expression is run 
-when all keys and values have been processed by the reducer and R is about to quit.
-
-```{r eval=FALSE, tidy=FALSE}
-map <- expression({
-  lapply(seq_along(map.values),function(r){
-    catlevel <- map.keys[[r]] #numeric
-    timepoint <- map.values[[r]]$timepoint #numeric
-    datastructure <- map.values[[r]]$data
-    key <- c(catlevel, timepoint)
-    rhcollect(key, datastructure)
-  })
-})
-redsetup <- expression({
-  currentkey <- NULL
- })
-reduce <- expression(
-  pre = {
-    catlevel <- reduce.key[1]
-    time <- reduce.key[2]
-    if(!identical(catlevel,currentkey)){
-    ## new categorical level
-    ## so finalize the computation for
-    ## the previous level e.g. use rhcollect
-    if(!identical(currentkey, NULL))
-      FINALIZE(F)
-      ## store current categorical level
-      currentkey <- catlevel
-      ## initialize computation for new level
-      INITIALIZE(F)
-    }
-  },
-  reduce = {
-    F <- UPDATE(F, reduce.values[[1]])
-  }
-)
-redclose <- expression({
-  ## need to run this, otherwise the last catlevel
-  ## will not get finalized
-  FINALIZE(F)
-})
-mr <- rhwatch(..., 
-  combiner    = FALSE,
-  setup       = list(reduce = redsetup),
-  cleanup     = list(reduce = redclose),
-  orderby     = "numeric",
-  partitioner = list(lims = 1, type = "numeric")
-)
-```
-
-#### Concrete (but artifical) Example ####
-
-We will create a data set with three columns: the level of a categorical variable A, a time variable
-B and a value C. For each level of A, we want the sum of differences of C ordered by B within A.
-
-Creating the Data set The column A is the key, but this is not important. There are 5000 levels of A,
-each level has 10,000 observations. By design the values of B are randomly written (sample), also for
-simplicity C is equal to B, though this need not be.
-
-```{r eval=FALSE, tidy=FALSE}
-map <- expression({
-  N <- 10000
-  for(first.col in map.values) {
-    w <- sample(N, N, replace = FALSE)
-    for(i in w) {
-      rhcollect(first.col, c(i, i))
-    }
-  }
-})
-mapred <- list(mapred.reduce.tasks = 0)
-mr <- rhwatch(
-  map = map, 
-  input = c(5000, 10),
-  output = rhfmt("/tmp/airline/output/sort", type = "sequence"),
-  mapred = mapred,
-  readback = FALSE,
-  noeval = TRUE
-)
-rhex(mr)
-```
-
-Sum of Differences The key is the value of A and B, the value is C.
-
-```{r eval=FALSE, tidy=FALSE}
-map <- expression({
-  lapply(seq_along(map.values),function(r){
-    f <- map.values[[r]]
-    rhcollect(as.integer(c(map.keys[[r]], f[1])), f[2])
-  })
-})
-```
-
-Thus each output from a map is a key (assuming there are not any duplicates for B for a given level
-of A), thus reduce.values has only one observation. All keys sharing the same level of A will be 
-sent to one R process and the tuples as.integer(c(map.keys[[r]],f[1])) will be sorted. reduce.setup 
-is called once when the R process starts processing its assigned partition of keys and reduce.post 
-is called at the end (when all keys have been processed)
-
-```{r eval=FALSE, tidy=FALSE}
-reduce.setup <- expression({
-  newp <- -Inf
-  diffsum <- NULL
-})
-reduce <- expression(
-  pre = {
-    if(reduce.key[[1]][1] != newp) {
-      if(newp > -Inf) rhcollect(newp, diffsum) #prevents -Inf from being collected
-      diffsum <- 0
-      lastval <- 0
-      newp <- reduce.key[[1]][1]
-      skip <- TRUE
-    }
-  },
-  reduce = {
-    current <- unlist(reduce.values) #only one value!
-    if(!skip) {
-      diffsum <- diffsum + (current-lastval) 
-    }else {
-      skip <- FALSE
-    }
-    lastval <- current
-  }
-)
-reduce.post <- expression({
-  if(newp > -Inf) rhcollect(newp, diffsum) #for the last key
-})
-mr <- rhwatch(
-  map = map,
-  reduce = reduce, 
-  input = rhfmt("/tmp/airline/output/sort", type = "sequence"),
-  output = rhrmt("/tmp/airline/output/sort2", type =  "sequence"),
-  partitioner = list(lims = 1, type = "integer"),
-  orderby = "integer",
-  cleanup = list(reduce = reduce.post),
-  setup = list(reduce = reduce.setup),
-  readback = FALSE
-)
-```
 
 ### Simple Debugging ###
 
 Consider the example code used to compute the delay quantiles by month (see Delay Quantiles By 
-Month ). We can use tryCatch for some simple debugging. See the error in line 7, there is no such v
-ariable isdelayed
+Month ). We can use tryCatch for some simple debugging. See the error in line 7, there is no such 
+variable is delayed
 
 ```{r eval=FALSE, tidy=FALSE}
 map <- expression({
@@ -226,7 +70,7 @@ It can be very useful to provide such debugging messages since R itself doesn’
 Use this to provide context about variables, such printing the first few rows of relevant data 
 frames (if required). Moreover, some errors don’t come to the screen instead the job finishes 
 successfully (but very quickly since the R code is failing) but the error message is returned as a 
-counter. The splits succeed since Hadoop has finished sending its data to R and not listening to 
+counter. The subsets succeed since Hadoop has finished sending its data to R and not listening to 
 for errors from the R code. Hence any errors sent from R do not trigger a failure condition in 
 Hadoop. This is a RHIPE design flaw. To compensate for this, the errors are stored in the counter 
 `R_ERROR`.

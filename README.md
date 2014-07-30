@@ -1,4 +1,4 @@
 docs-RHIPE
 ==========
 
-Tutorial and function reference for trelliscope
+Tutorial and function reference for RHIPE
