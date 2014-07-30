@@ -12,18 +12,18 @@ However, often `P << N` and thus we must either
 This works very well in an heterogeneous environment e.g. with varying processor capacities or 
 varying task characteristics - free resources will be automatically assigned pending tasks. The 
 cost in creating a new task can be much greater than the cost of evaluating the task.
-* Partition the `N` tasks into `n` splits each containing $\lceil N/n \rceil$ tasks (with the last 
-split containing the remainder). These splits are placed in a queue, each processor is assigned a 
-splits and the tasks in a split are evaluated sequentially.
+* Partition the `N` tasks into `n` subsets each containing $\lceil N/n \rceil$ tasks (with the last 
+subset containing the remainder). These subsets are placed in a queue, each processor is assigned a 
+subset and the tasks in a subset are evaluated sequentially.
 
-The second approach simplifies to the first when `n = N`. Creating one split per task is 
-inefficient since the time to create,assign launch the task contained in a split might be much 
+The second approach simplifies to the first when `n = N`. Creating one subset per task is 
+inefficient since the time to create,assign launch the task contained in a subset might be much 
 greater than the evaluation of the task. Moreover, with `N` in the millions, this will cause the 
-Jobtracker to run out of memory. It is recommended to divide the `N` tasks into fewer splits of 
+Jobtracker to run out of memory. It is recommended to divide the `N` tasks into fewer subsets of 
 sequential tasks. Because of non uniform running times among tasks, processors can spend time in 
-the sequential execution of tasks in a split $\sigma$ with other processors idle. Hadoop will 
-schedule the split $\sigma$ to another processor (however it will not divide the split into smaller 
-splits), and the output of whichever completes first will be used.
+the sequential execution of tasks in a subset $\sigma$ with other processors idle. Hadoop will 
+schedule the subset $\sigma$ to another processor (however it will not divide the subset into smaller 
+subsets), and the output of whichever completes first will be used.
 
 RHIPE provides two approaches to this sort of computation. To apply the function `F` to the set $\lbrace 1, 2,\ldots, M \rbrace$, the pseudo code would follow as (here we assume `F` returns a data frame)
 ```{r eval=FALSE, tidy=FALSE}
@@ -40,7 +40,7 @@ mrFC <- rhwatch(
   )
 do.call('rbind',lapply(rhread('/tempfolder', mc=TRUE),'[[',2))
 ```
-Here `F` is applied to the numbers $1, 2,\ldots, M$. The job is decomposed into `1000` splits 
+Here `F` is applied to the numbers $1, 2,\ldots, M$. The job is decomposed into `1000` subsets 
 (specified by `mapred.map.tasks`) each containing approximately $\lceil M/1000 \rceil$ tasks. 
 The expression, `FC` sequentially applies `F` to the elements of `map.values` (which will 
 contain a subset of $1, 2,\ldots ,M$) and aggregate the returned data frames with a call to rbind. 
@@ -49,7 +49,7 @@ the HDFS, the data frame are extracted from the list and combined using a call t
 this is boiler plate RHIPE code and the only varying portions are: the function `F`, the number of 
 iterations `M`, the number of groups (e.g. `mapred.map.tasks`) and the aggregation scheme (e.g. I 
 used the call to rbind). R lists can be written to a file on the HDFS (with `rhwrite`), which can 
-be used as input to a MapReduce job.
+be used as input to a Map-reduce job.
 
 ### Medians of Standard Normal Samples Example ###
 
@@ -115,47 +115,69 @@ Zmedians <- 1:6
 for(i in 1:6) Zmedians[i] <- median(rnorm(2^10))
 Zmedians
 ```
+### Nonparametric Spectrum Estimation ###
 
-### AR(2) Simulation Example ###
+Averaging Transformation Smoothing (ATS) Methods is a general nonparametric approach that can be utilized on a multitude of data forms. RHIPE is the optimum platform to utilize ATS methods for spectrum estimation.
 
-Estimating the parameters of an Auto Regressive Integrated Moving Average (ARIMA) Model requires 
-numerous approximations that inevitably still leave us without a closed form solution. The 
-following code will step us through the task of a good way to use the HDFS to effectively estimate 
-an Auto Regressive Two (AR(2)) Model.
+Below is a toy example, seeing as it is estimating AR(2) simulated data, which would not require such advanced methods. However, the code is functional and would be utilized to provide a nonparametric estimate to univariate time series data of any unknown form.
 ```{r eval=FALSE, tidy=FALSE}
-dir <- "/tmp/advsim/" 
-N <- 2^18 
-m <- 2^10
-maprho <- expression({
-  m <- 2^10
+N <- 2^20
+m <- 2^15
+rho.true <- c(2/3, -1/3)
+mapA <- expression({
+  m <- 2^15
   rho.true <- c(2/3, -1/3)
-  w.vec <- 2*pi*0:(m - 1)/m
-  ginv <- function(lambda, rho1, rho2)
-    1 + rho1^2 + rho2^2 - 2*rho1*(1 - rho2)*cos(lambda) - 2*rho2*cos(2*lambda)
   for(i in seq_along(map.values)){
-    AR2 <- arima.sim(n = m, model = list(ar = rho.true)) #Random AR(2) Data
-    X <- fft(AR2) #Fast Fourier Transform
-    per <- Re(X)^2 + Im(X)^2 #Periodogram
-    #Whittle Approximate Likelihood Function for AR(2) Time Series Model
-    lW <- function(rho)
-      m*log(sum(ginv(w.vec, rho[1], rho[2])*per)/m) + sum(log(1/ginv(w.vec, rho[1], rho[2])))
-    rho.argmin <- optim(c(0, 0), lW)$par
-    rhcollect(NULL, rho.argmin)
+    AR2 <- arima.sim(n = m, model = list(ar = rho.true))
+    X <- fft(AR2)
+    X <- X[2:(m/2)]
+    per <- Mod(X)^2
+    rhcollect(NULL, per)
   }
 })
-reducerho <- expression(reduce = {rhcollect(reduce.key, reduce.values)})
-mrrho <- rhwatch(
-  map      = maprho,
-  reduce   = reducerho,
+reduceA <- expression(
+  pre    = {A <- rep(0, m/2 - 1)},
+  reduce = {A <- A + apply(do.call("rbind", reduce.values), 2, sum)},
+  post   = {rhcollect(NULL, A)}
+  )
+mrA <- rhwatch(
+  map      = mapA,
+  reduce   = reduceA,
   input    = c(N/m, 8),
-  output   = paste(dir, "rho.argmin", sep=""),
+  output   = paste(dir, "A", sep=""),
   mapred   = list(mapred.reduce.tasks = 1),
   readback = FALSE
   )
+mapT <- expression({
+  for(i in seq_along(map.values)){
+    A <- map.values[[i]]
+    T <- log(A)
+    rhcollect(NULL, T)
+  }
+})
+mrT <- rhwatch(
+  map = mapT,
+  input = paste(dir, "A", sep=""),
+  output = paste(dir, "T", sep=""),
+  mapred = list(mapred.reduce.tasks = 0),
+  readback = FALSE
+  )
 ```
-At this point it is best to bring the values back into the R global environment. The code for this 
-is as follows:
+
+### Plotting LOESS in R Global Environment ###
+
 ```{r eval=FALSE, tidy=FALSE}
-rho.est <- matrix(unlist(rhread(dirrho)), ncol = 2, byrow = TRUE)
+dirT <- "/ln/jtroisi/T/part-m-00000"
+T <- unlist(rhread(dirT))
+freq <- time(T)/(m + 1)
+library(lattice)
+trellis.device(postscript, file = "S.ps")
+xyplot(T ~ freq,
+       panel = function(x, y){
+         panel.loess(x, y, span = 101/(m + 1), degree = 2, col = "red")
+         panel.xyplot(x, y, pch = ".")
+       }
+       )
+dev.off()
 ```
-The first column are your `rho1` estimates and the second column are your `rho2` estimates.
+Another useful plot would be a residuals plot, but it is not necessary to demonstrate the R coding for such a task here.

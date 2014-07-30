@@ -2,8 +2,8 @@
 ### Simple Debugging ###
 
 Consider the example code used to compute the delay quantiles by month (see Delay Quantiles By 
-Month ). We can use tryCatch for some simple debugging. See the error in line 7, there is no such v
-ariable isdelayed
+Month ). We can use tryCatch for some simple debugging. See the error in line 7, there is no such 
+variable is delayed
 
 ```{r eval=FALSE, tidy=FALSE}
 map <- expression({
@@ -70,7 +70,7 @@ It can be very useful to provide such debugging messages since R itself doesn’
 Use this to provide context about variables, such printing the first few rows of relevant data 
 frames (if required). Moreover, some errors don’t come to the screen instead the job finishes 
 successfully (but very quickly since the R code is failing) but the error message is returned as a 
-counter. The splits succeed since Hadoop has finished sending its data to R and not listening to 
+counter. The subsets succeed since Hadoop has finished sending its data to R and not listening to 
 for errors from the R code. Hence any errors sent from R do not trigger a failure condition in 
 Hadoop. This is a RHIPE design flaw. To compensate for this, the errors are stored in the counter 
 `R_ERROR`.

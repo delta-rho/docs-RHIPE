@@ -196,7 +196,7 @@ dev.off()
 
 It is very likely in the future analysis, we want to study the flights information for a specific 
 day.So for this scenario we want to create new key/value pairs by using RHIPE. The input files are
-the blocks of data we created previously, and the ouput will be 'sequence' file with key is the 
+the blocks of data we created previously, and the output will be 'sequence' file with key is the 
 date, and corresponding value is a data frame of data for that particular day. For example, we would
 like to know what is the delay rate on everyday.
 
@@ -247,7 +247,7 @@ collect the key which is the date, and value which is a vector with total number
 number of delayed flights for each element of `e`.
 
 In reduce expression, we initialize the `sums` in `pre` of reduce, which will be the final total
-number of flights and number of delay for a given day. And in `reduce` of reduce, we just cumulate
+number of flights and number of delay for a given day. And in `reduce` of reduce, we just accumulate
 all two numbers for same key. Finally, in `post` of reduce, collect the final key/value pairs. 
 `reduce.key` here is one particular date of the day, and `reduce.values` is a list with all 
 `c(numberofflight, numberofdelay)` as elements.
