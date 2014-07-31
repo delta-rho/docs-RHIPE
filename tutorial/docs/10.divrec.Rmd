@@ -160,12 +160,22 @@ Read 1024 objects(56.05 MB) in 2.47 seconds
 ```
 Lets take a look at the first key-value pair
 
+```{r eval=FALSE, tidy=FALSE}
+rst[[1]][[1]]
 ```
-> rst[[1]][[1]]
+```
 [1] 1
-> dim(rst[[1]][[2]])
+```
+```{r eval=FALSE, tidy=FALSE}
+dim(rst[[1]][[2]])
+```
+```
 [1] 1024    7
-> head(rst[[1]][[2]])
+```
+```{r eval=FALSE, tidy=FALSE}
+head(rst[[1]][[2]])
+```
+```
           [,1]       [,2]      [,3]      [,4]      [,5]      [,6]       [,7]
 [1,] 198.10936  162.42146 222.23335 -65.95778 102.51319 -97.83659   52.12151
 [2,] -20.67474  127.78560 165.78700 227.05826 163.80841  98.27273  207.99252
@@ -173,7 +183,6 @@ Lets take a look at the first key-value pair
 [4,]  88.71004   81.05882 174.25926 191.69040 182.61479  33.35298 -101.68867
 [5,] 269.69077  169.89717 -34.61709 112.69676 113.91712  88.10881  117.90491
 [6,] 153.51261 -121.04440  79.86753 135.62813 104.06711 198.12184  121.12668
-> 
 ```
 
 ### Second map expression: Computing X'X and its inverse at the subset level ###
@@ -200,8 +209,6 @@ map2 <- expression({
     rhcollect(1,value)
   })
 })
-
-
 job2 <- rhwatch(
   map = map2,
   input = rhfmt(file.path("/ln", account, "dr.reg", "data"), type="sequence"),
@@ -212,8 +219,8 @@ job2 <- rhwatch(
   noeval = TRUE
 )
 ex = rhex(job2, async=FALSE)
-
 ```
+
 Now let us see how does the key-value pairs look like at this point:
 
 ```{r eval=FALSE, tidy=FALSE}
@@ -226,12 +233,22 @@ Saving 3 parameters to /tmp/rhipe-temp-params-0769f5e3559addbba1c265e311137c7b (
 ```
 Lets take a look at the first key-value pair
 
-```
+```{r eval=FALSE, tidy=FALSE}
 > rst <- rhread(file.path("/ln", account, "dr.reg", "output"),type="sequence")
+```
+```
 Read 1024 objects(859 KB) in 0.09 seconds
-> rst[[1]][[1]]
+```
+```{r eval=FALSE, tidy=FALSE}
+rst[[1]][[1]]
+```
+```
 [1] 1
-> rst[[1]][[2]]
+```
+```{r eval=FALSE, tidy=FALSE}
+rst[[1]][[2]]
+```
+```
 [[1]]
          [,1]     [,2]     [,3]     [,4]     [,5]     [,6]     [,7]
 [1,] 19318545  9388943  9596353  9896569  9769613 10082149  9875709
@@ -306,11 +323,17 @@ rst
 ```
 The following output will appear in your R working console:
 
+```{r eval=FALSE, tidy=FALSE}
+source("drreg-a.R")
 ```
-> source("drreg-a.R")
+```
 Saving 3 parameters to /tmp/rhipe-temp-params-c440286626df612f6de032339f0a34ee (use rhclean to delete all temp files)
 Read 1 objects(0.04 KB) in 0.02 seconds
-> rst
+```
+```{r eval=FALSE, tidy=FALSE}
+rst
+```
+```
 [[1]]
 [[1]][[1]]
 [1] 1
