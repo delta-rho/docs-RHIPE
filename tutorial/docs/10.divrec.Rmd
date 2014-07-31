@@ -1,0 +1,324 @@
+## D&R regression ##
+
+### Comparison with least-square regression ###
+
+Consider the problem of regression. We have a response variable $y$ and $p$ dimentional covariate vector 
+$x$. We introduce the concept of `Divide and Recombione Regression`. Suppose our sample size $n$ is
+so large that is makes more sense to divide the data into $r$ nodes, and perform regression on each
+of those nodes separately. So our response vector $Y$ and covariate matrix $X$ can be written as
+$Y = [Y_1',Y_2',Y_3',\cdots,Y_r']'$ and $X = [X_1',X_2',X_3',\cdots,X_r']'$. The pair $(Y_i,X_i)$
+corresponds to the $i^{th}$ node.
+
+The least square estimate for this data is :
+
+$\hat{\beta}_{ls} = (X'X)^{-1}X'Y = (\sum_{i=1}^rX_i'X_i)^{-1}(\sum_{i=1}^rX_i'Y_i)$
+
+And we define the D&R estimate of this data as :
+
+$\hat{\beta}_{D\&R} = \frac{1}{r}(\sum_{i=1}^r (X_i'X_i)^{-1}X_i'Y_i)$
+
+Which is the average of the least square estimates for all the nodes.
+
+Now it would be very intersting to see how the D&R estimate performs compared to the LS estimate.
+It makes a lot of sense to use the following measure to compare these two:
+
+$r_X = \max_{x \in \mathbb{R}^p}\frac{Var(x'\hat{\beta}_{D\&R})}{Var(x'\hat{\beta}_{ls})}$
+
+One can easily verify that:
+
+$r_X = \frac{1}{r^2}\lambda_{max}(X'X(\sum_{i=1}^r (X_i'X_i)^{-1}))$
+
+We assume that the covariate vectors ar coming from a $N(0,100I_p)$ distribution, and we would like 
+to see the distribution of this number $r_X$. We can perform a map-reduce job to get the distribution
+of $r_X$.
+
+### Entire R code ###
+
+```{r eval=FALSE, tidy=FALSE}
+account <- "chakrav0"
+N <- 2^20
+R <- 2^10
+p <- 2^3 - 1
+
+##Generating data
+map1 <- expression({
+  lapply(seq_along(map.keys), function(r){
+		n <- N/R #number of rows for each subset
+		value <- matrix(rnorm(n*p), ncol=p)
+		rhcollect(r, value)
+		rm(value)
+	})
+})
+job1 <- rhwatch(
+	map = map1,
+	input = R,
+	output = rhfmt(file.path("/ln", account, "dr.reg", "data"), type="sequence"),
+	jobname = "Generating data",
+	readback = FALSE,
+	parameters = list(N = N, R = R, p = p),
+	noeval = TRUE
+)
+ex = rhex(job1, async=FALSE)
+
+##ls-fit over subsets
+map2 <- expression({
+  library(MASS)
+	lapply(seq_along(map.keys), function(r){
+		V <- map.values[[r]]
+		ls <- t(V)%*%V 
+    dr <- ginv(ls)
+    value <- list(ls,dr)
+		rhcollect(1,value)
+	})
+})
+
+##computing r_X
+reduce2 <- expression(
+  pre = {
+    ivbls <- 0
+    vbdr <- 0
+  },
+  reduce = {
+    ivbls = ivbls + matrix(unlist(reduce.values[[1]][[1]]),ncol=p)
+    vbdr = vbdr + matrix(unlist(reduce.values[[1]][[2]]),ncol=p)
+  },
+  post = {
+    v <- max(eigen(ivbls%*%vbdr)$values)
+    rhcollect(reduce.key,v)
+  }
+)
+
+job2 <- rhwatch(
+    map = map2,
+    reduce = reduce2,
+	  input = rhfmt(file.path("/ln", account, "dr.reg", "data"), type="sequence"),
+    output = rhfmt(file.path("/ln", account, "dr.reg", "output"), type="sequence"),
+    jobname = "D&R",
+    readback = FALSE,
+    parameters = list(N = N, R = R, p = p),
+    noeval = TRUE
+)
+ex = rhex(job2, async=FALSE)
+
+
+##read result from HDFS
+rst <- rhread(file.path("/ln", account, "dr.reg", "output"),type="sequence")
+rst
+
+```
+Now let us look at the components of this R code separately;
+
+### Defining account & parameters ###
+
+This is prety straight forward. N = total sample size, R = Number of nodes.
+
+```{r eval=FALSE, tidy=FALSE}
+account <- "chakrav0"
+N <- 2^20
+R <- 2^10
+p <- 2^3 - 1
+```
+
+### First map expression : Simulating covariates ###
+
+```{r eval=FALSE, tidy=FALSE}
+##Generating data
+map1 <- expression({
+  lapply(seq_along(map.keys), function(r){
+  	n <- N/R #number of rows for each subset
+		value <- matrix(rnorm(n*p), ncol=p)
+		rhcollect(r, value)
+		rm(value)
+	})
+})
+job1 <- rhwatch(
+	map = map1,
+	input = R,
+	output = rhfmt(file.path("/ln", account, "dr.reg", "data"), type="sequence"),
+	jobname = "Generating data",
+	readback = FALSE,
+	parameters = list(N = N, R = R, p = p),
+	noeval = TRUE
+)
+ex = rhex(job1, async=FALSE)
+```
+This is a simple mapreduce job to simulate covariates, each coordinates of the covariate vector is
+generated from $N(0,1)$. Initially the `input` for `rhwatch()` is set to the single integer $R$, so
+that the keys are all the integers from $1$ to $R$. For each key we generate a $n*p$ covariate
+matrix, all values are Normal. So we have an integer as key and a matrix as value to from a 
+key-value pair. A quick call of `rhread()` can give as an idea about the structure. Let us look at
+the output of this map expression: 
+
+```{r eval=FALSE, tidy=FALSE}
+rst <- rhread(files="/ln/chakrav0/dr.reg/data", type="sequence")
+```
+The following output will appear in your R working console:
+
+```
+Saving 4 parameters to /tmp/rhipe-temp-params-b73af9fdf046feb0de9707be4f2c328e (use rhclean to delete all temp files)
+Read 1024 objects(56.05 MB) in 2.47 seconds
+```
+Lets take a look at the first key-value pair
+
+```
+> rst[[1]][[1]]
+[1] 1
+> dim(rst[[1]][[2]])
+[1] 1024    7
+> head(rst[[1]][[2]])
+          [,1]       [,2]      [,3]      [,4]      [,5]      [,6]       [,7]
+[1,] 198.10936  162.42146 222.23335 -65.95778 102.51319 -97.83659   52.12151
+[2,] -20.67474  127.78560 165.78700 227.05826 163.80841  98.27273  207.99252
+[3,]  80.85842  222.59029 -46.18377 273.46541 -19.80952  51.53530  134.89961
+[4,]  88.71004   81.05882 174.25926 191.69040 182.61479  33.35298 -101.68867
+[5,] 269.69077  169.89717 -34.61709 112.69676 113.91712  88.10881  117.90491
+[6,] 153.51261 -121.04440  79.86753 135.62813 104.06711 198.12184  121.12668
+> 
+```
+
+### Second map expression: Computing X'X and its inverse at the subset level ###
+
+At this point the key-value pairs are (Node index($i$), Simulated covariate matrix($X_i$)). In the
+next step we just compute the terms $X_i'X_i$ and $(X_i'X_i)^{-1}$, these two matrices are the new
+two values for the key-value pair. We also assign the number $1$ as key, so that we can perform a
+summation in the next reduce expression. 
+
+Also we use `ginv()` function from `MASS` package to deal with the unlikely situation of $X_i'X_i$
+being singular. `ginv()` gives G-inverse for singular matrices.
+
+If we just include this map expression (without including any reduce expression) in a call to
+`rhwatch()` we get to look at the key value pairs:
+
+```{r eval=FALSE, tidy=FALSE}
+map2 <- expression({
+  library(MASS)
+  lapply(seq_along(map.keys), function(r){
+    V <- map.values[[r]]
+    ls <- t(V)%*%V 
+    dr <- ginv(ls)
+    value <- list(ls,dr)
+    rhcollect(1,value)
+  })
+})
+
+
+job2 <- rhwatch(
+  map = map2,
+  input = rhfmt(file.path("/ln", account, "dr.reg", "data"), type="sequence"),
+  output = rhfmt(file.path("/ln", account, "dr.reg", "output"), type="sequence"),
+  jobname = "D&R",
+  readback = FALSE,
+  parameters = list(N = N, R = R, p = p),
+  noeval = TRUE
+)
+ex = rhex(job2, async=FALSE)
+
+```
+Now let us see how does the key-value pairs look like at this point:
+
+```{r eval=FALSE, tidy=FALSE}
+rst <- rhread(files="/ln/chakrav0/dr.reg/output", type="sequence")
+```
+The following output will appear in your R working console:
+
+```
+Saving 3 parameters to /tmp/rhipe-temp-params-0769f5e3559addbba1c265e311137c7b (use rhclean to delete all temp files)
+```
+Lets take a look at the first key-value pair
+
+```
+> rst <- rhread(file.path("/ln", account, "dr.reg", "output"),type="sequence")
+Read 1024 objects(859 KB) in 0.09 seconds
+> rst[[1]][[1]]
+[1] 1
+> rst[[1]][[2]]
+[[1]]
+         [,1]     [,2]     [,3]     [,4]     [,5]     [,6]     [,7]
+[1,] 19318545  9388943  9596353  9896569  9769613 10082149  9875709
+[2,]  9388943 19896097  9713432  9906241  9286947  9547016  9956780
+[3,]  9596353  9713432 20994786 10000291  9615356 10057142 10027581
+[4,]  9896569  9906241 10000291 19087401  9985427 10016900 10443108
+[5,]  9769613  9286947  9615356  9985427 19991869  9523486  9618873
+[6,] 10082149  9547016 10057142 10016900  9523486 20082547  9345766
+[7,]  9875709  9956780 10027581 10443108  9618873  9345766 20302399
+
+[[2]]
+              [,1]          [,2]          [,3]          [,4]          [,5]
+[1,]  9.095943e-08 -1.046338e-08 -9.777399e-09 -1.350910e-08 -1.404635e-08
+[2,] -1.046338e-08  8.450609e-08 -1.117566e-08 -1.398960e-08 -9.752829e-09
+[3,] -9.777399e-09 -1.117566e-08  7.981048e-08 -1.201290e-08 -1.031603e-08
+[4,] -1.350910e-08 -1.398960e-08 -1.201290e-08  9.758577e-08 -1.479333e-08
+[5,] -1.404635e-08 -9.752829e-09 -1.031603e-08 -1.479333e-08  8.390808e-08
+[6,] -1.625236e-08 -1.128894e-08 -1.327669e-08 -1.415770e-08 -1.065850e-08
+[7,] -1.319971e-08 -1.382105e-08 -1.200411e-08 -1.730462e-08 -1.052741e-08
+              [,6]          [,7]
+[1,] -1.625236e-08 -1.319971e-08
+[2,] -1.128894e-08 -1.382105e-08
+[3,] -1.327669e-08 -1.200411e-08
+[4,] -1.415770e-08 -1.730462e-08
+[5,] -1.065850e-08 -1.052741e-08
+[6,]  8.531567e-08 -6.941488e-09
+[7,] -6.941488e-09  8.546730e-08
+```
+
+### Reduce Expression ###
+
+In the `pre` section we initialize zero matrices. Then in the `reduce` section we take summation 
+for value-pairs. So we end up with two matrices $\sum_{i=1}^rX_i'X_i(=X'X)$ and $\sum_{i=1}^r (X_i'X_i)^{-1}$.
+In the `post` section, we multiply these two matrices and divide by $R^2$ to end up with the 
+expression for $r_X$. This is our value for the final key-value pair:
+
+```{r eval=FALSE, tidy=FALSE}
+##computing r_X
+reduce2 <- expression(
+  pre = {
+    ivbls <- 0
+    vbdr <- 0
+  },
+  reduce = {
+    ivbls = ivbls + matrix(unlist(reduce.values[[1]][[1]]),ncol=p)
+    vbdr = vbdr + matrix(unlist(reduce.values[[1]][[2]]),ncol=p)
+  },
+  post = {
+    v <- max(eigen(ivbls%*%vbdr)$values)
+    rhcollect(reduce.key,v)
+  }
+)
+
+job2 <- rhwatch(
+    map = map2,
+    reduce = reduce2,
+    input = rhfmt(file.path("/ln", account, "dr.reg", "data"), type="sequence"),
+    output = rhfmt(file.path("/ln", account, "dr.reg", "output"), type="sequence"),
+    jobname = "D&R",
+    readback = FALSE,
+    parameters = list(N = N, R = R, p = p),
+    noeval = TRUE
+)
+ex = rhex(job2, async=FALSE)
+```
+
+Finaly we can look at the final key-value pair
+```{r eval=FALSE, tidy=FALSE}
+##read result from HDFS
+rst <- rhread(file.path("/ln", account, "dr.reg", "output"),type="sequence")
+rst
+```
+The following output will appear in your R working console:
+
+```
+> source("drreg-a.R")
+Saving 3 parameters to /tmp/rhipe-temp-params-c440286626df612f6de032339f0a34ee (use rhclean to delete all temp files)
+Read 1 objects(0.04 KB) in 0.02 seconds
+> rst
+[[1]]
+[[1]][[1]]
+[1] 1
+
+[[1]][[2]]
+[1] 1
+```
+
+### Conclusion ###
+
+We can see that the final value for $r_X$ is 1. So for Normally distributed covariates D&R regression performs as good as Least Square regression, in terms of maximal variance.
