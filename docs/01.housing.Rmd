@@ -20,10 +20,12 @@ There are 224369 rows and 7 columns. The meaning of each column are as following
 - **medListPriceSqft**: median list price per square foot
 - **medSoldPriceSqft**: median sold price per square foot
 
-Each column is separated by a tab. And the total size of the data text file is around 12Mb.
+Each column is separated by a tab. And the total size of the data text file is around 12Mb, and text
+file is available in our Tesseradata Github repository.   
+
 ### Write to HDFS ###
 
-make the data to be txt
+make the data to be text
 
 write it onto HDFS.
 
