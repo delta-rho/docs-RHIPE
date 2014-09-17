@@ -10,10 +10,9 @@
 library(buildDocs)
 
 files <- list.files("~/Github/docs-RHIPE/tutorial/docs")
-files <- grep('01', files, invert=T, value=T)
 ## function to build the docs
 #   assuming your working directory is 
-#   doc.RHIPE/how-to-nuggets/
+#   doc.RHIPE/tutorial/docs/
 buildDocs(
    docsLoc       = "./docs",
    outLoc        = "./",

@@ -1,0 +1,41 @@
+# RHIPE Tutorial #
+
+## Housing Data ##
+
+### Introduction ###
+
+What is the housing data? data information
+
+Monthly median home listing and sale price per square foot and number of units sold for 2883 
+counties in the contiguous United States From late 2008 to March 2014, harvested from 
+Quandl's Zillow Housing Data.
+
+There are 224369 rows and 7 columns. The meaning of each column are as following:
+
+- **fips**: FIPS county code, there are 2883 unique counties
+- **county**: county name
+- **state**: state abbreviation, 49 states are included
+- **time**: time of class "Date" - each month's values are placed at the first day of the month
+- **nSold**: number of units sold
+- **medListPriceSqft**: median list price per square foot
+- **medSoldPriceSqft**: median sold price per square foot
+
+Each column is separated by a tab. And the total size of the data text file is around 12Mb.
+### Write to HDFS ###
+
+make the data to be txt
+
+write it onto HDFS.
+
+```{r eva=TRUE,tidy=FALSE}
+a <- ddply(
+  .data = housing,
+  .variable = "fips",
+  .fun = summarize,
+  len = length(county),
+  count = sum(!is.na(medListPriceSqft))
+)
+```
+
+### Means by State ###
+create a mapreduce job to calculate the mean of each state.
