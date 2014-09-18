@@ -9,10 +9,10 @@
 ## load the pacakge
 library(buildDocs)
 
-files <- list.files("~/Github/docs-RHIPE/tutorial/docs")
+files <- list.files("../docs-RHIPE/docs")
 ## function to build the docs
 #   assuming your working directory is 
-#   doc.RHIPE/tutorial/docs/
+#   doc.RHIPE/docs/
 buildDocs(
    docsLoc       = "./docs",
    outLoc        = "./",

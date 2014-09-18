@@ -71,7 +71,7 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#write-to-hdfs'>Write to HDFS</a>
+         <a target='_self' class='nav-not-header' href='#writing-to-hdfs'>Writing to HDFS</a>
       </li>
 
 
@@ -87,9 +87,8 @@
 <div class='tab-pane active' id='introduction'>
 <h3>Introduction</h3>
 
-<p>What is the housing data? data information</p>
-
-<p>Monthly median home listing and sale price per square foot and number of units sold for 2883 
+<p>The first dataset we are going to use to demonstrate the <code>RHIPE</code> package is called housing data.
+It is about monthly median home listing and sale price per square foot and number of units sold for 2883 
 counties in the contiguous United States From late 2008 to March 2014, harvested from 
 Quandl&#39;s Zillow Housing Data.</p>
 
@@ -105,30 +104,69 @@ Quandl&#39;s Zillow Housing Data.</p>
 <li><strong>medSoldPriceSqft</strong>: median sold price per square foot</li>
 </ul>
 
-<p>Each column is separated by a tab. And the total size of the data text file is around 12Mb, and text
-file is available in our Tesseradata Github repository.   </p>
+<p>The total size of the data text file is around 12Mb. Text dataset file <code>housing.txt</code> is available 
+in our Tesseradata Github repository of the <code>RHIPE</code> documentation<br>
+<a href="https://github.com/XiaosuTong/docs-RHIPE">here</a>.   </p>
 
 </div>
 
 
-<div class='tab-pane' id='write-to-hdfs'>
-<h3>Write to HDFS</h3>
+<div class='tab-pane' id='writing-to-hdfs'>
+<h3>Writing to HDFS</h3>
 
-<p>make the data to be text</p>
+<p>We downloaded the text file to our current R working directory, </p>
 
-<p>write it onto HDFS.</p>
-
-<pre><code class="r">a &lt;- ddply(
-  .data = housing,
-  .variable = &quot;fips&quot;,
-  .fun = summarize,
-  len = length(county),
-  count = sum(!is.na(medListPriceSqft))
-)
+<pre><code class="r">list.files(&quot;./&quot;)
 </code></pre>
 
-<pre><code>Error: could not find function &quot;ddply&quot;
+<pre><code>[1]&quot;housing.txt&quot;
 </code></pre>
+
+<p>Here is how the file looks like:</p>
+
+<pre><code class="r">system(&quot;head housing.txt&quot;)
+</code></pre>
+
+<pre><code>06001,Alameda County,CA,2008-10-01,NA,307.97872340425,325.8118
+06001,Alameda County,CA,2008-11-01,NA,299.16666666667,NA
+06001,Alameda County,CA,2008-11-01,NA,NA,318.115
+06001,Alameda County,CA,2008-12-01,NA,289.88149498633,305.7878
+06001,Alameda County,CA,2009-01-01,NA,288.5,291.5977
+06001,Alameda County,CA,2009-02-01,NA,287.03703703704,NA
+06001,Alameda County,CA,2009-02-01,NA,NA,282.2345
+06001,Alameda County,CA,2009-03-01,NA,282.22591362126,276.6336
+06001,Alameda County,CA,2009-04-01,NA,280.85867620751,281.7146
+06001,Alameda County,CA,2009-05-01,NA,290.73756432247,NA
+</code></pre>
+
+<p>Each column is separated by a tab, and the first row is the column name.</p>
+
+<p>Now we will start with writing this text file to HDFS by using <code>RHIPE</code> in R.</p>
+
+<p>First of all, let&#39;s call the <code>RHIPE</code> library and initialize it in R.</p>
+
+<pre><code class="r">library(Rhipe)
+rhinit()
+</code></pre>
+
+<p>Then the function that writes file to HDFS is <code>rhput()</code>.  </p>
+
+<pre><code class="r">rhput(&quot;./housing.txt&quot;, &quot;/ln/tmp/housing/housing.txt&quot;)
+</code></pre>
+
+<p>The first argument is path to the local file to be copied, and the second argument is the path to 
+the file on the HDFS. <code>rhput</code> creates the file at destination.</p>
+
+<p>Now let&#39;s Check if the housing data text file is now locating on HDFS. </p>
+
+<pre><code class="r">rhls(&quot;/ln/tmp/housing&quot;)
+</code></pre>
+
+<pre><code>  permission owner      group     size          modtime                        file
+1 -rw-rw-rw- tongx supergroup 11.82 mb 2014-09-17 11:11 /ln/tmp/housing/housing.txt
+</code></pre>
+
+<p>We can see that <code>housing.txt</code> file with size 11.82Mb is located under <code>/ln/tmp</code> directory on HDFS.</p>
 
 </div>
 
@@ -136,7 +174,192 @@ file is available in our Tesseradata Github repository.   </p>
 <div class='tab-pane' id='means-by-state'>
 <h3>Means by State</h3>
 
-<p>create a mapreduce job to calculate the mean of each state.</p>
+<p>Now let&#39;s start the real analysis. The first question about housing data could be what is the mean
+of median list price per square feet and mean of median sold price per square feet for each county 
+over time? In base R, you can use <code>tapply</code> function to achieve this. However, if we are facing a 
+large and complex data located on HDFS, then we have to use <code>RHIPE</code> and Divide and  Recombined concept.</p>
+
+<h4>Entirety</h4>
+
+<p>The entire code of <code>RHIPE</code> for calculating the means by county is:</p>
+
+<pre><code class="r">map1 &lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    line = strsplit(map.values[[r]], &quot;,&quot;)[[1]]
+    key &lt;- line[[3]]
+    value &lt;- as.data.frame(rbind(line[-3]), stringsAsFactors = FALSE)
+    value &lt;- c(as.numeric(value[, 5]), as.numeric(value[, 6]))
+    rhcollect(key, value)
+  })
+})
+reduce1 &lt;- expression(
+  pre = {
+    listP &lt;- vector()
+    soldP &lt;- vector()
+    soldM &lt;- 0
+    listM &lt;- 0
+  },
+  reduce = {
+    listP &lt;- c(listP, unlist(lapply(reduce.values, &quot;[[&quot;, 1)))
+    soldP &lt;- c(soldP, unlist(lapply(reduce.values, &quot;[[&quot;, 2)))
+  },
+  post = {
+    if(sum(!is.na(listP)) == 0){
+      listM &lt;- NA
+    }else{
+      listM &lt;- mean(listP, na.rm = TRUE)
+    }
+    if(sum(!is.na(soldP)) == 0){
+      soldM &lt;- NA
+    }else{
+      soldM &lt;- mean(soldP, na.rm = TRUE)
+    }
+    rhcollect(reduce.key, c(listM, soldM))
+  }
+)
+mr1 &lt;- rhwatch(
+  map      = map1,
+  reduce   = reduce1,
+  input    = rhfmt(&quot;/ln/tmp/housing/housing.txt&quot;, type = &quot;text&quot;),
+  output   = rhfmt(&quot;/ln/tmp/housing/meanbystate&quot;, type = &quot;sequence&quot;),
+  mapred   = list( 
+    mapred.reduce.tasks = 5
+  ),
+  readback = FALSE
+)
+</code></pre>
+
+<p>A valid mapreduce job in <code>RHIPE</code> is consist of a <code>map</code> expression, an optional <code>reduce</code> expression, and
+a execution function <code>rhwatch()</code>. Right now you do not have to worry too much about the details of 
+map and reduce expressions, we will describe more details later. Here you can just run 
+this code in R. In R console you will see that job running information is keeping popping out, which 
+will be helpful for you to have some idea about the status of running job. </p>
+
+<pre><code>Saving 1 parameter to /tmp/rhipe-temp-params-98025e196090b5b38f21ace484a92c04 (use rhclean to delete all temp files)
+[Wed Sep 17 15:43:48 2014] Name:2014-09-17 15:43:48 Job: job_201405301308_4680  State: PREP Duration: 0.165
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4680
+       pct numtasks pending running complete killed failed_attempts killed_attempts
+map      0        1       1       0        0      0               0               0
+reduce   0        5       5       0        0      0               0               0
+Waiting 5 seconds
+[Wed Sep 17 15:43:53 2014] Name:2014-09-17 15:43:48 Job: job_201405301308_4680  State: RUNNING Duration: 5.199
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4680
+       pct numtasks pending running complete killed failed_attempts killed_attempts
+map      0        1       0       1        0      0               0               0
+reduce   0        5       5       0        0      0               0               0
+Waiting 5 seconds
+</code></pre>
+
+<p>After the job is successfully executed, you can access the output on HDFS by calling <code>rhread()</code> function. </p>
+
+<pre><code class="r">rst &lt;- rhread(&quot;/ln/tmp/housing/meanbystate&quot;)
+</code></pre>
+
+<pre><code>Read 49 objects(2.11 KB) in 0.03 seconds
+</code></pre>
+
+<pre><code class="r">str(rst)
+</code></pre>
+
+<pre><code>List of 49
+ $ :List of 2
+  ..$ : chr &quot;IA&quot;
+  ..$ : num [1:2] 74.5 95.1
+ $ :List of 2
+  ..$ : chr &quot;KS&quot;
+  ..$ : num [1:2] 66 NA
+......
+ $ :List of 2
+  ..$ : chr &quot;TN&quot;
+  ..$ : num [1:2] 85.3 80
+ $ :List of 2
+  ..$ : chr &quot;TX&quot;
+  ..$ : num [1:2] 81.7 76.3
+ $ :List of 2
+  ..$ : chr &quot;WA&quot;
+  ..$ : num [1:2] 135 129
+</code></pre>
+
+<p>As we can see, the class of the result is a list. Each element of the list is a list with two 
+elements. The first element is a state abbreviation, the second element is a numeric vector with
+length 2, first one is the mean of median list price per square feet, second one is the mean of 
+median sold price per square feet. The length of <code>rst</code> is the total number of states which is 49.</p>
+
+<p>Of course, the class of output object, which is a list, may not be convenient for further 
+analysis in R. It is easy to convert list to be a data.frame in R.</p>
+
+<pre><code class="r">data &lt;- data.frame(
+  state = unlist(lapply(rst, &quot;[[&quot;, 1)), 
+  list.mean = unlist(lapply(lapply(rst, &quot;[[&quot;, 2), &quot;[&quot;, 1)),
+  sold.mean = unlist(lapply(lapply(rst, &quot;[[&quot;, 2), &quot;[&quot;, 2))
+)
+data &lt;- data[with(data, order(list.mean, decreasing=TRUE)),]
+head(data)
+</code></pre>
+
+<pre><code>   state list.mean sold.mean
+10    DC  369.0546  422.4744
+43    MA  259.1316  210.8714
+41    CA  192.6343  185.8716
+19    RI  188.9953  174.9670
+45    NJ  180.0136  171.4495
+25    CT  162.4686  151.7553
+</code></pre>
+
+<h4>Map</h4>
+
+<p>Map is an R expression that is evaluated by <code>RHIPE</code> during the map stage. For each task, <code>RHIPE</code> will 
+call this expression multiple times. The input and output of map function are both key/value pairs, 
+we process the key/value pairs we got from the text file. The row number is the key, and the corresponding
+value would be the row content in string. The key/value pairs read in from input file will be 
+saved as <code>map.keys</code> and <code>map.values</code> respectively. <code>map.keys</code> and <code>map.values</code> are two lists which
+are consist of all keys and all values that will be executed in one task at one moment respectively.
+For each map.values, which is each line of the text file, we split it by the separator &quot;,&quot;. Then we 
+assign the third element from split list, the state abbreviation, to be the intermediate key, and
+median of list price and sold price together as a vector to be the intermediate value.</p>
+
+<h4>Reduce</h4>
+
+<p>The next thing we would like to dig into is a reduce function in our mapreduce job. In <code>RHIPE</code>, <code>reduce</code> 
+is an R expression that is evaluated by <code>RHIPE</code> during the reduce stage, or it is a vector of expressions
+with names <code>pre</code>, <code>reduce</code>, and <code>post</code>. All key/value pairs that share same key will be grouped together 
+and processed to be applied reduce function. In reduce-pre session, we initialize the mean for both
+list price and sold price to be 0, also the vector for all list price and vector for sold price. 
+<code>reduce.key</code> is the shared key, and <code>reduce.values</code> is a list that includes all values corresponding
+to that unique <code>reduce.key</code>. In reduce-reduce session, we concatenate all first element of 
+<code>reduce.values</code> to the list price vector, and all second element to the sold price vector. Finally
+in reduce-post session, we calculate the mean of list price and sold price respectively. If the
+state has all missing values for either price, the mean of the price will be assigned <code>NA</code>.
+The final key/value pair for each state will be collected in the end.</p>
+
+<h4>Execution Function</h4>
+
+<p>After the map and reduce expression, we are heading to the execution function of a mapreduce job in 
+<code>RHIPE</code>. <code>rhwatch()</code> is a call that packages the MapReduce job which is sent to Hadoop. In <code>rhwatch()</code> 
+function, we assign the map and reduce expression to <code>map</code> and <code>reduce</code> argument in <code>rhwatch()</code> 
+respectively. Input and output argument in <code>rhwatch()</code> function is used to specify the path on HDFS of 
+input file and output file respectively, and there are three types of file we can consider, text, 
+sequence, and map file. <code>mapred</code> argument is a list that can be used to customize the Hadoop and <code>RHIPE</code> 
+options. Here we specify the <code>mapred.reduce.tasks</code> to be 5, so the number of reduce tasks will be set to
+be 5. This number also is related to the number of output files, since each reduce task will generate
+one part of output file for the final output. </p>
+
+<pre><code class="r">rhls(&quot;/ln/tmp/housing/keyvalue&quot;)
+</code></pre>
+
+<pre><code>  permission owner      group     size          modtime                                  file
+1 -rw-r--r-- tongx supergroup        0 2014-09-17 16:13     /ln/tmp/housing/keyvalue/_SUCCESS
+2 drwxrwxrwx tongx supergroup        0 2014-09-17 16:12        /ln/tmp/housing/keyvalue/_logs
+3 -rw-r--r-- tongx supergroup 3.079 mb 2014-09-17 16:12 /ln/tmp/housing/keyvalue/part-r-00000
+4 -rw-r--r-- tongx supergroup 2.991 mb 2014-09-17 16:12 /ln/tmp/housing/keyvalue/part-r-00001
+5 -rw-r--r-- tongx supergroup 2.954 mb 2014-09-17 16:12 /ln/tmp/housing/keyvalue/part-r-00002
+6 -rw-r--r-- tongx supergroup 2.988 mb 2014-09-17 16:12 /ln/tmp/housing/keyvalue/part-r-00003
+7 -rw-r--r-- tongx supergroup 2.955 mb 2014-09-17 16:12 /ln/tmp/housing/keyvalue/part-r-00004
+</code></pre>
+
+<p>So there are five files in output &quot;/ln/tmp/housing/keyvalue&quot;, named from &quot;part-r-00000&quot; to 
+&quot;part-r-00004&quot;. Besides these five files, there are another two files named &quot;_SUCCESS&quot; and 
+&quot;_logs&quot; which records the metadata and log information.</p>
 
 </div>
 
