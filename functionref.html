@@ -126,11 +126,6 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#rhjoin'>rhjoin</a>
-      </li>
-
-
-      <li class='active'>
          <a target='_self' class='nav-not-header' href='#rhkill'>rhkill</a>
       </li>
 
@@ -611,47 +606,6 @@ The parameter <code>job</code> can either be a string with the format <em>job_da
 <h4>Description</h4>
 
 <p>Returns detailed job information across all TaskIDs</p>
-
-</div>
-
-
-<div class='tab-pane' id='rhjoin'>
-<h3>rhjoin</h3>
-
-<p>Wait For A MapReduce Job</p>
-
-<h4>Usage</h4>
-
-<pre><code class="r">rhjoin(job)
-</code></pre>
-
-<h4>Arguments</h4>
-
-<p><strong>job</strong><br>
-The parameter <code>job</code> can either be string with the format <code>job_datetime_id</code> or the value returned
-from <code>rhwatch</code> with the <code>async</code> option set to <code>TRUE</code>.</p>
-
-<p><strong>value</strong><br>
-This function returns the same object as <code>rhwatch</code> i.e a list of the results of the job (<code>TRUE</code> or 
-<code>FALSE</code> indicating success or failure) and a counters returned by the job.</p>
-
-<h4>Description</h4>
-
-<p>This function waits for a MapReduce job to complete before returning.</p>
-
-<h4>Details</h4>
-
-<p>Calling this functions pauses the R console till the MapReduce job indicated by <code>job</code> is over 
-(successfully or not). The parameter <code>job</code> can either be string with the format <code>job_datetime_id</code> 
-or the value returned from <code>rhwatch</code> with the <code>async</code> option set to <code>TRUE</code>.</p>
-
-<h4>Author</h4>
-
-<p>Saptarshi Guha</p>
-
-<h4>See also</h4>
-
-<p><code>rhstatus</code>, <code>rhwatch</code>, <code>rhkill</code>, <code>rhex</code></p>
 
 </div>
 
