@@ -63,14 +63,7 @@
    
    <div class="col-md-3 well">
    <ul class = "nav nav-list" id="toc">
-   <li class='nav-header unselectable' data-edit-href='01.housing.Rmd'>Set up</li>
-      
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#getting-started'>Getting Started</a>
-      </li>
-
-
-<li class='nav-header unselectable' data-edit-href='01.housing.Rmd'>Housing Data</li>
+   <li class='nav-header unselectable' data-edit-href='01.housing.Rmd'>Housing Data</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#introduction'>Introduction</a>
@@ -111,29 +104,7 @@
 
 <div class="col-md-9 tab-content" id="main-content">
 
-<div class='tab-pane active' id='getting-started'>
-<h3>Getting Started</h3>
-
-<p>When the first time to use <code>RHIPE</code>, we have to do something special:</p>
-
-<pre><code class="r">library(Rhipe)
-rhinit()
-hdfs.setwd(&quot;/ln/share&quot;)
-bashRhipeArchive()
-</code></pre>
-
-<p>After this, whenever we are using <code>RHIPE</code> in the future, only following initialization is necessary:</p>
-
-<pre><code class="r">library(Rhipe)
-rhinit()
-rhoptions(zips = &#39;/ln/share/RhipeLib.tar.gz&#39;)
-rhoptions(runner = &#39;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&#39;)
-</code></pre>
-
-</div>
-
-
-<div class='tab-pane' id='introduction'>
+<div class='tab-pane active' id='introduction'>
 <h3>Introduction</h3>
 
 <p>The first dataset we are going to use to demonstrate the <code>RHIPE</code> package is called housing data.
@@ -197,8 +168,13 @@ building and which have direct access from the outside of the building or throug
 
 <p>Each column is separated by a comma, and the first row is the column name.</p>
 
-<p>Then we will start with writing this text file to HDFS, 
-the function that writes file to HDFS is <code>rhput()</code>.  </p>
+<p>First, let&#39;s call the <code>RHIPE</code> library in R, and initialize it.</p>
+
+<pre><code class="r">library(Rhipe)
+rhinit()
+</code></pre>
+
+<p>Then we will start with writing this text file to HDFS, the function that writes file to HDFS is <code>rhput()</code>.  </p>
 
 <pre><code class="r">rhput(&quot;./housing.txt&quot;, &quot;/ln/tmp/housing/housing.txt&quot;)
 </code></pre>
