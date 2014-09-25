@@ -107,26 +107,26 @@
 <div class='tab-pane active' id='introduction'>
 <h3>Introduction</h3>
 
-<p>The first dataset we are going to use to demonstrate the <code>RHIPE</code> package is called housing data.
-It is about monthly median home listing and sale price per square foot and number of units sold for 2883 
-counties in the contiguous United States From late 2008 to March 2014, harvested from 
+<p>We&#39;ll demonstrate the <code>RHIPE</code> package with an analysis of housing data.
+The housing data set contains monthly median list and sale prices per square foot and number of units sold for 2883 
+counties in 49 states from October 2008 to March 2014, harvested from 
 Quandl&#39;s Zillow Housing Data.</p>
 
-<p>There are 224369 rows and 7 columns. The meaning of each column are as following:</p>
+<p>There are 224,369 rows and 7 columns. The meaning of each column is as follows:</p>
 
 <ul>
-<li><strong>fips</strong>: FIPS county code, there are 2883 unique counties</li>
+<li><strong>fips</strong>: FIPS county code.  There are 2883 unique counties</li>
 <li><strong>county</strong>: county name</li>
-<li><strong>state</strong>: state abbreviation, 49 states are included</li>
-<li><strong>time</strong>: time in &quot;YYYY-MM-DD&quot; - each month&#39;s values are placed at the first day of the month</li>
+<li><strong>state</strong>: state abbreviation.  49 states are included</li>
+<li><strong>time</strong>: time in &quot;YYYY-MM-DD&quot; format.  Each month&#39;s values are placed at the first day of the month</li>
 <li><strong>nSold</strong>: number of units sold</li>
 <li><strong>medListPriceSqft</strong>: median list price per square foot</li>
 <li><strong>medSoldPriceSqft</strong>: median sold price per square foot</li>
 </ul>
 
-<p>The total size of the data text file is around 12Mb. Text dataset file <code>housing.txt</code> is available 
-in our Tesseradata Github repository of the <code>RHIPE</code> documentation 
-<a href="https://github.com/XiaosuTong/docs-RHIPE">here</a>.   </p>
+<p>The total size of the data text file is around 12MB. The raw data are available as a comma-delimited
+file <code>housing.txt</code> in our Tesseradata Github repository of the <code>RHIPE</code> documentation 
+<a href="http://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt">here</a>.   </p>
 
 <p>Note:</p>
 
@@ -141,7 +141,7 @@ building and which have direct access from the outside of the building or throug
 <div class='tab-pane' id='writing-to-hdfs'>
 <h3>Writing to HDFS</h3>
 
-<p>We downloaded the text file to our current R working directory, </p>
+<p>We&#39;ve downloaded the text file to our current R working directory:</p>
 
 <pre><code class="r">list.files(&quot;./&quot;)
 </code></pre>
@@ -149,7 +149,7 @@ building and which have direct access from the outside of the building or throug
 <pre><code>[1]&quot;housing.txt&quot;
 </code></pre>
 
-<p>Here is how the file looks like:</p>
+<p>Here&#39;s what the file looks like:</p>
 
 <pre><code class="r">system(&quot;head housing.txt&quot;)
 </code></pre>
@@ -166,23 +166,26 @@ building and which have direct access from the outside of the building or throug
 06001,Alameda County,CA,2009-05-01,NA,290.73756432247,NA
 </code></pre>
 
-<p>Each column is separated by a comma, and the first row is the column name.</p>
+<p>Each column is separated by a comma, and there is no header row.</p>
 
-<p>First, let&#39;s call the <code>RHIPE</code> library in R, and initialize it.</p>
+<p>First, let&#39;s call the <code>RHIPE</code> library in R, and initialize it.  For details, see the installation instructions.</p>
 
 <pre><code class="r">library(Rhipe)
 rhinit()
+rhoptions(zips = &quot;/user/share/RhipeLib.tar.gz&quot;)
+rhoptions(runner = &quot;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&quot;)
 </code></pre>
 
-<p>Then we will start with writing this text file to HDFS, the function that writes file to HDFS is <code>rhput()</code>.  </p>
+<p>Now write the raw text file to HDFS.  The function that writes files to HDFS is <code>rhput()</code>.  </p>
 
 <pre><code class="r">rhput(&quot;./housing.txt&quot;, &quot;/ln/tmp/housing/housing.txt&quot;)
 </code></pre>
 
-<p>The first argument is path to the local file to be copied, and the second argument is the path to 
-the file on the HDFS. <code>rhput</code> creates the file at destination.</p>
+<p>The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
+the file will be written. <code>rhput</code> creates the file at destination, overwriting the destination if
+it already exists.</p>
 
-<p>Now let&#39;s Check if the housing data text file is now locating on HDFS. </p>
+<p>We can confirm that the housing data text file has been written to HDFS. </p>
 
 <pre><code class="r">rhexists(&quot;/ln/tmp/housing/housing.txt&quot;)
 </code></pre>
@@ -199,11 +202,11 @@ the file on the HDFS. <code>rhput</code> creates the file at destination.</p>
 1 -rw-rw-rw- tongx supergroup 11.82 mb 2014-09-17 11:11 /ln/tmp/housing/housing.txt
 </code></pre>
 
-<p><code>rhls()</code> is very similar to the bash command <code>ls</code>, it will list all content under given address. 
+<p><code>rhls()</code> is very similar to the bash command <code>ls</code>.  It will list all content under given address. 
 We can see that <code>housing.txt</code> file with size 11.82Mb is located under <code>/ln/tmp/housing/</code> 
-directory on HDFS.</p>
+on HDFS.</p>
 
-<p>OK, the dataset is ready on HDFS, and we will start the real analysis. </p>
+<p>OK, the dataset is ready on HDFS, and we are ready to start the analysis. </p>
 
 </div>
 
@@ -211,13 +214,28 @@ directory on HDFS.</p>
 <div class='tab-pane' id='read-and-divide-by-state'>
 <h3>Read and Divide by State</h3>
 
-<p>The first question about housing data could be what is the mean of median list price per square 
-feet and mean of median sold price per square feet for each state over time? In base R, you can 
-use <code>tapply</code> function to achieve this. However, if we are facing a large and complex data located
-on HDFS, then we have to use <code>RHIPE</code> and Divide and Recombined concept.</p>
+<p>The first step in a D&amp;R analysis is to choose a division method and create subsets.  We&#39;ll
+divide the housing data by state.  Rhipe allows us to read the raw text file on HDFS and 
+create a copy of the data broken into subsets using a MapReduce job.  The original data file will remain on HDFS.
+The data within each subset will be stored as R objects, rather than raw text.  This will 
+allow us to apply subsequent data analytic and visual methods using familiar R commands.</p>
 
-<p>A valid mapreduce job in RHIPE is consist of a map expression, an optional reduce expression, 
-and a execution function <code>rhwatch()</code>.</p>
+<p>In the MapReduce framework, we keep track of subsets as key-value pairs.  The key is a label for
+the subset.  It&#39;s usually a small data object, like a single number or character string.  There
+can be multiple subsets that share a common key.  The value is where we store the data.  For 
+example, it may be an R data frame.</p>
+
+<p>The map is a function applied to every key-value pair.  Its output is one or more key-value
+pairs, where the key may or may not have changed from the input key.  The output key-value 
+pairs of the map are sometimes called intermediate key-value pairs, because they will be the
+input to the reduce function.  The intermediate key-value pairs are grouped by key, and then
+the reduce function is applied to each group.  The output of the reduce function is again
+one or more key-value pairs.  <code>Rhipe</code> allows us to write the map and reduce functions in
+R code.</p>
+
+<p>A valid MapReduce job in <code>Rhipe</code> consists of a map expression, an optional reduce expression, 
+and a execution function <code>rhwatch()</code>.  If no reduce expression is given, the output of the
+map is the final output.</p>
 
 <h4>Map</h4>
 
@@ -231,16 +249,11 @@ and a execution function <code>rhwatch()</code>.</p>
 })
 </code></pre>
 
-<p>Map is an R expression that is evaluated by <code>RHIPE</code> during the map stage. For each task, <code>RHIPE</code> will 
-call this expression multiple times. The input and output of map function are both key/value pairs.
-The output key/value pairs are also called intermediate key/value pairs. We processed the key/value 
-pairs we got from the text file. The row number is the key, and the corresponding value would be the 
-row content in string. The key/value pairs read in from input file will be saved as <code>map.keys</code> and 
-<code>map.values</code> respectively. <code>map.keys</code> and <code>map.values</code> are two lists which are consist of all keys 
-and all values that will be executed in one task at one moment respectively. For each <code>map.values</code>, 
-which is each line of the text file, we split it by the separator &quot; , &quot;. Then we assign the third 
-element from split list, the state abbreviation, to be the intermediate key, and create a data frame
-with one row for the rest element of split list to be the intermediate value.</p>
+<p>The input keys are line numbers in the housing data text file.  They are available as the list
+object <code>map.keys</code>.  The values are the lines of text, which are in the list object <code>map.values</code>.
+This is the default for text files.  For each input key-value pair, <code>rhcollect</code> emits an
+intermediate key-value pair, where the key is the state name (the third field in the comma-separated
+line) and the value is all other fields in the line, stored as a single row data frame.</p>
 
 <h4>Reduce</h4>
 
@@ -263,7 +276,7 @@ with one row for the rest element of split list to be the intermediate value.</p
 )
 </code></pre>
 
-<p>The next thing is the reduce expression. In <code>RHIPE</code>, reduce is an R expression that is evaluated 
+<p>In <code>RHIPE</code>, reduce is an R expression that is evaluated 
 by <code>RHIPE</code> during the reduce stage. All intermediate key/value pairs from map stage that share same
 key will be grouped together and processed to be applied reduce function. In reduce-pre session, we 
 initialize an empty data.frame <code>tmp</code>. <code>reduce.key</code> is the shared key, and <code>reduce.values</code> is a list 
