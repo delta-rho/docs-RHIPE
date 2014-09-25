@@ -130,8 +130,8 @@ The meaning of each field is as follows:</p>
 <li><strong>state</strong>: state abbreviation</li>
 <li><strong>time</strong>: time in &quot;YYYY-MM-DD&quot; format.  Each month&#39;s values are placed at the first day of the month</li>
 <li><strong>sold</strong>: number of units sold</li>
-<li><strong>list</strong>: median list price dollar per square foot</li>
-<li><strong>selling</strong>: median sold price dollar per square foot</li>
+<li><strong>list</strong>: monthly median list price dollar per square foot</li>
+<li><strong>selling</strong>: monthly median selling price dollar per square foot</li>
 </ul>
 
 <p>The total size of the data text file is around 12MB. The raw data are available as named
@@ -163,7 +163,8 @@ We can get where this working directory is by using <code>getwd</code> function 
 <pre><code>[1] &quot;/home/tongx&quot;
 </code></pre>
 
-<p>We will download the text data file to this local working directory by R command:</p>
+<p>You should have your own working directory where is more convenient for yourself.
+We will download the text data file to this local working directory by R command:</p>
 
 <pre><code class="r">system(&quot;wget http://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt /home/tongx&quot;)
 </code></pre>
@@ -190,10 +191,13 @@ rhoptions(runner = &quot;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&quot;
 <pre><code class="r">rhput(&quot;/home/tongx/housing.txt&quot;, &quot;/user/tongx/housing/housing.txt&quot;)
 </code></pre>
 
-<p>In this function, we need two arguments or two two absolute filepath, one is for 
-The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
-the file will be written. <code>rhput</code> creates the file at destination, overwriting the destination if
-it already exists.</p>
+<p>In this function, we need two arguments or two two absolute file path.
+The first argument is the absolute path to the file to be copied which is located on our current 
+local working directory, and the second argument is the absolute HDFS path where the file will be written. 
+<code>rhput</code> creates the file at destination, overwriting the destination if it already exists.
+One of the great part of <code>Rhipe</code> package in R is that all the communication to the Hadoop from user
+can be achieved just in R. We do not have to worry about hadoop command that do all different types 
+of filesystem management or mapreduce job.</p>
 
 <p>We can confirm that the housing data text file has been written to HDFS. </p>
 
@@ -205,15 +209,15 @@ it already exists.</p>
 
 <p>If we want to see more details about a file or directory on HDFS, we can use <code>rhls()</code>.</p>
 
-<pre><code class="r">rhls(&quot;/ln/tmp/housing&quot;)
+<pre><code class="r">rhls(&quot;/user/tongx/housing&quot;)
 </code></pre>
 
-<pre><code>  permission owner      group     size          modtime                        file
-1 -rw-rw-rw- tongx supergroup 11.82 mb 2014-09-17 11:11 /ln/tmp/housing/housing.txt
+<pre><code>  permission owner      group     size          modtime                            file
+1 -rw-rw-rw- tongx supergroup 11.82 mb 2014-09-17 11:11 /user/tongx/housing/housing.txt
 </code></pre>
 
 <p><code>rhls()</code> is very similar to the bash command <code>ls</code>.  It will list all content under given address. 
-We can see that <code>housing.txt</code> file with size 11.82Mb is located under <code>/ln/tmp/housing/</code> 
+We can see that <code>housing.txt</code> file with size 11.82Mb is located under <code>/user/tongx/housing/</code> 
 on HDFS.</p>
 
 </div>
@@ -275,7 +279,7 @@ line) and the value is all other fields in the line, stored as a single row data
   post = {
     names(tmp) &lt;- c(
       &quot;fips&quot;, &quot;county&quot;, &quot;time&quot;, 
-      &quot;nSold&quot;, &quot;medListPriceSqft&quot;, &quot;medSoldPriceSqft&quot;
+      &quot;sold&quot;, &quot;list&quot;, &quot;selling&quot;
     )
     tmp$medListPriceSqft &lt;- as.numeric(tmp$medListPriceSqft)
     tmp$medSoldPriceSqft &lt;- as.numeric(tmp$medSoldPriceSqft)
@@ -298,8 +302,8 @@ key/value pair for each state will be collected in the end by using <code>rhcoll
 <pre><code class="r">mr1 &lt;- rhwatch(
   map      = map1,
   reduce   = reduce1,
-  input    = rhfmt(&quot;/ln/tmp/housing/housing.txt&quot;, type = &quot;text&quot;),
-  output   = rhfmt(&quot;/ln/tmp/housing/bystate&quot;, type = &quot;sequence&quot;),
+  input    = rhfmt(&quot;/user/tongx/housing/housing.txt&quot;, type = &quot;text&quot;),
+  output   = rhfmt(&quot;/user/tongx/housing/bystate&quot;, type = &quot;sequence&quot;),
   mapred   = list(
     mapred.reduce.tasks = 10
   ),
@@ -340,7 +344,7 @@ object with the length equal to the number of total key/value pairs. Each elemen
 also a list with length 2. The first one is the key, and the second one is the value. This is how 
 <code>RHIPE</code> translate key/value pairs into R.</p>
 
-<pre><code class="r">rst &lt;- rhread(&quot;/ln/tmp/housing/bystate&quot;)
+<pre><code class="r">rst &lt;- rhread(&quot;/user/tongx/housing/bystate&quot;)
 </code></pre>
 
 <pre><code>Read 49 objects(13.52 MB) in 1.41 seconds
@@ -354,7 +358,7 @@ also a list with length 2. The first one is the key, and the second one is the v
   ..$ : chr &quot;WV&quot;
   ..$ :&#39;data.frame&#39;:    3836 obs. of  6 variables:
   .. ..$ fips            : chr [1:3836] &quot;54015&quot; &quot;54015&quot; &quot;54015&quot; &quot;54015&quot; ...
-  .. ..$ county          : chr [1:3836] &quot;Clay County&quot; &quot;Clay County&quot; &quot;Clay County&quot; &quot;Clay County&quot; ...
+  .. ..$ county          : chr [1:3836] &quot;Clay&quot; &quot;Clay&quot; &quot;Clay&quot; &quot;Clay&quot; ...
   .. ..$ time            : chr [1:3836] &quot;2012-12-01&quot; &quot;2012-11-01&quot; &quot;2012-10-01&quot; &quot;2012-09-01&quot; ...
   .. ..$ nSold           : chr [1:3836] &quot;NA&quot; &quot;NA&quot; &quot;NA&quot; &quot;NA&quot; ...
   .. ..$ medListPriceSqft: num [1:3836] 78.5 80 80 80.1 93.1 ...
@@ -363,7 +367,7 @@ also a list with length 2. The first one is the key, and the second one is the v
   ..$ : chr &quot;KY&quot;
   ..$ :&#39;data.frame&#39;:    8059 obs. of  6 variables:
   .. ..$ fips            : chr [1:8059] &quot;21235&quot; &quot;21235&quot; &quot;21235&quot; &quot;21235&quot; ...
-  .. ..$ county          : chr [1:8059] &quot;Whitley County&quot; &quot;Whitley County&quot; &quot;Whitley County&quot; &quot;Whitley County&quot; ...
+  .. ..$ county          : chr [1:8059] &quot;Whitley&quot; &quot;Whitley&quot; &quot;Whitley&quot; &quot;Whitley&quot; ...
   .. ..$ time            : chr [1:8059] &quot;2012-05-01&quot; &quot;2012-07-01&quot; &quot;2012-08-01&quot; &quot;2012-09-01&quot; ...
   .. ..$ nSold           : chr [1:8059] &quot;NA&quot; &quot;NA&quot; &quot;NA&quot; &quot;NA&quot; ...
   .. ..$ medListPriceSqft: num [1:8059] 73.2 74.8 74.1 74.8 77.2 ...
@@ -373,7 +377,7 @@ also a list with length 2. The first one is the key, and the second one is the v
   ..$ : chr &quot;TX&quot;
   ..$ :&#39;data.frame&#39;:    13108 obs. of  6 variables:
   .. ..$ fips            : chr [1:13108] &quot;48215&quot; &quot;48479&quot; &quot;48479&quot; &quot;48479&quot; ...
-  .. ..$ county          : chr [1:13108] &quot;Hidalgo County&quot; &quot;Webb County&quot; &quot;Webb County&quot; &quot;Webb County&quot; ...
+  .. ..$ county          : chr [1:13108] &quot;Hidalgo&quot; &quot;Webb&quot; &quot;Webb&quot; &quot;Webb&quot; ...
   .. ..$ time            : chr [1:13108] &quot;2009-05-01&quot; &quot;2011-11-01&quot; &quot;2011-12-01&quot; &quot;2012-01-01&quot; ...
   .. ..$ nSold           : chr [1:13108] &quot;NA&quot; &quot;NA&quot; &quot;NA&quot; &quot;NA&quot; ...
   .. ..$ medListPriceSqft: num [1:13108] 76.3 83.6 84.7 85.2 86.4 ...
@@ -382,7 +386,7 @@ also a list with length 2. The first one is the key, and the second one is the v
   ..$ : chr &quot;WA&quot;
   ..$ :&#39;data.frame&#39;:    3705 obs. of  6 variables:
   .. ..$ fips            : chr [1:3705] &quot;53049&quot; &quot;53049&quot; &quot;53049&quot; &quot;53049&quot; ...
-  .. ..$ county          : chr [1:3705] &quot;Pacific County&quot; &quot;Pacific County&quot; &quot;Pacific County&quot; &quot;Pacific County&quot; ...
+  .. ..$ county          : chr [1:3705] &quot;Pacific&quot; &quot;Pacific&quot; &quot;Pacific&quot; &quot;Pacific&quot; ...
   .. ..$ time            : chr [1:3705] &quot;2012-08-01&quot; &quot;2012-09-01&quot; &quot;2012-09-01&quot; &quot;2012-10-01&quot; ...
   .. ..$ nSold           : chr [1:3705] &quot;NA&quot; &quot;29&quot; &quot;NA&quot; &quot;NA&quot; ...
   .. ..$ medListPriceSqft: num [1:3705] 120 NA 125 NA 120 ...
@@ -456,8 +460,8 @@ be read back from HDFS (without using <code>rhread()</code>) and assigned to an 
 <pre><code class="r">mr2 &lt;- rhwatch(
   map      = map2,
   reduce   = reduce2,
-  input    = rhfmt(&quot;/ln/tmp/housing/bystate&quot;, type = &quot;sequence&quot;),
-  output   = rhfmt(&quot;/ln/tmp/housing/meanbystate&quot;, type = &quot;sequence&quot;),
+  input    = rhfmt(&quot;/user/tongx/housing/bystate&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/user/tongx/housing/meanbystate&quot;, type = &quot;sequence&quot;),
   mapred   = list( 
     mapred.reduce.tasks = 5
   ),
@@ -516,20 +520,20 @@ head(data)
 <p>If you are wondering how the results looks like on HDFS, or how the results were saved on HDFS. 
 We can actually have a look at it by using <code>rhls()</code> function.</p>
 
-<pre><code class="r">rhls(&quot;/ln/tmp/housing/meanbystate&quot;)
+<pre><code class="r">rhls(&quot;/user/tongx/housing/meanbystate&quot;)
 </code></pre>
 
-<pre><code>  permission owner      group        size          modtime                                     file
-1 -rw-r--r-- tongx supergroup           0 2014-09-18 23:56     /ln/tmp/housing/meanbystate/_SUCCESS
-2 drwxrwxrwx tongx supergroup           0 2014-09-18 23:56        /ln/tmp/housing/meanbystate/_logs
-3 -rw-r--r-- tongx supergroup    1.363 kb 2014-09-18 23:56 /ln/tmp/housing/meanbystate/part-r-00000
-4 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tmp/housing/meanbystate/part-r-00001
-5 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tmp/housing/meanbystate/part-r-00002
-6 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tmp/housing/meanbystate/part-r-00003
-7 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tmp/housing/meanbystate/part-r-00004
+<pre><code>  permission owner      group        size          modtime                                         file
+1 -rw-r--r-- tongx supergroup           0 2014-09-18 23:56     /user/tongx/housing/meanbystate/_SUCCESS
+2 drwxrwxrwx tongx supergroup           0 2014-09-18 23:56        /user/tongx/housing/meanbystate/_logs
+3 -rw-r--r-- tongx supergroup    1.363 kb 2014-09-18 23:56 /user/tongx/housing/meanbystate/part-r-00000
+4 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /user/tongx/housing/meanbystate/part-r-00001
+5 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /user/tongx/housing/meanbystate/part-r-00002
+6 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /user/tongx/housing/meanbystate/part-r-00003
+7 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /user/tongx/housing/meanbystate/part-r-00004
 </code></pre>
 
-<p>So there are five files in output &quot;/ln/tmp/housing/meanbystate&quot;, named from &quot;part-r-00000&quot; to 
+<p>So there are five files in output &quot;/user/tongx/housing/meanbystate&quot;, named from &quot;part-r-00000&quot; to 
 &quot;part-r-00004&quot;. Besides these five files, there are another two files named &quot;_SUCCESS&quot; and 
 &quot;_logs&quot; which records the metadata and log information. One more thing should be noticed here,
 among those five output part files, there are four of them with the same size 94 bytes. This is
@@ -576,15 +580,15 @@ row are saved as a data.frame to be the value.</p>
   post = {
     names(tmp) &lt;- c(
       &quot;county&quot;, &quot;state&quot;, &quot;time&quot;, 
-      &quot;nSold&quot;, &quot;medListPriceSqft&quot;, &quot;medSoldPriceSqft&quot;
+      &quot;sold&quot;, &quot;list&quot;, &quot;selling&quot;
     )
     state &lt;- unique(tmp$state)
     county &lt;- unique(tmp$county)
     tmp &lt;- tmp[, !(names(tmp)%in%c(&quot;state&quot;, &quot;county&quot;))]
     attr(tmp, &quot;state&quot;) &lt;- state
     attr(tmp, &quot;county&quot;) &lt;- county
-    tmp$medListPriceSqft &lt;- as.numeric(tmp$medListPriceSqft)
-    tmp$medSoldPriceSqft &lt;- as.numeric(tmp$medSoldPriceSqft)
+    tmp$list &lt;- as.numeric(tmp$list)
+    tmp$selling &lt;- as.numeric(tmp$selling)
     rhcollect(reduce.key, tmp)
   }
 )
@@ -605,8 +609,8 @@ and reduce.</p>
 <pre><code class="r">mr3 &lt;- rhwatch(
   map      = map3,
   reduce   = reduce3,
-  input    = rhfmt(&quot;/ln/tmp/housing/housing.txt&quot;, type = &quot;text&quot;),
-  output   = rhfmt(&quot;/ln/tmp/housing/bycounty&quot;, type = &quot;sequence&quot;),
+  input    = rhfmt(&quot;/user/tongx/housing/housing.txt&quot;, type = &quot;text&quot;),
+  output   = rhfmt(&quot;/user/tongx/housing/bycounty&quot;, type = &quot;sequence&quot;),
   mapred   = list(
     mapred.reduce.tasks = 10
   ),
@@ -618,7 +622,7 @@ and reduce.</p>
 <code>rhread()</code>, which is <code>max</code>. It can control how many key/value pairs we are reading in. The default
 is -1, which means read in all key/value pairs.</p>
 
-<pre><code class="r">rst &lt;- rhread(&quot;/ln/tmp/housing/bycounty&quot;, max = 10)
+<pre><code class="r">rst &lt;- rhread(&quot;/user/tongx/housing/bycounty&quot;, max = 10)
 </code></pre>
 
 <pre><code>Read 10 objects(31.39 KB) in 0.04 seconds
@@ -641,7 +645,7 @@ the data frame.</p>
 </code></pre>
 
 <pre><code>$names
-[1] &quot;time&quot;             &quot;nSold&quot;            &quot;medListPriceSqft&quot; &quot;medSoldPriceSqft&quot;
+[1] &quot;time&quot;             &quot;sold&quot;            &quot;list&quot;             &quot;selling&quot;
 
 $row.names
  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32
@@ -678,8 +682,8 @@ county into one data.frame, we will assign 1 to be the key for all intermediate 
   lapply(seq_along(map.keys), function(r) {
     value &lt;- data.frame(
       fips = map.keys[[r]],
-      listMean = mean(map.values[[r]]$medListPriceSqft, na.rm = TRUE),
-      soldMean = mean(map.values[[r]]$medSoldPriceSqft, na.rm = TRUE),
+      listMean = mean(map.values[[r]]$list, na.rm = TRUE),
+      sellingMean = mean(map.values[[r]]$selling, na.rm = TRUE),
       stringsAsFactors = FALSE
     )
     value$state &lt;- attr(map.values[[r]], &quot;state&quot;)
@@ -713,8 +717,8 @@ means.</p>
 <pre><code class="r">mr4 &lt;- rhwatch(
   map      = map4,
   reduce   = reduce4,
-  input    = rhfmt(&quot;/ln/tmp/housing/bycounty&quot;, type = &quot;sequence&quot;),
-  output   = rhfmt(&quot;/ln/tmp/housing/meanbycounty&quot;, type = &quot;sequence&quot;),
+  input    = rhfmt(&quot;/user/tongx/housing/bycounty&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/user/tongx/housing/meanbycounty&quot;, type = &quot;sequence&quot;),
   mapred   = list( 
     mapred.reduce.tasks = 1
   ),
@@ -733,24 +737,24 @@ and metadata of the job.</p>
 <pre><code>List of 1
  $ :List of 2
   ..$ : num 1
-  ..$ :&#39;data.frame&#39;:    2883 obs. of  5 variables:
-  .. ..$ fips    : chr [1:2883] &quot;01005&quot; &quot;01023&quot; &quot;01041&quot; &quot;01069&quot; ...
-  .. ..$ listMean: num [1:2883] 85.5 54.3 59.3 87.6 74.4 ...
-  .. ..$ soldMean: num [1:2883] NaN NaN NaN NaN NaN ...
-  .. ..$ state   : chr [1:2883] &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; ...
-  .. ..$ county  : chr [1:2883] &quot;Barbour&quot; &quot;Choctaw&quot; &quot;Crenshaw&quot; &quot;Houston&quot; ...
+  ..$ :&#39;data.frame&#39; :    2883 obs. of  5 variables:
+  .. ..$ fips       : chr [1:2883] &quot;01005&quot; &quot;01023&quot; &quot;01041&quot; &quot;01069&quot; ...
+  .. ..$ listMean   : num [1:2883] 85.5 54.3 59.3 87.6 74.4 ...
+  .. ..$ sellingMean: num [1:2883] NaN NaN NaN NaN NaN ...
+  .. ..$ state      : chr [1:2883] &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; ...
+  .. ..$ county     : chr [1:2883] &quot;Barbour&quot; &quot;Choctaw&quot; &quot;Crenshaw&quot; &quot;Houston&quot; ...
 </code></pre>
 
 <pre><code class="r">head(rst[[1]][[2]])
 </code></pre>
 
-<pre><code>   fips listMean soldMean state       county
-1 01005 85.46983      NaN    AL      Barbour
-2 01023 54.27378      NaN    AL      Choctaw
-3 01041 59.29840      NaN    AL     Crenshaw
-4 01069 87.64237      NaN    AL      Houston
-5 01087 74.35722      NaN    AL        Macon
-6 01113 70.92100      NaN    AL      Russell
+<pre><code>   fips listMean sellingMean state       county
+1 01005 85.46983         NaN    AL      Barbour
+2 01023 54.27378         NaN    AL      Choctaw
+3 01041 59.29840         NaN    AL     Crenshaw
+4 01069 87.64237         NaN    AL      Houston
+5 01087 74.35722         NaN    AL        Macon
+6 01113 70.92100         NaN    AL      Russell
 </code></pre>
 
 </div>
@@ -805,8 +809,8 @@ code and county name.</p>
 <pre><code class="r">mr5 &lt;- rhwatch(
   map      = map5,
   reduce   = reduce5,
-  input    = rhfmt(&quot;/ln/tmp/housing/bycounty&quot;, type = &quot;sequence&quot;),
-  output   = rhfmt(&quot;/ln/tmp/housing/countytostate&quot;, type = &quot;sequence&quot;),
+  input    = rhfmt(&quot;/user/tongx/housing/bycounty&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/user/tongx/housing/countytostate&quot;, type = &quot;sequence&quot;),
   mapred   = list( 
     mapred.reduce.tasks = 10
   ),
@@ -959,7 +963,7 @@ NULL
 
 <p>Finally, the result can be read back as a list object in R.</p>
 
-<pre><code class="r">rst &lt;- rhread(&quot;/ln/tmp/housing/countytostate&quot;)
+<pre><code class="r">rst &lt;- rhread(&quot;/user/tongx/housing/countytostate&quot;)
 </code></pre>
 
 <pre><code>Read 49 objects(15.22 MB) in 1.32 seconds
