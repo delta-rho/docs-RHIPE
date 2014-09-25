@@ -85,6 +85,7 @@ Now write the raw text file to HDFS.  The function that writes files to HDFS is 
 rhput("/home/tongx/housing.txt", "/user/tongx/housing/housing.txt")
 ```
 
+In this function, we need two arguments or two two absolute filepath, one is for 
 The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
 the file will be written. `rhput` creates the file at destination, overwriting the destination if
 it already exists.
@@ -288,7 +289,7 @@ So, as we expect, the `rst` is a list with length 49, and each element of `rst` 
 two elements, one is the state abbreviation, another one is the data frame of the data for the corresponding
 state.
 
-### Compute State  Means###
+### Compute State  Means ###
 
 Now let's start to combine the result from the divide stage.
 
@@ -558,7 +559,7 @@ $class
 [1] "data.frame"
 ```
 
-### Compute County Means###
+### Compute County Means ###
 
 Next, we calculate the means of list price and sold price for each county. It will be similar to 
 what we have done with means by state but with a little update.
