@@ -5,22 +5,32 @@
 ### Introduction ###
 
 We'll demonstrate the `RHIPE` package with an analysis of housing data.
-The housing data set contains monthly median list and sale prices per square foot and number of units sold for 2883 
-counties in 49 states from October 2008 to March 2014, harvested from 
+The housing data set contains monthly median list and selling prices per square foot and number 
+of units sold for 2883 counties in 49 states from October 2008 to March 2014, harvested from 
 Quandl's Zillow Housing Data.
 
-There are 224,369 rows and 7 columns. The meaning of each column is as follows:
+Here is how raw text file looks like:
+```
+06001,Alameda,CA,2008-10-01,NA,307.97872340425,325.8118
+06001,Alameda,CA,2008-11-01,NA,299.16666666667,NA
+06001,Alameda,CA,2008-11-01,NA,NA,318.115
+06001,Alameda,CA,2008-12-01,NA,289.88149498633,305.7878
+06001,Alameda,CA,2009-01-01,NA,288.5,291.5977
+```
 
-- **fips**: FIPS county code.  There are 2883 unique counties
+There are 224,369 rows and 7 fields. Each field is separated by a comma, and there is no header row.
+The meaning of each field is as follows:
+
+- **fips**: FIPS county code.
 - **county**: county name
 - **state**: state abbreviation.  49 states are included
 - **time**: time in "YYYY-MM-DD" format.  Each month's values are placed at the first day of the month
-- **nSold**: number of units sold
-- **medListPriceSqft**: median list price per square foot
-- **medSoldPriceSqft**: median sold price per square foot
+- **sold**: number of units sold
+- **list**: median list price dollar per square foot
+- **selling**: median sold price dollar per square foot
  
-The total size of the data text file is around 12MB. The raw data are available as a comma-delimited
-file `housing.txt` in our Tesseradata Github repository of the `RHIPE` documentation 
+The total size of the data text file is around 12MB. The raw data are available as named
+`housing.txt` in our Tesseradata Github repository of the `RHIPE` documentation 
 [here](http://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt).   
 
 Note:
@@ -30,8 +40,9 @@ occupied (or if vacant, is intended for occupancy) as separate living quarters. 
 quarters are those in which the occupants live and eat separately from any other persons in the 
 building and which have direct access from the outside of the building or through a common hall.
 
-### Writing to HDFS ###
+### Write Text to HDFS ###
 
+Now we are setting on the frontend of the cluster or any node of the cluster
 We've downloaded the text file to our current R working directory:
 ```{r eval=FALSE, tidy=FALSE}
 list.files("./")
@@ -39,23 +50,6 @@ list.files("./")
 ```
 [1]"housing.txt"
 ```
-Here's what the file looks like:
-```{r eval=FALSE, tidy=FALSE}
-system("head housing.txt")
-```
-```
-06001,Alameda County,CA,2008-10-01,NA,307.97872340425,325.8118
-06001,Alameda County,CA,2008-11-01,NA,299.16666666667,NA
-06001,Alameda County,CA,2008-11-01,NA,NA,318.115
-06001,Alameda County,CA,2008-12-01,NA,289.88149498633,305.7878
-06001,Alameda County,CA,2009-01-01,NA,288.5,291.5977
-06001,Alameda County,CA,2009-02-01,NA,287.03703703704,NA
-06001,Alameda County,CA,2009-02-01,NA,NA,282.2345
-06001,Alameda County,CA,2009-03-01,NA,282.22591362126,276.6336
-06001,Alameda County,CA,2009-04-01,NA,280.85867620751,281.7146
-06001,Alameda County,CA,2009-05-01,NA,290.73756432247,NA
-```
-Each column is separated by a comma, and there is no header row.
 
 First, let's call the `RHIPE` library in R, and initialize it.  For details, see the installation instructions.
 
@@ -95,8 +89,6 @@ rhls("/ln/tmp/housing")
 `rhls()` is very similar to the bash command `ls`.  It will list all content under given address. 
 We can see that `housing.txt` file with size 11.82Mb is located under `/ln/tmp/housing/` 
 on HDFS.
-
-OK, the dataset is ready on HDFS, and we are ready to start the analysis. 
 
 ### Read and Divide by State ###
 
@@ -276,7 +268,7 @@ So, as we expect, the `rst` is a list with length 49, and each element of `rst` 
 two elements, one is the state abbreviation, another one is the data frame of the data for the corresponding
 state.
 
-### Means by State ###
+### Compute State  Means###
 
 Now let's start to combine the result from the divide stage.
 
@@ -540,13 +532,13 @@ $state
 [1] "AL"
 
 $county
-[1] "Butler County"
+[1] "Butler"
 
 $class
 [1] "data.frame"
 ```
 
-### Means by County ###
+### Compute County Means###
 
 Next, we calculate the means of list price and sold price for each county. It will be similar to 
 what we have done with means by state but with a little update.
@@ -626,22 +618,22 @@ List of 1
   .. ..$ listMean: num [1:2883] 85.5 54.3 59.3 87.6 74.4 ...
   .. ..$ soldMean: num [1:2883] NaN NaN NaN NaN NaN ...
   .. ..$ state   : chr [1:2883] "AL" "AL" "AL" "AL" ...
-  .. ..$ county  : chr [1:2883] "Barbour County" "Choctaw County" "Crenshaw County" "Houston County" ...
+  .. ..$ county  : chr [1:2883] "Barbour" "Choctaw" "Crenshaw" "Houston" ...
 ```
 ```{r eval=FALSE, tidy=FALSE}
 head(rst[[1]][[2]])
 ```
 ```
-   fips listMean soldMean state          county
-1 01005 85.46983      NaN    AL  Barbour County
-2 01023 54.27378      NaN    AL  Choctaw County
-3 01041 59.29840      NaN    AL Crenshaw County
-4 01069 87.64237      NaN    AL  Houston County
-5 01087 74.35722      NaN    AL    Macon County
-6 01113 70.92100      NaN    AL  Russell County
+   fips listMean soldMean state       county
+1 01005 85.46983      NaN    AL      Barbour
+2 01023 54.27378      NaN    AL      Choctaw
+3 01041 59.29840      NaN    AL     Crenshaw
+4 01069 87.64237      NaN    AL      Houston
+5 01087 74.35722      NaN    AL        Macon
+6 01113 70.92100      NaN    AL      Russell
 ```
 
-### Division from County to State ###
+### New Division by State ###
 
 In previous tasks, we started from reading in text data file. Input key/value pairs are each row
 from the text file. It is also reasonable and common that we transfer from one type of division to a
