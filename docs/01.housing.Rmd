@@ -21,9 +21,9 @@ Here is how raw text file looks like:
 There are 224,369 rows and 7 fields. Each field is separated by a comma, and there is no header row.
 The meaning of each field is as follows:
 
-- **fips**: FIPS county code.
+- **fips**: FIPS county code
 - **county**: county name
-- **state**: state abbreviation.  49 states are included
+- **state**: state abbreviation
 - **time**: time in "YYYY-MM-DD" format.  Each month's values are placed at the first day of the month
 - **sold**: number of units sold
 - **list**: median list price dollar per square foot
@@ -42,13 +42,33 @@ building and which have direct access from the outside of the building or throug
 
 ### Write Text to HDFS ###
 
-Now we are setting on the frontend of the cluster or any node of the cluster
-We've downloaded the text file to our current R working directory:
+Now we ssh to the frontend of the cluster or any node of the cluster where we will start
+the initial R session. When we start the initial R, there is a working directory of the R to which the .RData
+and .Rhistory is saved. This working directory is locating on the frontend of the node we are sshing.
+We will treat this working directory as our current local working directory.
+We can get where this working directory is by using `getwd` function in R:
+
 ```{r eval=FALSE, tidy=FALSE}
-list.files("./")
+getwd()
 ```
 ```
-[1]"housing.txt"
+[1] "/home/tongx"
+```
+
+We will download the text data file to this local working directory by R command:
+
+```{r eval=FALSE, tidy=FALSE}
+system("wget http://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt /home/tongx")
+```
+
+We can check if text file is available now in our local working directory:
+
+```{r eval=FALSE, tidy=FALSE}
+list.files("/home/tongx")
+```
+```
+[1] "housing.txt" "Projects"    "Rhipe"       "R_LIBS"      "R_LIBS.new" 
+[6] "R_packages"
 ```
 
 First, let's call the `RHIPE` library in R, and initialize it.  For details, see the installation instructions.
@@ -62,7 +82,7 @@ rhoptions(runner = "sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh")
 
 Now write the raw text file to HDFS.  The function that writes files to HDFS is `rhput()`.  
 ```{r eval=FALSE, tidy=FALSE}
-rhput("./housing.txt", "/ln/tmp/housing/housing.txt")
+rhput("/home/tongx/housing.txt", "/user/tongx/housing/housing.txt")
 ```
 
 The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
@@ -72,7 +92,7 @@ it already exists.
 We can confirm that the housing data text file has been written to HDFS. 
 
 ```{r eval=FALSE, tidy=FALSE}
-rhexists("/ln/tmp/housing/housing.txt")
+rhexists("/user/tongx/housing/housing.txt")
 ```
 ```
 [1] TRUE

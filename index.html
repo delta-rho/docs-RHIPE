@@ -71,7 +71,7 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#writing-to-hdfs'>Writing to HDFS</a>
+         <a target='_self' class='nav-not-header' href='#write-text-to-hdfs'>Write Text to HDFS</a>
       </li>
 
 
@@ -81,22 +81,12 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#means-by-state'>Means by State</a>
-      </li>
-
-
-      <li class='active'>
          <a target='_self' class='nav-not-header' href='#read-and-divide-by-county'>Read and Divide by County</a>
       </li>
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#means-by-county'>Means by County</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#division-from-county-to-state'>Division from County to State</a>
+         <a target='_self' class='nav-not-header' href='#new-division-by-state'>New Division by State</a>
       </li>
 
    </ul>
@@ -108,24 +98,34 @@
 <h3>Introduction</h3>
 
 <p>We&#39;ll demonstrate the <code>RHIPE</code> package with an analysis of housing data.
-The housing data set contains monthly median list and sale prices per square foot and number of units sold for 2883 
-counties in 49 states from October 2008 to March 2014, harvested from 
+The housing data set contains monthly median list and selling prices per square foot and number 
+of units sold for 2883 counties in 49 states from October 2008 to March 2014, harvested from 
 Quandl&#39;s Zillow Housing Data.</p>
 
-<p>There are 224,369 rows and 7 columns. The meaning of each column is as follows:</p>
+<p>Here is how raw text file looks like:</p>
+
+<pre><code>06001,Alameda,CA,2008-10-01,NA,307.97872340425,325.8118
+06001,Alameda,CA,2008-11-01,NA,299.16666666667,NA
+06001,Alameda,CA,2008-11-01,NA,NA,318.115
+06001,Alameda,CA,2008-12-01,NA,289.88149498633,305.7878
+06001,Alameda,CA,2009-01-01,NA,288.5,291.5977
+</code></pre>
+
+<p>There are 224,369 rows and 7 fields. Each field is separated by a comma, and there is no header row.
+The meaning of each field is as follows:</p>
 
 <ul>
-<li><strong>fips</strong>: FIPS county code.  There are 2883 unique counties</li>
+<li><strong>fips</strong>: FIPS county code</li>
 <li><strong>county</strong>: county name</li>
-<li><strong>state</strong>: state abbreviation.  49 states are included</li>
+<li><strong>state</strong>: state abbreviation</li>
 <li><strong>time</strong>: time in &quot;YYYY-MM-DD&quot; format.  Each month&#39;s values are placed at the first day of the month</li>
-<li><strong>nSold</strong>: number of units sold</li>
-<li><strong>medListPriceSqft</strong>: median list price per square foot</li>
-<li><strong>medSoldPriceSqft</strong>: median sold price per square foot</li>
+<li><strong>sold</strong>: number of units sold</li>
+<li><strong>list</strong>: median list price dollar per square foot</li>
+<li><strong>selling</strong>: median sold price dollar per square foot</li>
 </ul>
 
-<p>The total size of the data text file is around 12MB. The raw data are available as a comma-delimited
-file <code>housing.txt</code> in our Tesseradata Github repository of the <code>RHIPE</code> documentation 
+<p>The total size of the data text file is around 12MB. The raw data are available as named
+<code>housing.txt</code> in our Tesseradata Github repository of the <code>RHIPE</code> documentation 
 <a href="http://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt">here</a>.   </p>
 
 <p>Note:</p>
@@ -138,35 +138,34 @@ building and which have direct access from the outside of the building or throug
 </div>
 
 
-<div class='tab-pane' id='writing-to-hdfs'>
-<h3>Writing to HDFS</h3>
+<div class='tab-pane' id='write-text-to-hdfs'>
+<h3>Write Text to HDFS</h3>
 
-<p>We&#39;ve downloaded the text file to our current R working directory:</p>
+<p>Now we ssh to the frontend of the cluster or any node of the cluster where we will start
+the initial R session. When we start the initial R, there is a working directory of the R to which the .RData
+and .Rhistory is saved. This working directory is locating on the frontend of the node we are sshing.
+We will treat this working directory as our current local working directory.
+We can get where this working directory is by using <code>getwd</code> function in R:</p>
 
-<pre><code class="r">list.files(&quot;./&quot;)
+<pre><code class="r">getwd()
 </code></pre>
 
-<pre><code>[1]&quot;housing.txt&quot;
+<pre><code>[1] &quot;/home/tongx&quot;
 </code></pre>
 
-<p>Here&#39;s what the file looks like:</p>
+<p>We will download the text data file to this local working directory by R command:</p>
 
-<pre><code class="r">system(&quot;head housing.txt&quot;)
+<pre><code class="r">system(&quot;wget http://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt /home/tongx&quot;)
 </code></pre>
 
-<pre><code>06001,Alameda County,CA,2008-10-01,NA,307.97872340425,325.8118
-06001,Alameda County,CA,2008-11-01,NA,299.16666666667,NA
-06001,Alameda County,CA,2008-11-01,NA,NA,318.115
-06001,Alameda County,CA,2008-12-01,NA,289.88149498633,305.7878
-06001,Alameda County,CA,2009-01-01,NA,288.5,291.5977
-06001,Alameda County,CA,2009-02-01,NA,287.03703703704,NA
-06001,Alameda County,CA,2009-02-01,NA,NA,282.2345
-06001,Alameda County,CA,2009-03-01,NA,282.22591362126,276.6336
-06001,Alameda County,CA,2009-04-01,NA,280.85867620751,281.7146
-06001,Alameda County,CA,2009-05-01,NA,290.73756432247,NA
+<p>We can check if text file is available now in our local working directory:</p>
+
+<pre><code class="r">list.files(&quot;/home/tongx&quot;)
 </code></pre>
 
-<p>Each column is separated by a comma, and there is no header row.</p>
+<pre><code>[1] &quot;housing.txt&quot; &quot;Projects&quot;    &quot;Rhipe&quot;       &quot;R_LIBS&quot;      &quot;R_LIBS.new&quot; 
+[6] &quot;R_packages&quot;
+</code></pre>
 
 <p>First, let&#39;s call the <code>RHIPE</code> library in R, and initialize it.  For details, see the installation instructions.</p>
 
@@ -178,7 +177,7 @@ rhoptions(runner = &quot;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&quot;
 
 <p>Now write the raw text file to HDFS.  The function that writes files to HDFS is <code>rhput()</code>.  </p>
 
-<pre><code class="r">rhput(&quot;./housing.txt&quot;, &quot;/ln/tmp/housing/housing.txt&quot;)
+<pre><code class="r">rhput(&quot;/home/tongx/housing.txt&quot;, &quot;/user/tongx/housing/housing.txt&quot;)
 </code></pre>
 
 <p>The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
@@ -187,7 +186,7 @@ it already exists.</p>
 
 <p>We can confirm that the housing data text file has been written to HDFS. </p>
 
-<pre><code class="r">rhexists(&quot;/ln/tmp/housing/housing.txt&quot;)
+<pre><code class="r">rhexists(&quot;/user/tongx/housing/housing.txt&quot;)
 </code></pre>
 
 <pre><code>[1] TRUE
@@ -205,8 +204,6 @@ it already exists.</p>
 <p><code>rhls()</code> is very similar to the bash command <code>ls</code>.  It will list all content under given address. 
 We can see that <code>housing.txt</code> file with size 11.82Mb is located under <code>/ln/tmp/housing/</code> 
 on HDFS.</p>
-
-<p>OK, the dataset is ready on HDFS, and we are ready to start the analysis. </p>
 
 </div>
 
@@ -385,11 +382,7 @@ also a list with length 2. The first one is the key, and the second one is the v
 two elements, one is the state abbreviation, another one is the data frame of the data for the corresponding
 state.</p>
 
-</div>
-
-
-<div class='tab-pane' id='means-by-state'>
-<h3>Means by State</h3>
+<h3>Compute State  Means</h3>
 
 <p>Now let&#39;s start to combine the result from the divide stage.</p>
 
@@ -644,17 +637,13 @@ $state
 [1] &quot;AL&quot;
 
 $county
-[1] &quot;Butler County&quot;
+[1] &quot;Butler&quot;
 
 $class
 [1] &quot;data.frame&quot;
 </code></pre>
 
-</div>
-
-
-<div class='tab-pane' id='means-by-county'>
-<h3>Means by County</h3>
+<h3>Compute County Means</h3>
 
 <p>Next, we calculate the means of list price and sold price for each county. It will be similar to 
 what we have done with means by state but with a little update.</p>
@@ -730,26 +719,26 @@ and metadata of the job.</p>
   .. ..$ listMean: num [1:2883] 85.5 54.3 59.3 87.6 74.4 ...
   .. ..$ soldMean: num [1:2883] NaN NaN NaN NaN NaN ...
   .. ..$ state   : chr [1:2883] &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; ...
-  .. ..$ county  : chr [1:2883] &quot;Barbour County&quot; &quot;Choctaw County&quot; &quot;Crenshaw County&quot; &quot;Houston County&quot; ...
+  .. ..$ county  : chr [1:2883] &quot;Barbour&quot; &quot;Choctaw&quot; &quot;Crenshaw&quot; &quot;Houston&quot; ...
 </code></pre>
 
 <pre><code class="r">head(rst[[1]][[2]])
 </code></pre>
 
-<pre><code>   fips listMean soldMean state          county
-1 01005 85.46983      NaN    AL  Barbour County
-2 01023 54.27378      NaN    AL  Choctaw County
-3 01041 59.29840      NaN    AL Crenshaw County
-4 01069 87.64237      NaN    AL  Houston County
-5 01087 74.35722      NaN    AL    Macon County
-6 01113 70.92100      NaN    AL  Russell County
+<pre><code>   fips listMean soldMean state       county
+1 01005 85.46983      NaN    AL      Barbour
+2 01023 54.27378      NaN    AL      Choctaw
+3 01041 59.29840      NaN    AL     Crenshaw
+4 01069 87.64237      NaN    AL      Houston
+5 01087 74.35722      NaN    AL        Macon
+6 01113 70.92100      NaN    AL      Russell
 </code></pre>
 
 </div>
 
 
-<div class='tab-pane' id='division-from-county-to-state'>
-<h3>Division from County to State</h3>
+<div class='tab-pane' id='new-division-by-state'>
+<h3>New Division by State</h3>
 
 <p>In previous tasks, we started from reading in text data file. Input key/value pairs are each row
 from the text file. It is also reasonable and common that we transfer from one type of division to a
