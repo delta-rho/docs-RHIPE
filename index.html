@@ -99,6 +99,41 @@
          <a target='_self' class='nav-not-header' href='#new-division-by-state'>New Division by State</a>
       </li>
 
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#access-subset-by-state'>Access Subset by State</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#read-and-divide-by-time'>Read and Divide by Time</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#compute-total-sold'>Compute Total Sold</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#job-counter'>Job Counter</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#set-parameters'>Set Parameters</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#shared-objects'>Shared Objects</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#manage-files-on-hdfs'>Manage Files on HDFS</a>
+      </li>
+
    </ul>
    </div>
 
@@ -968,6 +1003,356 @@ NULL
 
 <pre><code>Read 49 objects(15.22 MB) in 1.32 seconds
 </code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='access-subset-by-state'>
+<h3>Access Subset by State</h3>
+
+<p>As we have already
+seen in previous examples, our R objects from a mapreduce job have been saved as a sequence file on HDFS.
+We also have seen that how to control the number of key-value pairs we want to read by specifying the <code>max</code>
+argument in <code>rhread</code>. However, this can only guarantee we read fixed number of key-value pairs. The order
+of the key-value pairs or those R objects saved on HDFS is random. What if we would like to only access 
+specific key-value pairs by the key without reading all key-value pairs back into the R global environment?
+In other words, can we treat our dataset as a queryable database through <code>Rhipe</code> functions? The answer is
+absolutely YES!</p>
+
+<p>In order to achieve this purpose, we have to save our subsets as a map file instead of sequence file on HDFS.
+Map file is another type of file can be saved on HDFS besides text and sequence file. For example, we are 
+still trying to get subsets for each state based on the subsets for each county. This time we would like to 
+be able to access the subset of data for Indiana state only. The code is showed as following:</p>
+
+<pre><code class="r">map5 &lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    key &lt;- attr(map.values[[r]], &quot;state&quot;)
+    county &lt;- attr(map.values[[r]], &quot;county&quot;)
+    value &lt;- map.values[[r]]
+    value$fips &lt;- rep(map.keys[[r]], nrow(value))
+    value$county &lt;- rep(county, nrow(value))
+    rhcollect(key, value)
+  })
+})
+reduce5 &lt;- expression(
+  pre = {
+    combine &lt;- data.frame()
+  },
+  reduce = {
+    combine &lt;- rbind(combine, do.call(rbind, reduce.values))
+  },
+  post = {
+    rhcollect(reduce.key, combine)
+  }
+)
+mr5 &lt;- rhwatch(
+  map      = map5,
+  reduce   = reduce5,
+  input    = rhfmt(&quot;/user/tongx/housing/bycounty&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/user/tongx/housing/countytostate.map&quot;, type = &quot;map&quot;),
+  mapred   = list( 
+    mapred.reduce.tasks = 10
+  ),
+  readback = FALSE
+)
+</code></pre>
+
+<p>It is not hard to notice that the only difference between the code above with the code in the previous
+session is that the <code>type</code> in <code>output</code> argument in <code>rhwatch</code> function is changed to be <code>map</code>, which means
+we are creating a map file output in this mapreduce job. In this mapreduce job, we are doing exactly same
+division of the dataset as we did in sequence file, except that we would like to add indexing by key 
+property in the output file. And this is the main difference between map file and sequence file. After
+the job is finished, we can access a map file with <code>rhmapfile</code> function.</p>
+
+<pre><code class="r">rst &lt;- rhmapfile(&quot;/user/tongx/housing/countytostate.map&quot;)
+rst
+</code></pre>
+
+<pre><code>/ln/tmp/housing/countytostate.map is a MapFile with 10 index files
+</code></pre>
+
+<pre><code class="r">class(rst)
+</code></pre>
+
+<pre><code>[1] &quot;mapfile&quot;
+</code></pre>
+
+<pre><code class="r">object.size(rst)
+</code></pre>
+
+<pre><code>264 bytes
+</code></pre>
+
+<p>We can see that <code>rst</code> is a MapFile with 10 index files because we specified the reduce tasks number 
+to be 10. Its class is <code>mapfile</code>, and size is only 264 bytes, which we did not read the whole R
+object back from HDFS.</p>
+
+<p>Now let us have a deeper look at the output files on HDFS. Recall that &quot;/user/tongx/housing/countytostate&quot;
+is the sequence output files, and &quot;/user/tongx/housing/countytostate.map&quot; is the map output files.</p>
+
+<pre><code class="r">rhls(&quot;/user/tongx/housing/countytostate.map&quot;)
+</code></pre>
+
+<pre><code>   permission owner      group size          modtime                                               file
+1  -rw-r--r-- tongx supergroup    0 2014-09-28 13:52     /user/tongx/housing/countytostate.map/_SUCCESS
+2  drwxrwxrwx tongx supergroup    0 2014-09-28 13:51        /user/tongx/housing/countytostate.map/_logs
+3  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00000
+4  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00001
+5  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00002
+......
+</code></pre>
+
+<pre><code class="r">rhls(&quot;/ln/tmp/housing/countytostate&quot;)
+</code></pre>
+
+<pre><code>   permission owner      group     size          modtime                                           file
+1  -rw-r--r-- tongx supergroup        0 2014-09-20 18:02     /user/tongx/housing/countytostate/_SUCCESS
+2  drwxrwxrwx tongx supergroup        0 2014-09-20 18:02        /user/tongx/housing/countytostate/_logs
+3  -rw-r--r-- tongx supergroup 235.1 kb 2014-09-20 18:02 /user/tongx/housing/countytostate/part-r-00000
+4  -rw-r--r-- tongx supergroup   969 kb 2014-09-20 18:02 /user/tongx/housing/countytostate/part-r-00001
+5  -rw-r--r-- tongx supergroup 1.698 mb 2014-09-20 18:02 /user/tongx/housing/countytostate/part-r-00002
+......
+</code></pre>
+
+<p>We found out that all <code>part-r-</code> files now becomes directory instead of data files. When we go inside of each
+<code>part-r-</code> files, we notice that we have two files which are <code>data</code> and <code>index</code>. <code>data</code> file is similar with 
+the output in <code>part-r-</code> files we got in sequence output files. We can actually read it by using <code>rhread</code> 
+function. This extra <code>index</code> file with size around 200 bytes records all indexing information by key of this 
+part file.</p>
+
+<pre><code class="r">rhls(&quot;/user/tongx/housing/countytostate.map/part-r-00000&quot;)
+</code></pre>
+
+<pre><code>  permission owner      group        size          modtime                                                     file
+1 -rw-r--r-- tongx supergroup    235.1 kb 2014-09-28 13:52  /user/tongx/housing/countytostate.map/part-r-00000/data
+2 -rw-r--r-- tongx supergroup   209 bytes 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00000/index
+</code></pre>
+
+<p>Finally, we can access the subset of data frame of Indiana state by:</p>
+
+<pre><code class="r">head(rst[[&quot;IN&quot;]])
+</code></pre>
+
+<pre><code>        time  sold      list  selling  fips county
+1 2010-11-01    NA  56.70013       NA 18177  Wayne
+2 2010-12-01    NA  52.01389       NA 18177  Wayne
+3 2011-01-01    NA  49.92504       NA 18177  Wayne
+4 2011-02-01    NA  51.91466       NA 18177  Wayne
+5 2011-03-01    NA  55.27211       NA 18177  Wayne
+6 2011-04-01    NA  56.68348       NA 18177  Wayne
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='read-and-divide-by-time'>
+<h3>Read and Divide by Time</h3>
+
+<p>Same as before, we can create the subsets of dataset divided by time variable. But here one of
+potential problem that we may face is that what if some of the subsets are very large? This is
+a very general problem if we are dealing with a large and complex dataset. In fact, <code>Rhipe</code> is 
+able to write any size of subset to HDFS, but only can read less than 256 Mb subset from HDFS.
+In other words, we are able to create any size of subset in a mapreduce job, but we will get 
+issue when we are trying to read and apply analysis method on oversize subset.</p>
+
+<p>In this example, we are assuming that each subset of data by time is oversize, so we are going
+to create multiple subset for same time string.</p>
+
+<h4>Map</h4>
+
+<pre><code class="r">map6 &lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    line = strsplit(map.values[[r]], &quot;,&quot;)[[1]]
+    key &lt;- line[[4]]
+    value &lt;- as.data.frame(rbind(line[-4]), stringsAsFactors = FALSE)
+    rhcollect(key, value)
+  })
+})
+</code></pre>
+
+<h4>Reduce</h4>
+
+<pre><code class="r">reduce6 &lt;- expression(
+  pre = {
+  },
+  reduce = {
+    tmp &lt;- data.frame()
+    tmp &lt;- rbind(tmp, do.call(rbind, reduce.values))
+    names(tmp) &lt;- c(
+      &quot;fips&quot;, &quot;county&quot;, &quot;state&quot;, 
+      &quot;sold&quot;, &quot;list&quot;, &quot;selling&quot;
+    )
+    tmp$list &lt;- as.numeric(tmp$list)
+    tmp$selling &lt;- as.numeric(tmp$selling)
+    rhcollect(reduce.key, tmp)
+  },
+  post = {
+  }
+)
+</code></pre>
+
+<h4>Execution Function</h4>
+
+<pre><code class="r">mr6 &lt;- rhwatch(
+  map      = map6,
+  reduce   = reduce6,
+  input    = rhfmt(&quot;/ln/tmp/housing/housing.txt&quot;, type = &quot;text&quot;),
+  output   = rhfmt(&quot;/ln/tmp/housing/bytime&quot;, type = &quot;sequence&quot;),
+  mapred   = list(
+    mapred.reduce.tasks = 10,
+    rhipe_reduce_buff_size = 500
+  ),
+  readback = FALSE
+)
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='compute-total-sold'>
+<h3>Compute Total Sold</h3>
+
+<p>We then would like to calculate the total sold units for every month over all states.</p>
+
+<h4>Without Combiner</h4>
+
+<pre><code class="r">map7 &lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    key &lt;- map.keys[[r]]
+    value &lt;- sum(as.numeric(map.values[[r]]$sold), na.rm = TRUE)
+    rhcollect(key, value)
+  })
+})
+reduce7 &lt;- expression(
+  pre = {
+    count &lt;- 0
+  },
+  reduce = {
+    count &lt;- count + sum(unlist(reduce.values), na.rm = TRUE)
+  },
+  post = {
+    rhcollect(reduce.key, count)
+  }
+)
+</code></pre>
+
+<p>In the map expression, we calculated the sum of the sold units for each key</p>
+
+<pre><code class="r">mr7 &lt;- rhwatch(
+  map       = map7,
+  reduce    = reduce7,
+  input     = rhfmt(&quot;/ln/tmp/housing/bytime&quot;, type = &quot;sequence&quot;),
+  output    = rhfmt(&quot;/ln/tmp/housing/soldbytime&quot;, type = &quot;sequence&quot;),
+  mapred    = list(
+    mapred.reduce.tasks = 10
+  ),
+  jobname   = &quot;total sold unit for each month&quot;,
+  mon.sec   = 10,
+  combiner  = FALSE,
+  readback  = FALSE
+)
+</code></pre>
+
+<p>The default for combiner is <code>FALSE</code>, which is what we have used before.</p>
+
+<h4>Combiner as an Optimization</h4>
+
+<p>Between the map phase and reduce phase of a MapReduce job, Hadoop sends all the intermediate values
+for a given key to the reducer. The intermediate values for a given key are located on several compute 
+nodes and need to be shuffled (sent across the network) to the node assigned the processing of that
+intermediate key. This involves a lot of network transfer.</p>
+
+<p>Some operations do not need access to all of the data (intermediate values), i.e they can compute on 
+subsets and order does not matter, i.e associative and commutative operations. For example, the minimum, 
+or the sum, of some numbers. In these cases, a combiner can be useful.</p>
+
+<p>The idea of the combiner is that the reduce is first run locally on mapper outputs before they are sent 
+for the final reduce. When the combiner is enabled, the reduction occurs just after the map phase on a 
+subset of intermediate values for a given intermediate keys. The output of this is then sent to the 
+reducer. This greatly reduces network transfer and accelerates the job speed, especially if the output 
+from a map contains a lot of data.</p>
+
+<h4>Enabling Combiner in RHIPE</h4>
+
+<p>Combiner can be enabled in <code>Rhipe</code> by specifying <code>combiner = TRUE</code> when calling function <code>rhwatch()</code>.</p>
+
+<p>To be able to use a combiner, your reduce expression needs to pass the same data type as it receives,
+i.e the two arguments in the function rhcollect() in your map expression need to be of the same type as 
+those in the function rhcollect() in your reduce expression. For example, if you pass a string as the key
+and a numeric vector as the value in the map expression, you need to pass a string as key and a numeric 
+vector as the value in the reduce expression as well.</p>
+
+<p>We will demonstrate the usage of combiners through the following examples.</p>
+
+<pre><code class="r">mr8 &lt;- rhwatch(
+  map       = map7,
+  reduce    = reduce7,
+  input     = rhfmt(&quot;/ln/tmp/housing/bytime&quot;, type = &quot;sequence&quot;),
+  output    = rhfmt(&quot;/ln/tmp/housing/soldbytime.combiner&quot;, type = &quot;sequence&quot;),
+  mapred    = list(
+    mapred.reduce.tasks = 10
+  ),
+  jobname   = &quot;total sold unit for each month with combiner&quot;,
+  mon.sec   = 10,
+  combiner  = TRUE,
+  readback  = FALSE
+)
+</code></pre>
+
+<pre><code class="r">rst.comb &lt;- rhread(&quot;/ln/tmp/housing/soldbytime.combiner&quot;)
+rst &lt;- rhread(&quot;/ln/tmp/housing/soldbytime&quot;)
+identical(rst, rst.comb)
+</code></pre>
+
+<pre><code>[1] TRUE
+</code></pre>
+
+<pre><code class="r">df &lt;- data.frame(  
+  time  = sapply(rst, &quot;[[&quot;, 1),
+  total = sapply(rst, &quot;[[&quot;, 2)
+)
+df &lt;- df[order(df$time, decreasing = FALSE), ]  
+df.comb &lt;- data.frame(  
+  time  = sapply(rst.comb, &quot;[[&quot;, 1),
+  total = sapply(rst.comb, &quot;[[&quot;, 2)
+)
+df.comb &lt;- df.comb[order(df.comb$time, decreasing = FALSE), ]
+head(df.comb)
+head(df)
+</code></pre>
+
+<pre><code>         time  total
+45 2008-10-01 272879
+50 2008-11-01 201648
+59 2008-12-01 229829
+51 2009-01-01 180674
+60 2009-02-01 187276
+1  2009-03-01 219149
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='job-counter'>
+<h3>Job Counter</h3>
+
+</div>
+
+
+<div class='tab-pane' id='set-parameters'>
+<h3>Set Parameters</h3>
+
+</div>
+
+
+<div class='tab-pane' id='shared-objects'>
+<h3>Shared Objects</h3>
+
+</div>
+
+
+<div class='tab-pane' id='manage-files-on-hdfs'>
+<h3>Manage Files on HDFS</h3>
 
 </div>
 
