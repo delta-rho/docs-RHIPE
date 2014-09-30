@@ -146,7 +146,7 @@ The meaning of each field is as follows:</p>
 
 <p>The total size of the text file is around 12MB. It is available as 
 <code>housing.txt</code> in our Tesseradata Github repository of the <code>RHIPE</code> documentation 
-<a href="http://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt">here</a>.   </p>
+<a href="https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt">here</a>.   </p>
 
 <p>Note:</p>
 
@@ -167,17 +167,17 @@ where you can store files, such as your .RData and .Rhistory files.  This might 
 Start an interactive R session.</p>
 
 <p>You can double-check the name of your local working directory with the <code>getwd</code> command.  Mine is
-called &quot;/home/tongx&quot; but yours will be different.</p>
+called &quot;/home/median/u41/tongx&quot; but yours will be different.</p>
 
 <pre><code class="r">getwd()
 </code></pre>
 
-<pre><code>[1] &quot;/home/tongx&quot;
+<pre><code>[1] &quot;/home/median/u41/tongx&quot;
 </code></pre>
 
 <p>Download the data file to your local working directory with the following command:</p>
 
-<pre><code class="r">system(&quot;wget http://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt&quot;)
+<pre><code class="r">system(&quot;wget https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt&quot;)
 </code></pre>
 
 <p>If it downloaded properly, then &quot;housing.txt&quot; will show up in the output of this command, which lists files
@@ -199,7 +199,7 @@ rhoptions(runner = &quot;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&quot;
 <p>Now we want to copy the raw text file to the HDFS.  The function that writes files to HDFS is <code>rhput()</code>.<br>
 Replace <code>tongx</code> with an appropriate HDFS directory, such as your user name.</p>
 
-<pre><code class="r">rhput(&quot;./housing.txt&quot;, &quot;/user/tongx/housing/housing.txt&quot;)
+<pre><code class="r">rhput(&quot;./housing.txt&quot;, &quot;/ln/tongx/housing/housing.txt&quot;)
 </code></pre>
 
 <p>The <code>rhput</code> function takes two arguments.
@@ -211,7 +211,7 @@ Rhipe allows us to achieve this task from within R.</p>
 <p>We can confirm that the housing data text file has been written to HDFS with the <code>rhexists</code> function.
 Make sure you specify the same directory as you used in the last step.</p>
 
-<pre><code class="r">rhexists(&quot;/user/tongx/housing/housing.txt&quot;)
+<pre><code class="r">rhexists(&quot;/ln/tongx/housing/housing.txt&quot;)
 </code></pre>
 
 <pre><code>[1] TRUE
@@ -219,11 +219,11 @@ Make sure you specify the same directory as you used in the last step.</p>
 
 <p>If we want to see more details about a file or directory on HDFS, we can use <code>rhls()</code>.</p>
 
-<pre><code class="r">rhls(&quot;/user/tongx/housing&quot;)
+<pre><code class="r">rhls(&quot;/ln/tongx/housing&quot;)
 </code></pre>
 
 <pre><code>  permission owner      group     size          modtime                            file
-1 -rw-rw-rw- tongx supergroup 11.82 mb 2014-09-17 11:11 /user/tongx/housing/housing.txt
+1 -rw-rw-rw- tongx supergroup 11.82 mb 2014-09-17 11:11   /ln/tongx/housing/housing.txt
 </code></pre>
 
 <p><code>rhls()</code> is very similar to the bash command <code>ls</code>.  It will list all content under a given address. 
