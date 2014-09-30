@@ -58,7 +58,7 @@ You should have your own working directory wherever is more convenient for yours
 We will download the text data file to this local working directory by R command:
 
 ```{r eval=FALSE, tidy=FALSE}
-system("wget http://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt /home/tongx")
+system("wget https://raw.githubusercontent.com/XiaosuTong/docs-RHIPE/gh-pages/housing.txt /home/tongx")
 ```
 
 We can check if text file is available now in our local working directory:
