@@ -6,10 +6,10 @@
 
 We'll demonstrate the `RHIPE` package with an analysis of housing data.
 The housing data set contains monthly median list and selling prices per square foot and number 
-of units sold for 2883 counties in 49 states from October 2008 to March 2014, harvested from 
+of units sold for 2,883 counties in 49 states from October 2008 to March 2014, harvested from 
 Quandl's Zillow Housing Data.
 
-Here is how raw text file looks like:
+Here are the first few lines of the raw text file:
 ```
 06001,Alameda,CA,2008-10-01,NA,307.97872340425,325.8118
 06001,Alameda,CA,2008-11-01,NA,299.16666666667,NA
@@ -24,12 +24,12 @@ The meaning of each field is as follows:
 - **fips**: FIPS county code
 - **county**: county name
 - **state**: state abbreviation
-- **time**: time in "YYYY-MM-DD" format.  Each month's values are placed at the first day of the month
-- **sold**: number of units sold
-- **list**: monthly median list price dollar per square foot
-- **selling**: monthly median selling price dollar per square foot
+- **date**: date in "YYYY-MM-DD" format.  Each month's values are placed at the first day of the month
+- **nUnits**: number of units sold
+- **listPrice**: monthly median list price dollar per square foot
+- **salePrice**: monthly median selling price dollar per square foot
  
-The total size of the data text file is around 12MB. The raw data are available as named
+The total size of the text file is around 12MB. It is available as 
 `housing.txt` in our Tesseradata Github repository of the `RHIPE` documentation 
 [here](http://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt).   
 
@@ -42,11 +42,13 @@ building and which have direct access from the outside of the building or throug
 
 ### Write Text to HDFS ###
 
-Now we ssh to the frontend of the cluster or any node of the cluster where we will start
-the initial R session. When we start the initial R, there is a working directory of the R to which the .RData
-and .Rhistory is saved. This working directory is locating on the frontend or the node we are sshing.
-We will treat this working directory as our current local working directory.
-We can get where this working directory is by using `getwd` function in R:
+Begin by connecting via ssh to the machine from which you will issue commands to your HDFS.  This might
+be the frontend machine of your cluster, or it may be one of the Hadoop nodes.  Navigate to a directory
+where you can store files, such as your .RData and .Rhistory files.  This might be your home directory.
+Start an interactive R session.
+
+You can double-check the name of your local working directory with the `getwd` command.  Mine is
+called "/home/tongx" but yours will be different.
 
 ```{r eval=FALSE, tidy=FALSE}
 getwd()
@@ -54,46 +56,46 @@ getwd()
 ```
 [1] "/home/tongx"
 ```
-You should have your own working directory wherever is more convenient for yourself.
-We will download the text data file to this local working directory by R command:
+
+Download the data file to your local working directory with the following command:
 
 ```{r eval=FALSE, tidy=FALSE}
-system("wget https://raw.githubusercontent.com/XiaosuTong/docs-RHIPE/gh-pages/housing.txt /home/tongx")
+system("wget http://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt")
 ```
 
-We can check if text file is available now in our local working directory:
+If it downloaded properly, then "housing.txt" will show up in the output of this command, which lists files
+in your local working directory:
 
 ```{r eval=FALSE, tidy=FALSE}
-list.files("/home/tongx")
-```
-```
-[1] "housing.txt" "Projects"    "Rhipe"       "R_LIBS"      "R_LIBS.new" 
-[6] "R_packages"
+list.files(".")
 ```
 
-First, let's call the `RHIPE` library in R, and initialize it.  For details, see the installation instructions.
+This tutorial assumes that you've already installed Rhipe using the instructions provided.
+Every time we use Rhipe, we have to call the Rhipe library in R and initialize it.  Your values
+for `zips` and `runner` might be different than these, depending on the details of your installation.
 
 ```{r eval=FALSE, tidy=FALSE}
 library(Rhipe)
 rhinit()
-rhoptions(zips = "/user/share/RhipeLib.tar.gz")
+rhoptions(zips = "/ln/share/RhipeLib.tar.gz")
 rhoptions(runner = "sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh")
 ```
 
-Now write the raw text file to HDFS.  The function that writes files to HDFS is `rhput()`.  
+Now we want to copy the raw text file to the HDFS.  The function that writes files to HDFS is `rhput()`.  
+Replace `tongx` with an appropriate HDFS directory, such as your user name.
+
 ```{r eval=FALSE, tidy=FALSE}
-rhput("/home/tongx/housing.txt", "/user/tongx/housing/housing.txt")
+rhput("./housing.txt", "/user/tongx/housing/housing.txt")
 ```
 
-In this function, we need two arguments or two two absolute file path.
-The first argument is the absolute path to the file to be copied which is located on our current 
-local working directory, and the second argument is the absolute HDFS path where the file will be written. 
-`rhput` creates the file at destination, overwriting the destination if it already exists.
-One of the great part of `Rhipe` package in R is that all the communication to the Hadoop from user
-can be achieved just in R. We do not have to worry about hadoop command that do all different types 
-of filesystem management or mapreduce job.
+The `rhput` function takes two arguments.
+The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
+the file will be written. `rhput` creates the file at destination, overwriting the destination if
+it already exists.  We can also copy files onto HDFS via Hadoop's command line interface, but
+Rhipe allows us to achieve this task from within R.
 
-We can confirm that the housing data text file has been written to HDFS. 
+We can confirm that the housing data text file has been written to HDFS with the `rhexists` function.
+Make sure you specify the same directory as you used in the last step.
 
 ```{r eval=FALSE, tidy=FALSE}
 rhexists("/user/tongx/housing/housing.txt")
@@ -110,9 +112,11 @@ rhls("/user/tongx/housing")
   permission owner      group     size          modtime                            file
 1 -rw-rw-rw- tongx supergroup 11.82 mb 2014-09-17 11:11 /user/tongx/housing/housing.txt
 ```
-`rhls()` is very similar to the bash command `ls`.  It will list all content under given address. 
-We can see that `housing.txt` file with size 11.82Mb is located under `/user/tongx/housing/` 
+`rhls()` is very similar to the bash command `ls`.  It will list all content under a given address. 
+We can see that the `housing.txt` file with size 11.82Mb is located under `/user/tongx/housing/` 
 on HDFS.
+
+With our data on the HDFS, we are ready to start a D\&R analysis.
 
 ### Read and Divide by State ###
 
@@ -132,11 +136,11 @@ pairs, where the key may or may not have changed from the input key.  The output
 pairs of the map are sometimes called intermediate key-value pairs, because they will be the
 input to the reduce function.  The intermediate key-value pairs are grouped by key, and then
 the reduce function is applied to each group.  The output of the reduce function is again
-one or more key-value pairs.  `Rhipe` allows us to write the map and reduce functions in
-R code.
+one or more key-value pairs.  Rhipe allows us to write the map and reduce functions in
+R code, using R objects for the keys and values.
 
-A valid MapReduce job in `Rhipe` consists of a map expression, an optional reduce expression, 
-and a execution function `rhwatch()`.  If no reduce expression is given, the output of the
+A valid MapReduce job in Rhipe consists of a map expression, an optional reduce expression, 
+and an execution function `rhwatch()`.  If no reduce expression is given, the output of the
 map is the final output.
 
 #### Map ####
@@ -145,49 +149,55 @@ map is the final output.
 map1 <- expression({
   lapply(seq_along(map.keys), function(r) {
     line = strsplit(map.values[[r]], ",")[[1]]
-    key <- line[[3]]
+    key <- line[3]
     value <- as.data.frame(rbind(line[-3]), stringsAsFactors = FALSE)
+    names(value) <- c(
+      "fips", "county", "date", 
+      "nUnits", "listPrice", "salePrice"
+    )
+    value$listPrice <- as.numeric(value$listPrice)
+    value$salePrice <- as.numeric(value$salePrice)
     rhcollect(key, value)
   })
 })
 ```
 
-The input keys are line numbers in the housing data text file.  They are available as the list
-object `map.keys`.  The values are the lines of text, which are in the list object `map.values`.
-This is the default for text files.  For each input key-value pair, `rhcollect` emits an
+The input keys are line numbers in the housing data text file.  They are the elements of the list
+object `map.keys`.  The input values are the lines of text, which are the elements of the list object `map.values`.
+This is the default when the input is a raw text file.  For each input key-value pair, `rhcollect` emits an
 intermediate key-value pair, where the key is the state name (the third field in the comma-separated
-line) and the value is all other fields in the line, stored as a single row data frame.
+line) and the value is all other fields in the line, stored as a data frame with a single row.
 
 #### Reduce ####
 
 ```{r eval=FALSE, tidy=FALSE}
 reduce1 <- expression(
   pre = {
-    tmp <- data.frame()
+    oneState <- data.frame()
   },
   reduce = {
-    tmp <- rbind(tmp, do.call(rbind, reduce.values))
+    oneState <- rbind(tmp, do.call(rbind, reduce.values))
   },
   post = {
-    names(tmp) <- c(
-      "fips", "county", "time", 
-      "sold", "list", "selling"
-    )
-    tmp$list <- as.numeric(tmp$list)
-    tmp$selling <- as.numeric(tmp$selling)
-    rhcollect(reduce.key, tmp)
+    attr(oneState, "state") <- reduce.key
+    rhcollect(reduce.key, oneState)
   }
 )
 ```
 
-In `RHIPE`, reduce is an R expression that is evaluated 
-by `RHIPE` during the reduce stage. All intermediate key/value pairs from map stage that share same
-key will be grouped together and processed to be applied reduce function. In reduce-pre session, we 
-initialize an empty data.frame `tmp`. `reduce.key` is the shared key, and `reduce.values` is a list 
-that includes all values corresponding to that unique `reduce.key`. In reduce-reduce session, we row 
-combined all one-row data.frame, and then row combined it with `tmp`. Finally in reduce-post session, 
-we assigned the name to each column, and force the two price variable to be numeric. The final 
-key/value pair for each state will be collected in the end by using `rhcollect()`.
+Between the map and reduce stages, the intermediate key-value pairs are grouped by key (the state name).
+The current group's key is available in the object `reduce.key`, and all values associated with that key
+are elements of the list object `reduce.values`.  The reduce expression has three parts: `pre`, which is 
+executed once first; `reduce`, which is executed repeatedly until all intermediate values associated with
+the current key have been processed; and `post`, which is executed once at the end.  
+
+In the reduce expression above, our goal is to combine all observations associated with one particular
+state into a single data frame.  In `pre`, we initialize an empty data frame, `oneState`.  In `reduce`, 
+we use `rbind`
+to combine all observations associated with one particular state.  In `post`, we add an attribute to the
+data frame containing the state name and emit the final key-value
+pair.  The key is the state name, and the value is the data frame with all observations belonging to
+that state.  These final key-value pairs are written to HDFS, and will persist for subsequent analyses.
 
 #### Execution Function ####
 
@@ -195,8 +205,8 @@ key/value pair for each state will be collected in the end by using `rhcollect()
 mr1 <- rhwatch(
   map      = map1,
   reduce   = reduce1,
-  input    = rhfmt("/user/tongx/housing/housing.txt", type = "text"),
-  output   = rhfmt("/user/tongx/housing/bystate", type = "sequence"),
+  input    = rhfmt("/ln/tongx/housing/housing.txt", type = "text"),
+  output   = rhfmt("/ln/tongx/housing/byState", type = "sequence"),
   mapred   = list(
     mapred.reduce.tasks = 10
   ),
@@ -204,18 +214,19 @@ mr1 <- rhwatch(
 )
 ```
 
-After the map and reduce expression, we are heading to the execution function of a mapreduce job in 
-`RHIPE`. `rhwatch()` is a call that packages the MapReduce job which is sent to Hadoop. In `rhwatch()` 
-function, we assign the map and reduce expression to `map` and `reduce` argument respectively. Input
-and output argument in `rhwatch()` function is used to specify the path on HDFS of input file and 
-output file respectively, and there are three types of file we can consider, text, sequence, and map 
-file. `mapred` argument is a list that can be used to customize the Hadoop and `RHIPE` options. Here 
-we specified the `mapred.reduce.tasks` to be 10, so the number of reduce tasks will be set to be 10. 
-This number also is related to the number of output files, since each reduce task will generate one 
-part of output file for the final output. 
+The `rhwatch` function packages and executes our Rhipe MapReduce job.  In addition to the `map` and
+`reduce` expressions created above, we specify the HDFS locations of the input and output for this
+MapReduce job.  The input is the location where we stored our raw text file using `rhput` in the
+previous section.  The output is any location on HDFS we choose.  Be careful, as any existing data
+in the output location will be overwritten.
 
-Once we submit the job, in R console we can see that job running information is keeping popping 
-out, which will be helpful for you to have some idea about the status of running job.
+The `mapred` argument contains optional configuration parameters for the MapReduce job.  In this
+case, we've specified 10 reduce tasks using `mapred.reduce.tasks`.  This means that of the 49 groups
+of key-value pairs corresponding to the 49 states in our data set, 10 at a time will be processed
+in parallel.  Specifying 10 reduce tasks also means that the output written to HDFS will be broken
+into 10 files (we'll come back to this point in the next section).  Finally, `readback = FALSE` 
+tells Rhipe not to read the final output from HDFS into our interactive R session.  We'll do that
+with a separate command. 
 
 ```
 Saving 1 parameter to /tmp/rhipe-temp-params-bbb96e029776c9953476a54c74d9eaf7 (use rhclean to delete all temp files)
@@ -233,20 +244,36 @@ reduce   0       10      10       0        0      0               0             
 Waiting 5 seconds
 ``` 
 
-We can use `rhread()` to read back the result from HDFS. The object we read back into R is a list 
-object with the length equal to the number of total key/value pairs. Each element in this list is
-also a list with length 2. The first one is the key, and the second one is the value. This is how 
-`RHIPE` translate key/value pairs into R.
+After our job has completed successfully, the output will be in the location we specified on the HDFS.
+Since this data set is quite small, we can read the whole thing from HDFS into our interactive R
+environment using `rhread`.  All we have to specify is the HDFS location we wish to read from.
 
 ```{r eval=FALSE, tidy=FALSE}
-rst <- rhread("/user/tongx/housing/bystate")
+stateSubsets <- rhread("/ln/tongx/housing/byState")
 ```
 ```
 Read 49 objects(13.52 MB) in 1.41 seconds
 ```
+
+Rhipe conveniently packages the key-value pairs in our HDFS output location as a nested list, which we've
+assigned to the variable `stateSubsets`.  Since there were 49 key-value pairs in the output of our reduce
+stage, there are 49 elements in `stateSubsets`.  Each element is itself a list with two elements: a key
+and a value.  In this case, the keys are character strings containing the state names, and the 
+values are data frames, just as they should be based on our reduce code.
+
+We can take a look at the data frame contained in the first key-value pair.  The key-value pairs
+are in no particular order.    
+
 ```{r eval=FALSE, tidy=FALSE}
-str(rst)
+head(stateSubsets[[1]][[2]])
 ```
+
+We can also look at the structure of `stateSubsets` and confirm that it's what we expected.
+
+```{r eval=FALSE, tidy=FALSE}
+str(stateSubsets)
+```
+
 ```
 List of 49
  $ :List of 2
@@ -288,13 +315,18 @@ List of 49
   .. ..$ selling: num [1:3705] NA 94.6 NA 90.8 NA ...
 ```
 
-So, as we expect, the `rst` is a list with length 49, and each element of `rst` is also a list with
-two elements, one is the state abbreviation, another one is the data frame of the data for the corresponding
-state.
+We've now successfully divided our data into subsets and stored each subset as an R object.  
+They will persist on HDFS and be used for many analytic methods, each applied using Rhipe. 
 
 ### Compute State  Means ###
 
-Now let's start to combine the result from the divide stage.
+Now we'll apply an analytic method to the subsets of our housing data.  Our analytic
+method will be to take the mean.  We have monthly list prices and sale prices per square foot, 
+so our desired output is two numbers for each state: a mean of list prices and a mean 
+of sale prices.  The recombination step will be to put all the state means in a single data
+frame, which can be further analyzed in an interactive R session.
+
+We apply our chosen analytic method with a second Rhipe MapReduce job:
 
 #### Map ####
 
@@ -302,9 +334,9 @@ Now let's start to combine the result from the divide stage.
 map2 <- expression({
   lapply(seq_along(map.keys), function(r) {
     value <- data.frame(
-      state = map.keys[[r]],
-      listmean = mean(map.values[[r]]$list, na.rm = TRUE),
-      sellingmean = mean(map.values[[r]]$selling, na.rm = TRUE),
+      state = attr(map.values[[r]], "state"),
+      listMean = mean(map.values[[r]]$listPrice, na.rm = TRUE),
+      saleMean = mean(map.values[[r]]$salePrice, na.rm = TRUE),
       stringsAsFactors = FALSE
     )
     rhcollect(1, value)
@@ -312,50 +344,64 @@ map2 <- expression({
 })
 ```
 
-In this map expression, we read in the key/value pairs we created in previous division. And for 
-each state, means were calculated. We created a data.frame with one row, three columns which are
-state, listmean, and sellingmean. When we calculated the mean, we removed all NA in the data. Then we
-collected the key/value pair which key is 1, value is the data frame. The reason we assign 1 as key
-to all state is that by doing this, we can collect all means by state together in the reduce stage,
-and then create a final data frame.
+The input to our map is the the final output we created in the previous section.  The keys 
+were state names, stored as character objects, and the values were data frames with prices,
+dates, and county information.  In general, 
+keys need not be uniue, but in this case we know that there are 49 state names, where no state
+is duplicated.  
+
+To each state's data frame, we apply the same action: take the mean of the list price and 
+the mean of the sale price.  These are stored in a single row data frame to be recombined in 
+the reduce step below.  The row has three columns: state name plus the two calculated means.
+As before, `rhcollect` emits intermediate key-value pairs.  One key-value pair is emitted per
+state.  The value is the single row data frame we just created.  We use the same key for all 49
+states so that they will all appear together in the reduce step.  The key itself is meaningless,
+so we'll use 1 as a placeholder.
 
 #### Reduce ####
 
 ```{r eval=FALSE, tidy=FALSE}
 reduce2 <- expression(
   pre = {
-    combine <- data.frame()
+    allMeans <- data.frame()
   },
   reduce = {
-    combine <- rbind(combine, do.call(rbind, reduce.values))
+    allMeans <- rbind(allMeans, do.call(rbind, reduce.values))
   },
   post = {
-    rhcollect(reduce.key, combine)
+    rhcollect(reduce.key, allMeans)
   }
 )
 ```
 
-In the reduce expression, we still have three parts, pre, reduce, and post. In reduce-pre, we 
-initialized a data frame `combine`. Since all key now is 1, all those data frames with one row, 
-three columns will be grouped together as a list in `reduce.values`. After the row combined 
-function, the `combine` object will be a data frame with all means for each state. Finally in
-reduce-post, we collect the key which is 1, and the value which is the `combine`, and save this
-key/value pair to HDFS.
+We divided our data into subsets and applied an analytic method to each subset.  The reduce step
+above is our recombination.  We recombine the state means into a data frame with 49 rows and 3
+columns.  Later, we can read that data frame from HDFS into our interactive R session for further
+analysis.
+
+The input key is the placeholder value 1, which is left unchanged as the output key.  The input
+values are the single row data frames for each state, and the output values is the 49 row data 
+frame with all states represented.  In the `pre` step we initialize an empty data frame.  In
+`reduce` we use `rbind` to append the single row data frames to the empty data frame we created, 
+and in `post` we use `rhcollect` to emit the final output so that it will be written to HDFS.
 
 #### Execution Function ####
 
-In `rhwatch()` this time, we changed several arguments. First, in the `rhfmt` of `input` argument,
+In `rhwatch()` this time, we've changed several arguments. First, in the `rhfmt` of `input` argument,
 `type` is specified to be "sequence", since the input file to this mapreduce job is the output
-from our division. Also we changed the `mapred.reduce.tasks` to be 5. At last, we assigned 
-`readback` to be `TRUE`. By doing this, the final results will not only be saved on HDFS, but also
-be read back from HDFS (without using `rhread()`) and assigned to an object in R, like `mr2`.
+from our division. This indicates to Rhipe that the input is not a raw text file, but rather a 
+file already organized as key-value pairs.  Also we request 5 reduce tasks for this job using
+the `mapred.reduce.tasks` option.  Finally, we assign
+`readback` to be `TRUE`. By doing this, the final results not only will be saved on HDFS, but also
+will be read back from HDFS (without using `rhread()`) and assigned to an object in our interactive R
+session.  We've named that object `stateMeans`.
 
 ```{r eval=FALSE, tidy=FALSE}
-mr2 <- rhwatch(
+stateMeans <- rhwatch(
   map      = map2,
   reduce   = reduce2,
-  input    = rhfmt("/user/tongx/housing/bystate", type = "sequence"),
-  output   = rhfmt("/user/tongx/housing/meanbystate", type = "sequence"),
+  input    = rhfmt("/ln/tongx/housing/byState", type = "sequence"),
+  output   = rhfmt("/ln/tongx/housing/meanByState", type = "sequence"),
   mapred   = list( 
     mapred.reduce.tasks = 5
   ),
@@ -363,7 +409,7 @@ mr2 <- rhwatch(
 )
 ```
 
-Same as before, once we submit the job, in R console we can see job running information.
+Just as before, once we submit the job, we see job status information.
 
 ```
 [Thu Sep 18 23:48:19 2014] Name:2014-09-18 23:48:19 Job: job_201405301308_4715  State: PREP Duration: 0.175
@@ -383,7 +429,7 @@ Read 1 objects(2.42 KB) in 0.06 seconds
 ```
 
 ```{r eval=FALSE, tidy=FALSE}
-str(mr2)
+str(stateMeans)
 ```
 ```
 List of 1
@@ -395,17 +441,18 @@ List of 1
   .. ..$ sellingmean: num [1:49] 95.1 NaN 101.3 422.5 143.4 ...
 ```
 
-As we can see, the class of the result is a list with one element which is a nested list with two 
-elements. The first element is the key 1 which is meaningless, the second element is a data.frame with
-three columns which are state abbreviation, mean of median list price per square feet, and mean of 
-median sold price per square feet.
+As we can see, the result is a list of length 1.  This make sense, since we only output a single
+key-value pair.  This single element is itself a list of length 2: one element for the key, and 
+another for the value.  The value is what we're interested in, namely, the data frame of 49 state means.
+It has three columns which are state abbreviation, mean of median list price per square feet, and mean of 
+median sale price per square feet.
  
 ```{r eval=FALSE, tidy=FALSE}
-data <- mr2[[1]][[2]][with(mr2[[1]][[2]], order(listmean, decreasing=TRUE)),]
-head(data)
+stateMeans <- stateMeans[[1]][[2]]
+head(stateMeans)
 ```
 ```
-   state listmean sellingmean
+   state listMean saleMean
 4     DC 369.0546    422.4744
 45    MA 259.1316    210.8714
 44    CA 192.6343    185.8716
@@ -414,38 +461,45 @@ head(data)
 22    CT 162.4686    151.7553
 ```
 
-If you are wondering how the results looks like on HDFS, or how the results were saved on HDFS. 
-We can actually have a look at it by using `rhls()` function.
+Let's take a look at how the output was stored on HDFS using `rhls`.
 
 ```{r eval=FALSE, tidy=FALSE}
-rhls("/user/tongx/housing/meanbystate")
+rhls("/ln/tongx/housing/meanByState")
 ```
 ```
   permission owner      group        size          modtime                                         file
-1 -rw-r--r-- tongx supergroup           0 2014-09-18 23:56     /user/tongx/housing/meanbystate/_SUCCESS
-2 drwxrwxrwx tongx supergroup           0 2014-09-18 23:56        /user/tongx/housing/meanbystate/_logs
-3 -rw-r--r-- tongx supergroup    1.363 kb 2014-09-18 23:56 /user/tongx/housing/meanbystate/part-r-00000
-4 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /user/tongx/housing/meanbystate/part-r-00001
-5 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /user/tongx/housing/meanbystate/part-r-00002
-6 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /user/tongx/housing/meanbystate/part-r-00003
-7 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /user/tongx/housing/meanbystate/part-r-00004
+1 -rw-r--r-- tongx supergroup           0 2014-09-18 23:56     /ln/tongx/housing/meanByState/_SUCCESS
+2 drwxrwxrwx tongx supergroup           0 2014-09-18 23:56        /ln/tongx/housing/meanByState/_logs
+3 -rw-r--r-- tongx supergroup    1.363 kb 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00000
+4 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00001
+5 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00002
+6 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00003
+7 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00004
 ```
 
-So there are five files in output "/user/tongx/housing/meanbystate", named from "part-r-00000" to 
-"part-r-00004". Besides these five files, there are another two files named "_SUCCESS" and 
-"_logs" which records the metadata and log information. One more thing should be noticed here,
-among those five output part files, there are four of them with the same size 94 bytes. This is
-not by coincidence, and it means those four files are empty. Since we only have one key/value
-pair and the key/value pair is the finest process unit in `HDFS`, only one reduce task was working
-on that key/value pair, and the rest of four tasks are just empty.
+There are five files in "/ln/tongx/housing/meansByState", named from "part-r-00000" to 
+"part-r-00004". There are five of these because we selected 5 reduce tasks with `mapred.reduce.tasks`.
+Besides these five files, there are another two files named "_SUCCESS" and 
+"_logs" which record the metadata and log information. 
+
+Notice that four of the five files have the same size, 94 bytes, which is quite small. 
+This is because those four files are 
+empty. Since we only had one intermediate key-value pair (the output of the map), four of the 
+reduce tasks we requested did nothing.
+
+We've now successfully completed our first D\&R analysis with Rhipe.  We created a division by state, applied an
+analytic method to each subset when we took the mean, and recombined the subset outputs into an R
+data frame for further interactive analysis.  We did the division in one Rhipe MapReduce job, and 
+the analytic method and recombination in a second job.
 
 
 ### Read and Divide by County ###
 
-The task for calculating the mean by state is finished, but what if we want to calculate the mean
-by county over the time? Yes, the answer would be no problem. We will read in the txt file data again, 
-and divide it by county instead of state. Same as before, we will illustrate a mapreduce job in `RHIPE`
-to achieve this division.
+The input keys are line numbers in the housing data text file.  They are the elements of the list
+object `map.keys`.  The input values are the lines of text, which are the elements of the list object `map.values`.
+This is the default when the input is a raw text file.  For each input key-value pair, `rhcollect` emits an
+intermediate key-value pair, where the key is the state name (the third field in the comma-separated
+line) and the value is all other fields in the line, stored as a data frame with a single row.
 
 #### Map ####
 
@@ -453,53 +507,44 @@ to achieve this division.
 map3 <- expression({
   lapply(seq_along(map.keys), function(r) {
     line = strsplit(map.values[[r]], ",")[[1]]
-    key <- line[[1]]
-    value <- as.data.frame(rbind(line[-1]), stringsAsFactors = FALSE)
+    key <- line[1:3]
+    value <- as.data.frame(rbind(line[c(-1, -2, -3)]), stringsAsFactors = FALSE)
+    names(value) <- c("date", "nUnits", "listPrice", "salePrice")
+    value$listPrice <- as.numeric(value$listPrice)
+    value$salePrice <- as.numeric(value$salePrice)
     rhcollect(key, value)
   })
 })
+
 ```
 
-In the map expression, we still split each line of text file by a comma separator, then save the
-first element of `line` which is the FIPS county code to be the key, and the rest columns of the
-row are saved as a data.frame to be the value.
+Note that we want to use the FIPS code as a unique identifier for the county, since counties in
+different states can share a common name.  This time we've used a character vector of length 3
+as the key.  It contains the unique FIPS code, the county name, and the state name.
 
 #### Reduce ####
 
 ```{r eval=FALSE, tidy=FALSE}
 reduce3 <- expression(
   pre = {
-    tmp <- data.frame()
+    oneCounty <- data.frame()
   },
   reduce = {
-    tmp <- rbind(tmp, do.call(rbind, reduce.values))
+    oneCounty <- rbind(oneCounty, do.call(rbind, reduce.values))
   },
   post = {
-    names(tmp) <- c(
-      "county", "state", "time", 
-      "sold", "list", "selling"
-    )
-    state <- unique(tmp$state)
-    county <- unique(tmp$county)
-    tmp <- tmp[, !(names(tmp)%in%c("state", "county"))]
-    attr(tmp, "state") <- state
-    attr(tmp, "county") <- county
-    tmp$list <- as.numeric(tmp$list)
-    tmp$selling <- as.numeric(tmp$selling)
-    rhcollect(reduce.key, tmp)
+    attr(oneCounty, "FIPS") <- reduce.key[1]
+    attr(oneCounty, "county") <- reduce.key[2]
+    attr(oneCounty, "state") <- reduce.key[3]
+    rhcollect(reduce.key, oneCounty)
   }
 )
 ```
 
-The difference between this reduce expression than the one in divide in state session is that we
-tried to minimize the size of the value objects. For a given county, the `state` column has all
-same value as well as `county` column, so it is meaningless to keep the whole column in stead of 
-just one string value. So in the reduce-post, once we got data.frame `tmp` for one county, we 
-removed the `state` and `county` columns, and then created two attributes for `tmp` for recording 
-state and county name information. By doing this, we eliminated redundant information in each 
-data.frame. Imagine if we have a data.frame related to each key that has thousands of rows, keeping 
-the value size as small as possible can save a lot of I/O time and transporting time between map 
-and reduce.
+By removing the FIPS, county, and state columns from the data frame and storing them as
+attributes, we've eliminated redundant information in each data frame. Working with massive 
+data sets, we want our data to take up the least possible space on disk in order to save 
+read/write time.
 
 #### Execution Function ####
 
@@ -507,8 +552,8 @@ and reduce.
 mr3 <- rhwatch(
   map      = map3,
   reduce   = reduce3,
-  input    = rhfmt("/user/tongx/housing/housing.txt", type = "text"),
-  output   = rhfmt("/user/tongx/housing/bycounty", type = "sequence"),
+  input    = rhfmt("/ln/tongx/housing/housing.txt", type = "text"),
+  output   = rhfmt("/ln/tongx/housing/byCounty", type = "sequence"),
   mapred   = list(
     mapred.reduce.tasks = 10
   ),
@@ -516,32 +561,33 @@ mr3 <- rhwatch(
 )
 ```
 
-Again, after the job is done, we can use `rhread()` function. We specified another argument in 
-`rhread()`, which is `max`. It can control how many key/value pairs we are reading in. The default
-is -1, which means read in all key/value pairs.
+After the job completes successfully, we'll read the results from HDFS into our interactive R 
+session as we did before.  This time, let's use the `max` argument to `rhread`, which specifies 
+how many key-value pairs to read. The default value is -1, which means read in all key-value pairs.
 
 ```{r eval=FALSE, tidy=FALSE}
-rst <- rhread("/user/tongx/housing/bycounty", max = 10)
+countySubsets <- rhread("/ln/tongx/housing/byCounty", max = 10)
 ```
 ```
 Read 10 objects(31.39 KB) in 0.04 seconds
 ```
-We also can grab all keys in the result. Recall that the result is a list of key/value pairs which
-are also a list with two elements. We can use `lapply` to get all the first elements in the list.
+Suppose we want to see all 10 keys that we read.  Recall that key-value pairs are stored as a nested
+list.  So what we want is the first element of each element in the list.  We can use `lapply` to get
+them:
 
 ```{r eval=FALSE, tidy=FALSE}
-keys <- unlist(lapply(rst, "[[", 1))
+keys <- unlist(lapply(countySubsets, "[[", 1))
 keys
 ```
 ```
  [1] "01013" "01031" "01059" "01077" "01095" "01103" "01121" "04001" "05019" "05037"
 ```
 
-Finally, let's check if we do have the state and county name information as an attribute saved with
-the data frame.
+Finally, let's check that we have the FIPS code, state name, and county name information saved as 
+attributes of the data frame.
 
 ```{r eval=FALSE, tidy=FALSE}
-attributes(rst[[1]][[2]])
+attributes(countySubsets[[1]][[2]])
 ```
 ```
 $names
@@ -564,27 +610,27 @@ $class
 
 ### Compute County Means ###
 
-Next, we calculate the means of list price and sold price for each county. It will be similar to 
-what we have done with means by state but with a little update.
+We calculate the mean list price and mean sale price by county exactly the same way we 
+calculated them by state. 
 
 #### Map ####
 
-In map expression, we will create a one-row data.frame for each county. The data.frame has five
-columns: fips, listmean, sellingmean, state, and county name. State and county name information 
-can be found in the attribute of each element of `map.values`. In order to combine all means by
-county into one data.frame, we will assign 1 to be the key for all intermediate key/value pairs.
+In the map expression, we create a single row data frame for each county. The data frame has five
+columns: FIPS, listMean, saleMean, state, and county name. FIPS code, state name, and county name 
+can be found in the attributes of each element of `map.values`. In order to combine all means by
+county into one data frame, we will assign 1 to be the key for all intermediate key-value pairs.
 
 ```{r eval=FALSE, tidy=FALSE}
 map4 <- expression({
   lapply(seq_along(map.keys), function(r) {
     value <- data.frame(
-      fips = map.keys[[r]],
-      listmean = mean(map.values[[r]]$list, na.rm = TRUE),
-      sellingmean = mean(map.values[[r]]$selling, na.rm = TRUE),
+      listMean = mean(map.values[[r]]$listPrice, na.rm = TRUE),
+      saleMean = mean(map.values[[r]]$salePrice, na.rm = TRUE),
       stringsAsFactors = FALSE
     )
     value$state <- attr(map.values[[r]], "state")
     value$county <- attr(map.values[[r]], "county")
+    value$FIPS <- attr(map.values[[r]], "FIPS")
     rhcollect(1, value)
   })
 })
@@ -592,20 +638,20 @@ map4 <- expression({
 
 #### Reduce ####
 
-We can use the same reduce expression as we used in "Mean by State" session. The final output is 
-consist of one key/value pair, which the key is 1, and value is the data.frame with all county
+We can use the same reduce expression which we used to find the means by state. The final output
+consists of one key-value pair, where the key is 1, and value is the data frame with all county
 means.
 
 ```{r eval=FALSE, tidy=FALSE}
 reduce4 <- expression(
   pre = {
-    combine <- data.frame()
+    countyMeans <- data.frame()
   },
   reduce = {
-    combine <- rbind(combine, do.call(rbind, reduce.values))
+    countyMeans <- rbind(countyMeans, do.call(rbind, reduce.values))
   },
   post = {
-    rhcollect(reduce.key, combine)
+    rhcollect(reduce.key, countyMeans)
   }
 )
 ```
@@ -613,11 +659,11 @@ reduce4 <- expression(
 #### Execution Function ####
 
 ```{r eval=FALSE, tidy=FALSE}
-mr4 <- rhwatch(
+meansByCounty <- rhwatch(
   map      = map4,
   reduce   = reduce4,
-  input    = rhfmt("/user/tongx/housing/bycounty", type = "sequence"),
-  output   = rhfmt("/user/tongx/housing/meanbycounty", type = "sequence"),
+  input    = rhfmt("/ln/tongx/housing/byCounty", type = "sequence"),
+  output   = rhfmt("/ln/tongx/housing/meansByCounty", type = "sequence"),
   mapred   = list( 
     mapred.reduce.tasks = 1
   ),
@@ -625,13 +671,13 @@ mr4 <- rhwatch(
 )
 ```
 
-This time we specified the `mapred.reduce.tasks` to be only 1, since we know there is only one
-key/value pair in the output, which means we only need one output file. Eliminating the number
-of the final output files can speed up the job process time in the sense of eliminating log file
-and metadata of the job.
+This time we specify only one reduce task by setting `mapred.reduce.tasks` to be 1.
+Since we know there is only one
+key-value pair in the output, we only need one output file. Eliminating unnecessary output files 
+can speed up this job and future jobs which read its output.
 
 ```{r eval=FALSE, tidy=FALSE}
-str(mr4)
+str(meansByCounty)
 ```
 ```
 List of 1
@@ -645,10 +691,10 @@ List of 1
   .. ..$ county     : chr [1:2883] "Barbour" "Choctaw" "Crenshaw" "Houston" ...
 ```
 ```{r eval=FALSE, tidy=FALSE}
-head(rst[[1]][[2]])
+head(meansByCounty[[1]][[2]])
 ```
 ```
-   fips listmean sellingmean state       county
+   FIPS listMean saleMean state       county
 1 01005 85.46983         NaN    AL      Barbour
 2 01023 54.27378         NaN    AL      Choctaw
 3 01041 59.29840         NaN    AL     Crenshaw
@@ -659,10 +705,68 @@ head(rst[[1]][[2]])
 
 ### New Division by State ###
 
-In previous tasks, we started from reading in text data file. Input key/value pairs are each row
-from the text file. It is also reasonable and common that we transfer from one type of division to a
-different type of division. For example, we would like to divide the data set by state based on the
-division by county.
+In the previous two divisions, we started from raw text data, where input key-value pairs were each row
+of the text file. In some cases it might be more efficient to go from one subset division method to
+another.  Either way, it's a good thing to know how to do.  In this section we'll recreate the 
+division by state from the division by county.
+
+Let's start by removing our existing state subsets from the HDFS so there aren't too many copies
+floating around.  We can delete files from the HDFS using the `rhdel` function.  It only requires
+one argument - the directory to be deleted - and it recursively deletes any subdirectories or files.
+
+We can use `rhls` to see that the division by state is on the HDFS, right where we put it:
+
+```{r eval=FALSE, tidy=FALSE}
+rhls("/ln/tongx/housing")
+```
+```
+Philip, you should put the output of rhls right here
+```
+
+We can delete it with the `rhdel` function:
+
+```{r eval=FALSE, tidy=FALSE}
+rhdel("/ln/tongx/housing/byState")
+```
+```
+Philip, you should put the output of rhdel right here
+```
+
+And we can use `rhls` again to see that we were successful:
+
+```{r eval=FALSE, tidy=FALSE}
+rhls("/ln/tongx/housing")
+```
+```
+Philip, you should put the new output of rhls right here
+```
+
+As long as we're talking about HDFS file management, let's try out a few more functions.  Suppose
+we want to make a copy of the original text file on the HDFS.  We can use the
+`rhcp` function.  It takes two arguments.  The first is the source, or the directory on HDFS we 
+want to copy.  The second is the target, or location for the new copy.
+
+```{r eval=FALSE, tidy=FALSE}
+rhcp("/ln/tongx/housing/housing.txt", "/ln/tongx/housing/tmp/housing.txt")
+rhls("/ln/tongx/housing/tmp"
+```
+```
+Philip, you should put the output of rhls here
+```
+
+We can use `rhmv` to move the text file to a different folder.  This
+function also takes two arguments, just like `rhcp`.
+
+```{r eval=FALSE, tidy=FALSE}
+rhmv("/ln/tongx/housing/tmp/housing.txt", "/ln/tongx/housing/tmp2/housing.txt")
+rhls("/ln/tongx/housing/"
+```
+```
+Philip, you should put the output of rhls here
+```
+
+That's enough file management.  Now let's recreate the division by state from the division by 
+county, which is still on the HDFS.
 
 #### Map ####
 
@@ -670,23 +774,25 @@ division by county.
 map5 <- expression({
   lapply(seq_along(map.keys), function(r) {
     key <- attr(map.values[[r]], "state")
-    county <- attr(map.values[[r]], "county")
     value <- map.values[[r]]
-    value$fips <- rep(map.keys[[r]], nrow(value))
-    value$county <- rep(county, nrow(value))
+    value$FIPS <- attr(map.keys[[r]], "FIPS")
+    value$county <- attr(map.keys[[r]], "county")
     rhcollect(key, value)
   })
 })
 ```
 
-In map expression this time, the input keys are county fips code, and values are data.frame of subset
-for the county. State and county name information is in attribute of each data.frame. The output key
-is the state abbreviation string, and output value is map input value with two more columns: fips 
-code and county name.
+The most important part of this map expression is the key we assigned.  Our input key was the length 3
+character vector containing FIPS code, county name, and state name.  Our output key is the state
+name only.  This ensures that the data frames of all the counties belonging to a single state go to
+a single reduce task, so that we can combine them into a single data frame for that state.  Meanwhile,
+we also want to make the FIPS code and county name columns of our data frame again.
 
 #### Reduce ####
 
-Same reduce expression as before, we just combine all data.frames that belong to the same state.
+We can use the same reduce expression that we used in the first division by state.  But keep in mind
+that this time, the intermediate key-value pairs are different.  Before there was one key-value pair
+for each line of the text file, but now there is one for each county.
 
 ```{r eval=FALSE, tidy=FALSE}
 reduce5 <- expression(
@@ -704,12 +810,15 @@ reduce5 <- expression(
 
 #### Execution Function ####
 
+Let's do something new in the `rhwatch` function.  We'll set the `noeval` argument to indicate
+that we don't want to run this job, we just want to package it to be run later.
+ 
 ```{r eval=FALSE, tidy=FALSE}
 mr5 <- rhwatch(
   map      = map5,
   reduce   = reduce5,
-  input    = rhfmt("/user/tongx/housing/bycounty", type = "sequence"),
-  output   = rhfmt("/user/tongx/housing/countytostate", type = "sequence"),
+  input    = rhfmt("/ln/tongx/housing/byCounty", type = "sequence"),
+  output   = rhfmt("/ln/tongx/housing/byState", type = "sequence"),
   mapred   = list( 
     mapred.reduce.tasks = 10
   ),
@@ -718,157 +827,70 @@ mr5 <- rhwatch(
 )
 ```
 
-Here, we specified one more argument in `rhwatch()`, `noeval` argument means no evaluation. If it 
-is `TRUE`, the job will not run. `rhwatch` will just return a job object. Let's see what `mr5` looks
-like:
+You won't see any output, because no commands have been sent to Hadoop.  Instead, the packaged
+job has been stored in the `mr5` object.  When we're ready to run the job, we call `rhex()`.
 
 ```{r eval=FALSE, tidy=FALSE}
-str(mr5)
-```
-```
-List of 3
- $ lines     :List of 295
-  ..$ rhipe_reduce_justcollect                                 : chr "FALSE"
-  ..$ rhipe_reduce                                             : chr "A\n2\n196865\n131840\n518\n1026\n1\n262153\n6\nsrcref\n19\n2\n781\n8\n5\n12\n5\n12\n12\n12\n5\n5\n1026\n1\n262153\n7\nsrcfile\n"| __truncated__
-  ..$ rhipe_reduce_prekey                                      : chr "A\n2\n196865\n131840\n518\n1026\n1\n262153\n6\nsrcref\n19\n2\n781\n8\n2\n9\n2\n9\n9\n9\n2\n2\n1026\n1\n262153\n7\nsrcfile\n4\n0"| __truncated__
-......
-  ..$ mapred.job.shuffle.merge.percent                         : chr "0.66"
-  ..$ mapred.map.max.attempts                                  : chr "4"
-  ..$ jobclient.progress.monitor.poll.interval                 : chr "1000"
-  ..$ dfs.safemode.extension                                   : chr "30000"
-  .. [list output truncated]
- $ temp      : chr "/tmp/Rtmp7T9QVe/rhipe5f563a4100f1"
- $ parameters:List of 2
-  ..$ envir:<environment: 0x9fe5590> 
-  ..$ file : chr "/tmp/rhipe-temp-params-db4fcae80c0979c459c868a8db58ac50"
- - attr(*, "class")= chr "rhmr"
+byState <- rhex(mr5, async = FALSE)
 ```
 
-`mr5` is a list with three elements, `lines` element is a list with length 295 which includes all
-`RHIPE` and Hadoop mapreduce job arguments. `temp` element is a string which specifies the address
-of temperary directory on each node of cluster. `parameters` element is a list with length 2. We wil
-come back to this `parameters` in later session. The class of `mr5` is `rhmr` which means `RHIPE` 
-mapreduce job object.
+The first argument to `rhex` is the packaged job we just created.  The second argument `async` 
+specifies whether the job should be run asynchronously.  If we set `async = FALSE` then we'll see
+continuously updated job status information, and we won't be able to issue any further R commands
+until the job completes.  If we set it to `TRUE`, which is the default, the job will run in the 
+background while we continue to interact with our R session.  It's similar to the `\&` command in
+a Linux shell.
 
-Then if we want to run the job, we have to call `rhex()` function in `RHIPE`.
+After the job successfully completes, we'll have state subsets in the specified output folder
+on the HDFS, just as before, but created in a different way.
+
+### Manage Jobs ###
+
+As you submit more Rhipe jobs, you'll need to check their status and manage them.  In this short
+section, we'll introduce two new functions to do just that.
+
+First, let's submit a simple job:
 
 ```{r eval=FALSE, tidy=FALSE}
-job <- rhex(mr5, async = FALSE)
+map6 <- expression(while(TRUE) {})
+mr6 <- rhwatch(
+  map      = map6,
+  input    = rhfmt("/ln/tongx/housing/housing.txt", type = "text"),
+  output   = rhfmt("/ln/tongx/housing/tmp", type = "sequence"),
+  mapred   = list(
+    mapred.reduce.tasks = 0
+  ),
+  readback = FALSE,
+  noeval   = TRUE
+)
+badjob <- rhex(mr6, async = TRUE) 
 ```
 
-The first argument is a job object, and the second argument `async` is used to specify if function 
-returns immediately, leaving the job running asynchronously in the background on Hadoop, and `FALSE`
-means do not returns immediately. Once the job is finished, we can have a look at the `job` object.
+We've set `mapred.reduce.tasks = 0` because this job omits the optional reduce expression.  
+The map contains an infinite loop, so this job will never complete.  But since we've run
+it asynchronously, we can check its status with `rhstatus`, which takes as an argument
+the object returned by `rhex`.
 
 ```{r eval=FALSE, tidy=FALSE}
-job
+rhstatus(badjob)
 ```
 ```
-$state
-[1] TRUE
-
-$counters
-$counters$FileSystemCounters
-   FILE_BYTES_READ FILE_BYTES_WRITTEN    HDFS_BYTES_READ HDFS_BYTES_WRITTEN 
-          14846061           31179682            8781400           14180224 
-
-$counters$`Job Counters `
-                                              Data-local map tasks 
-                                                                10 
-   Total time spent by all maps waiting after reserving slots (ms) 
-                                                                 0 
-Total time spent by all reduces waiting after reserving slots (ms) 
-                                                                 0 
-                                                 SLOTS_MILLIS_MAPS 
-                                                             93603 
-                                              SLOTS_MILLIS_REDUCES 
-                                                            149521 
-                                                Launched map tasks 
-                                                                10 
-                                             Launched reduce tasks 
-                                                                10 
-
-$counters$`Map-Reduce Framework`
-             Combine input records             Combine output records Total committed heap usage (bytes) 
-                                 0                                  0                        10083368960 
-               CPU time spent (ms)                  Map input records                   Map output bytes 
-                             87810                               2883                           14834469 
-                Map output records   Physical memory (bytes) snapshot                Reduce input groups 
-                              2883                         3740327936                                 49 
-              Reduce input records              Reduce output records               Reduce shuffle bytes 
-                              2883                                 49                           14846601 
-                   Spilled Records                    SPLIT_RAW_BYTES    Virtual memory (bytes) snapshot 
-                              5766                               1350                        33988882432 
-
-$counters$rhipeInternal
-partialFlush 
-          10 
-
-$counters$rhipe_timing
-overall_mapper_ms 
-            15736 
-
-$counters$job_time
-[1] 30.048
-
-```
-Mapreduce job information is returned here.
-
-What if we specify the `async` to be `TRUE`? Let's check it out.
-
-```{r eval=FALSE, tidy=FALSE}
-job2 <- rhex(mr5, async = TRUE)
-```
-
-We found that the function returns immediately, and let the job running on Hadoop. Then how can we
-check the status of the job? The answer is using `rhstatus()`.
-
-```{r eval=FALSE, tidy=FALSE}
-rhstatus(job2)
-```
-```
-[Sat Sep 20 17:22:04 2014] Name:2014-09-20 17:21:58 Job: job_201405301308_4741  State: RUNNING Duration: 5.457
-URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4741
-       pct numtasks pending running complete killed failed_attempts killed_attempts
-map      0       10       0      10        0      0               0               0
-reduce   0       10      10       0        0      0               0               0
-Waiting 5 seconds
-[Sat Sep 20 17:22:09 2014] Name:2014-09-20 17:21:58 Job: job_201405301308_4741  State: RUNNING Duration: 10.491
-URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4741
-       pct numtasks pending running complete killed failed_attempts killed_attempts
-map      0       10       0      10        0      0               0               0
-reduce   0       10      10       0        0      0               0               0
+[Tue Sep 30 00:34:20 2014] Name:2014-09-30 00:34:05 Job: job_201405301308_4753  State: RUNNING Duration: 14.673
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4753
+             pct numtasks pending running complete killed failed_attempts
+map    0.0191228        1       0       1        0      0               0
+reduce 0.0000000        0       0       0        0      0               0
+       killed_attempts
+map                  0
+reduce               0
 Waiting 5 seconds
 ```
 
-Job running information is back on screen, and also the job summary information is returned in the end.
-
-```
-$state
-[1] "SUCCEEDED"
-
-$duration
-[1] 30.758
-
-$progress
-       pct numtasks pending running complete killed failed_attempts killed_attempts
-map      1       10       0       0       10      0               0               0
-reduce   1       10       0       0       10      0               0               0
-
-$warnings
-NULL
-......
-```
-More job detailed information can be addressed by using `rhJobInfo()`.
-```{r eval=FALSE, tidy=FALSE}
-rhJobInfo(job2)
-```
-
-Finally, the result can be read back as a list object in R.
+Type `ctrl+c` to stop the status updates.  Since we know this job won't ever complete, 
+we'll have to kill it.  Again, use the object returned by `rhex`
 
 ```{r eval=FALSE, tidy=FALSE}
-rst <- rhread("/user/tongx/housing/countytostate")
+rhkill(badjob)
 ```
-```
-Read 49 objects(15.22 MB) in 1.32 seconds
-```
+
+You can call `rhstatus` again to see that the job is now in state `KILLED`
