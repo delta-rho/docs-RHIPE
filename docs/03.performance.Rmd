@@ -1,6 +1,4 @@
-# Tessera - Performance Measurements #
-
-## Elapsed Timing Experiment ##
+## Tessera Cluster Performance Measurements ##
 
 ### The Problem Description and the Deneb/Mimosa Cluster ###
 
