@@ -14,13 +14,17 @@ of the time cosuming and the memory limitation.
 
 Instead, we will use `RHIPE` package to generate subsets first and then use logistic regression 
 method to analyze each subset by R function `glm.fit`. The subset size is *M* and the number of 
-subsets is *R*. As a result, $N = M * R$. We will use R function `system.time` to measure these two
-different time which will be introduced in the later session.
+subsets is *R*. As a result, $N = M * R$. We will use R function `system.time` to measure elapsed 
+time which will be explained more in the later session.
 
 In this example, we will show how to do a sing run of the performance test, which means we only pick
-one possible value of *M* and one possible value of *P* to see how fast it is to go. 
+one possible value of *M* and one possible value of *V* to see how fast it is to go. 
 
-There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. 
+We choose $N = 2^(23)$, $V = 2^5$, and $M = 2^13$ to illustrate the single run.
+
+### Generate Datasets and Write to HDFS ###
+
+### There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. 
 The first computation type is **O**, the elapsed time to read the subsets from the HDFS and make 
 them available to `glm.fit` in memory as an R objects. The other type, **L**, starts when **O** ends
 and it consists of `glm.fit` computations on the subsets by **map**, plus **reduce** gathering the 
@@ -29,7 +33,6 @@ subset estimates and computing the means. However, we cannot measure **L** direc
 
 
 
-We choose N = 2^23, M = 
 
 
 one The cluster which we are going to test the computation performance is the Deneb/Mimosa Cluster.The 
