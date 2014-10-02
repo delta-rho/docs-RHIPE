@@ -498,7 +498,7 @@ the analytic method and recombination in a second job.
 As we showed previously, we divided the whole data set to subsets by state, and then calculated the mean list
 and selling price for each state. According to different purpose of the data analysis, we sometime would
 like to divide the data set by diferent variables. So we are going to show that what if we divide our housing
-data by county.
+data by county from the text file as well.
 
 The input keys are line numbers in the housing data text file.  They are the elements of the list
 object `map.keys`.  The input values are the lines of text, which are the elements of the list object `map.values`.

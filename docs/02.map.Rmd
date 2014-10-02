@@ -140,7 +140,7 @@ head(rst[["IN"]])
 ### Manage Jobs ###
 
 As you submit more Rhipe jobs, you'll need to check their status and manage them.  In this short
-section, we'll introduce two new functions to do just that.
+section, we'll introduce two new functions to do just that. 
 
 First, let's submit a simple job:
 
@@ -162,7 +162,8 @@ badjob <- rhex(mr6, async = TRUE)
 ```
 
 We've set `mapred.reduce.tasks` to be 0, because this job omits the optional reduce expression.  
-The map contains an infinite loop, so this job will never complete.  But since we've run
+The map contains an infinite loop, so this job will never complete. The only purpose for this meaningless
+map expression is we want the job is keeping running when we try to access its status. But since we've run
 this job on the backgroup, we can check its status with `rhstatus`, which takes as an argument
 the object returned by `rhex`. When we said background, it means that the job is running on the 
 Hadoop, and we still have the control ability of R session at the same time. 

@@ -655,7 +655,7 @@ the analytic method and recombination in a second job.</p>
 <p>As we showed previously, we divided the whole data set to subsets by state, and then calculated the mean list
 and selling price for each state. According to different purpose of the data analysis, we sometime would
 like to divide the data set by diferent variables. So we are going to show that what if we divide our housing
-data by county.</p>
+data by county from the text file as well.</p>
 
 <p>The input keys are line numbers in the housing data text file.  They are the elements of the list
 object <code>map.keys</code>.  The input values are the lines of text, which are the elements of the list object <code>map.values</code>.
@@ -1140,7 +1140,7 @@ part file.</p>
 <h3>Manage Jobs</h3>
 
 <p>As you submit more Rhipe jobs, you&#39;ll need to check their status and manage them.  In this short
-section, we&#39;ll introduce two new functions to do just that.</p>
+section, we&#39;ll introduce two new functions to do just that. </p>
 
 <p>First, let&#39;s submit a simple job:</p>
 
@@ -1161,7 +1161,8 @@ badjob &lt;- rhex(mr6, async = TRUE)
 </code></pre>
 
 <p>We&#39;ve set <code>mapred.reduce.tasks</code> to be 0, because this job omits the optional reduce expression.<br>
-The map contains an infinite loop, so this job will never complete.  But since we&#39;ve run
+The map contains an infinite loop, so this job will never complete. The only purpose for this meaningless
+map expression is we want the job is keeping running when we try to access its status. But since we&#39;ve run
 this job on the backgroup, we can check its status with <code>rhstatus</code>, which takes as an argument
 the object returned by <code>rhex</code>. When we said background, it means that the job is running on the 
 Hadoop, and we still have the control ability of R session at the same time. </p>
