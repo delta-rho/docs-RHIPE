@@ -1,24 +1,38 @@
-## Tessera Cluster Performance Test ##
+## Tessera Cluster Logistic Performance Test ##
 
-### The Problem Description and the Deneb/Mimosa Cluster ###
+### Introduction ###
 
-Divide and Recombine (D & R) is a statistical framework for the analysis of large complex data. The
-Elapsed Timing Experiment is a very good example for embarrassingly parallel computing and it is
-designed to improve the perormance of D & R Computations on a Cluster. The time depends on many
-factors, so it presents an opportunity for optimizing the computation by making the best choice of
-the factors. However, this exmaple here mainly serve to illustrate the computation ability of the 
-Deneb cluster with Rhipe computation environment, so we will only consider two statistical factors that 
-measure characteristics of the dataset and the subsets.
+We'll demonstrate the computation ability of `RHIPE` package with a performance test by using logistic
+regression. 
 
-The basic idea is to generate subsets first and then use logistic regression method to analyze each
-subset by R function `glm.fit` . There are two types of elapsed-time computation. The subsets are
-stored on the HDFS as R objects. The first computation type is **O**, the elapsed time to read the
-subsets from the HDFS and make them available to `glm.fit` in memory as an R objects. The other typ
-e, **L**, starts when **O** ends and it consists of `glm.fit` computations on the subsets by **map**
-, plus **reduce** gathering the subset estimates and computing the means. However, we cannot measure
-**L** directly. So we measure **O** in one run and **T = O + L** in another.
+The basic idea is firstly, we wishto generate an observation sample with a size of *N*, *P* number of 
+explanatory variables and one response variables. Let's denote the number of the variables as *V*, 
+which equals to $P+1$. In summary, we wish to generate a dataframe with *N* rows and *V* collumns. 
+Secondly, We want to use the logistic regression method to analyze the dataframe. However, when the
+data size is quite large, it will be impractical to generate and analyse the whole data set in terms
+of the time cosuming and the memory limitation.
 
-The cluster which we are going to test the computation performance is the Deneb/Mimosa Cluster.The 
+Instead, we will use `RHIPE` package to generate subsets first and then use logistic regression 
+method to analyze each subset by R function `glm.fit`. The subset size is *M* and the number of 
+subsets is *R*. As a result, $N = M * R$. We will use R function `system.time` to measure these two
+different time which will be introduced in the later session.
+
+In this example, we will show how to do a sing run of the performance test, which means we only pick
+one possible value of *M* and one possible value of *P* to see how fast it is to go. 
+
+There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. 
+The first computation type is **O**, the elapsed time to read the subsets from the HDFS and make 
+them available to `glm.fit` in memory as an R objects. The other type, **L**, starts when **O** ends
+and it consists of `glm.fit` computations on the subsets by **map**, plus **reduce** gathering the 
+subset estimates and computing the means. However, we cannot measure **L** directly. So we measure 
+**O** in one run and **T = O + L** in another.
+
+
+
+We choose N = 2^23, M = 
+
+
+one The cluster which we are going to test the computation performance is the Deneb/Mimosa Cluster.The 
 Deneb cluster is maintained by system administrators at the Department of Statistics Purdue University.
 It is used for teaching distributed parallel computing for the analysis of large complex data.
 There are two nodes of this cluster, one runs NameNode and the other runs JobTracker. Both run Hadoop
