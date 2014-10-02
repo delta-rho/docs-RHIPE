@@ -136,3 +136,58 @@ head(rst[["IN"]])
 5 2011-03-01    NA  55.27211       NA 18177  Wayne
 6 2011-04-01    NA  56.68348       NA 18177  Wayne
 ```
+
+### Manage Jobs ###
+
+As you submit more Rhipe jobs, you'll need to check their status and manage them.  In this short
+section, we'll introduce two new functions to do just that.
+
+First, let's submit a simple job:
+
+```{r eval=FALSE, tidy=FALSE}
+map6 <- expression(
+  while(TRUE) {}
+)
+mr6 <- rhwatch(
+  map      = map6,
+  input    = rhfmt("/ln/tongx/housing/housing.txt", type = "text"),
+  output   = rhfmt("/ln/tongx/housing/tmp", type = "sequence"),
+  mapred   = list(
+    mapred.reduce.tasks = 0
+  ),
+  readback = FALSE,
+  noeval   = TRUE
+)
+badjob <- rhex(mr6, async = TRUE) 
+```
+
+We've set `mapred.reduce.tasks` to be 0, because this job omits the optional reduce expression.  
+The map contains an infinite loop, so this job will never complete.  But since we've run
+this job on the backgroup, we can check its status with `rhstatus`, which takes as an argument
+the object returned by `rhex`. When we said background, it means that the job is running on the 
+Hadoop, and we still have the control ability of R session at the same time. 
+
+```{r eval=FALSE, tidy=FALSE}
+rhstatus(badjob)
+```
+```
+[Tue Sep 30 00:34:20 2014] Name:2014-09-30 00:34:05 Job: job_201405301308_4753  State: RUNNING Duration: 14.673
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4753
+             pct numtasks pending running complete killed failed_attempts
+map    0.0191228        1       0       1        0      0               0
+reduce 0.0000000        0       0       0        0      0               0
+       killed_attempts
+map                  0
+reduce               0
+Waiting 5 seconds
+```
+
+Type `ctrl+c` to stop the status updates.  Since we know this job won't ever complete, 
+we'll have to kill it.  Again, use the object returned by `rhex`
+
+```{r eval=FALSE, tidy=FALSE}
+rhkill(badjob)
+```
+
+You can call `rhstatus` again to see that the job is now in state `KILLED`
+

@@ -1,4 +1,4 @@
-## Tessera Cluster Performance Measurements ##
+## Tessera Cluster Performance Test ##
 
 ### The Problem Description and the Deneb/Mimosa Cluster ###
 

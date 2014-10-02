@@ -25,9 +25,9 @@ The meaning of each field is as follows:
 - **county**: county name
 - **state**: state abbreviation
 - **date**: date in "YYYY-MM-DD" format.  Each month's values are placed at the first day of the month
-- **nUnits**: number of units sold
-- **listPrice**: monthly median list price dollar per square foot
-- **salePrice**: monthly median selling price dollar per square foot
+- **units**: number of units sold
+- **list**: monthly median list price dollar per square foot
+- **selling**: monthly median selling price dollar per square foot
  
 The total size of the text file is around 12MB. It is available as 
 `housing.txt` in our Tesseradata Github repository of the `RHIPE` documentation 
@@ -126,7 +126,7 @@ create a copy of the data broken into subsets using a MapReduce job.  The origin
 The data within each subset will be stored as R objects, rather than raw text.  This will 
 allow us to apply subsequent data analytic and visual methods using familiar R commands.
 
-In the MapReduce framework, we keep track of subsets as key-value pairs.  The key is a label for
+In the MapReduce framework, we keep track of subsets as key-value pairs.  The key is a identifier for
 the subset.  It's usually a small data object, like a single number or character string.  There
 can be multiple subsets that share a common key.  The value is where we store the data.  For 
 example, it may be an R data frame.
@@ -153,10 +153,10 @@ map1 <- expression({
     value <- as.data.frame(rbind(line[-3]), stringsAsFactors = FALSE)
     names(value) <- c(
       "fips", "county", "date", 
-      "nUnits", "listPrice", "salePrice"
+      "units", "list", "selling"
     )
-    value$listPrice <- as.numeric(value$listPrice)
-    value$salePrice <- as.numeric(value$salePrice)
+    value$list <- as.numeric(value$list)
+    value$selling <- as.numeric(value$selling)
     rhcollect(key, value)
   })
 })
@@ -176,7 +176,7 @@ reduce1 <- expression(
     oneState <- data.frame()
   },
   reduce = {
-    oneState <- rbind(tmp, do.call(rbind, reduce.values))
+    oneState <- rbind(oneState, do.call(rbind, reduce.values))
   },
   post = {
     attr(oneState, "state") <- reduce.key
@@ -335,8 +335,8 @@ map2 <- expression({
   lapply(seq_along(map.keys), function(r) {
     value <- data.frame(
       state = attr(map.values[[r]], "state"),
-      listMean = mean(map.values[[r]]$listPrice, na.rm = TRUE),
-      saleMean = mean(map.values[[r]]$salePrice, na.rm = TRUE),
+      listMean = mean(map.values[[r]]$list, na.rm = TRUE),
+      saleMean = mean(map.values[[r]]$selling, na.rm = TRUE),
       stringsAsFactors = FALSE
     )
     rhcollect(1, value)
@@ -347,7 +347,7 @@ map2 <- expression({
 The input to our map is the the final output we created in the previous section.  The keys 
 were state names, stored as character objects, and the values were data frames with prices,
 dates, and county information.  In general, 
-keys need not be uniue, but in this case we know that there are 49 state names, where no state
+keys need not be unique, but in this case we know that there are 49 state names, where no state
 is duplicated.  
 
 To each state's data frame, we apply the same action: take the mean of the list price and 
@@ -452,7 +452,7 @@ stateMeans <- stateMeans[[1]][[2]]
 head(stateMeans)
 ```
 ```
-   state listMean saleMean
+   state listMean    saleMean
 4     DC 369.0546    422.4744
 45    MA 259.1316    210.8714
 44    CA 192.6343    185.8716
@@ -495,6 +495,11 @@ the analytic method and recombination in a second job.
 
 ### Read and Divide by County ###
 
+As we showed previously, we divided the whole data set to subsets by state, and then calculated the mean list
+and selling price for each state. According to different purpose of the data analysis, we sometime would
+like to divide the data set by diferent variables. So we are going to show that what if we divide our housing
+data by county.
+
 The input keys are line numbers in the housing data text file.  They are the elements of the list
 object `map.keys`.  The input values are the lines of text, which are the elements of the list object `map.values`.
 This is the default when the input is a raw text file.  For each input key-value pair, `rhcollect` emits an
@@ -509,9 +514,9 @@ map3 <- expression({
     line = strsplit(map.values[[r]], ",")[[1]]
     key <- line[1:3]
     value <- as.data.frame(rbind(line[c(-1, -2, -3)]), stringsAsFactors = FALSE)
-    names(value) <- c("date", "nUnits", "listPrice", "salePrice")
-    value$listPrice <- as.numeric(value$listPrice)
-    value$salePrice <- as.numeric(value$salePrice)
+    names(value) <- c("date", "units", "list", "selling")
+    value$list <- as.numeric(value$list)
+    value$selling <- as.numeric(value$selling)
     rhcollect(key, value)
   })
 })
@@ -624,8 +629,8 @@ county into one data frame, we will assign 1 to be the key for all intermediate 
 map4 <- expression({
   lapply(seq_along(map.keys), function(r) {
     value <- data.frame(
-      listMean = mean(map.values[[r]]$listPrice, na.rm = TRUE),
-      saleMean = mean(map.values[[r]]$salePrice, na.rm = TRUE),
+      listMean = mean(map.values[[r]]$list, na.rm = TRUE),
+      saleMean = mean(map.values[[r]]$selling, na.rm = TRUE),
       stringsAsFactors = FALSE
     )
     value$state <- attr(map.values[[r]], "state")
@@ -694,16 +699,16 @@ List of 1
 head(meansByCounty[[1]][[2]])
 ```
 ```
-   FIPS listMean saleMean state       county
-1 01005 85.46983         NaN    AL      Barbour
-2 01023 54.27378         NaN    AL      Choctaw
-3 01041 59.29840         NaN    AL     Crenshaw
-4 01069 87.64237         NaN    AL      Houston
-5 01087 74.35722         NaN    AL        Macon
-6 01113 70.92100         NaN    AL      Russell
+   FIPS listMean  saleMean state       county
+1 01005 85.46983       NaN    AL      Barbour
+2 01023 54.27378       NaN    AL      Choctaw
+3 01041 59.29840       NaN    AL     Crenshaw
+4 01069 87.64237       NaN    AL      Houston
+5 01087 74.35722       NaN    AL        Macon
+6 01113 70.92100       NaN    AL      Russell
 ```
 
-### New Division by State ###
+### Division by State from County Division ###
 
 In the previous two divisions, we started from raw text data, where input key-value pairs were each row
 of the text file. In some cases it might be more efficient to go from one subset division method to
@@ -843,54 +848,3 @@ a Linux shell.
 
 After the job successfully completes, we'll have state subsets in the specified output folder
 on the HDFS, just as before, but created in a different way.
-
-### Manage Jobs ###
-
-As you submit more Rhipe jobs, you'll need to check their status and manage them.  In this short
-section, we'll introduce two new functions to do just that.
-
-First, let's submit a simple job:
-
-```{r eval=FALSE, tidy=FALSE}
-map6 <- expression(while(TRUE) {})
-mr6 <- rhwatch(
-  map      = map6,
-  input    = rhfmt("/ln/tongx/housing/housing.txt", type = "text"),
-  output   = rhfmt("/ln/tongx/housing/tmp", type = "sequence"),
-  mapred   = list(
-    mapred.reduce.tasks = 0
-  ),
-  readback = FALSE,
-  noeval   = TRUE
-)
-badjob <- rhex(mr6, async = TRUE) 
-```
-
-We've set `mapred.reduce.tasks = 0` because this job omits the optional reduce expression.  
-The map contains an infinite loop, so this job will never complete.  But since we've run
-it asynchronously, we can check its status with `rhstatus`, which takes as an argument
-the object returned by `rhex`.
-
-```{r eval=FALSE, tidy=FALSE}
-rhstatus(badjob)
-```
-```
-[Tue Sep 30 00:34:20 2014] Name:2014-09-30 00:34:05 Job: job_201405301308_4753  State: RUNNING Duration: 14.673
-URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4753
-             pct numtasks pending running complete killed failed_attempts
-map    0.0191228        1       0       1        0      0               0
-reduce 0.0000000        0       0       0        0      0               0
-       killed_attempts
-map                  0
-reduce               0
-Waiting 5 seconds
-```
-
-Type `ctrl+c` to stop the status updates.  Since we know this job won't ever complete, 
-we'll have to kill it.  Again, use the object returned by `rhex`
-
-```{r eval=FALSE, tidy=FALSE}
-rhkill(badjob)
-```
-
-You can call `rhstatus` again to see that the job is now in state `KILLED`
