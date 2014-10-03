@@ -2,7 +2,7 @@
 
 ## Housing Data ##
 
-### Introduction ###
+### Intro ###
 
 We'll demonstrate the `RHIPE` package with an analysis of housing data.
 The housing data set contains monthly median list and selling prices per square foot and number 
