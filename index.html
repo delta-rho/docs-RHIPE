@@ -106,11 +106,16 @@
 
 
       <li class='active'>
+         <a target='_self' class='nav-not-header' href='#plots-by-state'>Plots by State</a>
+      </li>
+
+
+      <li class='active'>
          <a target='_self' class='nav-not-header' href='#manage-jobs'>Manage Jobs</a>
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='04.performance.Rmd'>Tessera Cluster Performance Test</li>
+<li class='nav-header unselectable' data-edit-href='05.performance.Rmd'>Tessera Cluster Performance Test</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#the-problem-description-and-the-denebmimosa-cluster'>The Problem Description and the Deneb/Mimosa Cluster</a>
@@ -321,6 +326,7 @@ map is the final output.</p>
     )
     value$list &lt;- as.numeric(value$list)
     value$selling &lt;- as.numeric(value$selling)
+    value$units &lt;- as.numeric(value$units)
     rhcollect(key, value)
   })
 })
@@ -1132,6 +1138,198 @@ part file.</p>
 5 2011-03-01    NA  55.27211       NA 18177  Wayne
 6 2011-04-01    NA  56.68348       NA 18177  Wayne
 </code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='plots-by-state'>
+<h3>Plots by State</h3>
+
+<h4>Time Series Plot of Sold Units</h4>
+
+<pre><code class="r">map6 &lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    value &lt;- subset(map.values[[r]], !is.na(as.numeric(units)))
+    if(nrow(value) != 0) {
+      rhcollect(map.keys[[r]], value)
+    }
+  })
+})
+</code></pre>
+
+<pre><code class="r">reduce6 &lt;- expression(
+  pre = {
+    onestate &lt;- data.frame()
+  },
+  reduce = {
+    onestate &lt;- do.call(rbind, reduce.values)
+  },
+  post = {
+    onestate$date &lt;- as.POSIXct(
+      x      = strptime(onestate$date, format = &quot;%Y-%m-%d&quot;), 
+      format = &#39;%Y%m%d&#39;, 
+      tz     = &quot;&quot;
+    )
+    trellis.device(postscript, 
+      file  = paste(&quot;./tmp/time.vs.unit&quot;, reduce.key, &quot;ps&quot;, sep=&quot;.&quot;), 
+      color = TRUE,
+      paper = &quot;legal&quot;
+    )
+    b &lt;- xyplot(
+      log2(as.numeric(units)) ~ date | FIPS,
+      data   = onestate,
+      layout = c(4, 3),
+      cex    = 0.5,
+      pch    = 16,
+      xlab   = &quot;Time&quot;,
+      ylab   = &quot;Log of Number of Sold Units(log base 2)&quot;,
+      main   = paste(&quot;Sold Units vs Time in State &quot;, reduce.key, sep=&quot;&quot;)
+    )
+    print(b)
+    dev.off()    
+  }
+)
+</code></pre>
+
+<pre><code class="r">mr6 &lt;- rhwatch(
+  map       = map6,
+  reduce    = reduce6,
+  input     = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
+  output    = rhfmt(&quot;/ln/tongx/housing/timeplotbystate&quot;, type = &quot;sequence&quot;),
+  setup     = expression(
+    map = {
+    },
+    reduce = {
+      library(lattice)
+    }
+  ),
+  mapred    = list( 
+    mapred.reduce.tasks = 12
+  ),
+  copyFiles = TRUE,
+  readback  = FALSE
+)
+</code></pre>
+
+<pre><code class="r">rhls(&quot;/ln/tmp/housing/timeplotbystate&quot;)
+</code></pre>
+
+<pre><code>   permission owner      group        size          modtime                                           file
+1  -rw-r--r-- tongx supergroup           0 2014-10-02 21:20     /ln/tongx/housing/timeplotbystate/_SUCCESS
+2  drwxrwxrwx tongx supergroup           0 2014-10-02 21:20        /ln/tongx/housing/timeplotbystate/_logs
+3  drwxr-xr-x tongx supergroup           0 2014-10-02 21:20     /ln/tongx/housing/timeplotbystate/_outputs
+4  -rw-r--r-- tongx supergroup    94 bytes 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/part-r-00000
+5  -rw-r--r-- tongx supergroup    94 bytes 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/part-r-00001
+......
+</code></pre>
+
+<pre><code class="r">rhls(&quot;/ln/tmp/housing/timeplotbystate/_outputs&quot;)
+</code></pre>
+
+<pre><code>   permission owner      group     size          modtime                                                           file
+1  -rw-r--r-- tongx supergroup 53.21 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AL.pdf
+2  -rw-r--r-- tongx supergroup 136.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AR.pdf
+3  -rw-r--r-- tongx supergroup 31.86 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AZ.pdf
+4  -rw-r--r-- tongx supergroup 150.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CA.pdf
+5  -rw-r--r-- tongx supergroup 106.7 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CO.pdf
+......
+</code></pre>
+
+<pre><code class="r">rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.NC.pdf&quot;, &quot;./&quot;)
+rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;, &quot;./&quot;)
+</code></pre>
+
+<p><a href="./plots/time.vs.unit.NC.pdf">Time series plot of number of units sold for North Carolina State</a>.</p>
+
+<p><a href="./plots/time.vs.unit.TX.pdf">Time series plot of number of units sold for Texas State</a>.</p>
+
+<h4>Scatter Plot of Sold Units vs. List Price</h4>
+
+<pre><code class="r">map7 &lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    value &lt;- subset(
+      map.values[[r]], !is.na(as.numeric(list))
+    )
+    if(nrow(value) != 0) {
+      rhcollect(map.keys[[r]], value)
+    }
+  })
+})
+</code></pre>
+
+<pre><code class="r">reduce7 &lt;- expression(
+  pre = {
+    onestate &lt;- data.frame()
+  },
+  reduce = {
+    onestate &lt;- do.call(rbind, reduce.values)
+  },
+  post = {
+    onestate$date &lt;- as.POSIXct(
+      x      = strptime(onestate$date, format = &quot;%Y-%m-%d&quot;), 
+      format = &#39;%Y%m%d&#39;, 
+      tz     = &quot;&quot;
+    )
+    trellis.device(postscript, 
+      file  = paste(&quot;./tmp/list.vs.time&quot;, reduce.key, &quot;ps&quot;, sep=&quot;.&quot;), 
+      color = TRUE,
+      paper = &quot;legal&quot;
+    )
+    b &lt;- xyplot(
+      log2(as.numeric(list)) ~ date | FIPS,
+      data   = onestate,
+      layout = c(4,3),
+      cex    = 0.5,
+      pch    = 16,
+      scale  = list(
+        y = list(relation = &quot;sliced&quot;) 
+      ),
+      xlab   = &quot;time&quot;,
+      ylab   = &quot;Log of list price (log base 2 dollar per square foot)&quot;,
+      main   = paste(&quot;List Price vs Time in State &quot;, reduce.key, sep=&quot;&quot;)
+    )
+    print(b)
+    dev.off()    
+  }
+)
+</code></pre>
+
+<pre><code class="r">mr7 &lt;- rhwatch(
+  map       = map7,
+  reduce    = reduce7,
+  input     = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
+  output    = rhfmt(&quot;/ln/tongx/housing/listplotbystate&quot;, type = &quot;sequence&quot;),
+  setup     = expression(
+    reduce = {
+      library(lattice)
+    }
+  ),
+  mapred    = list( 
+    mapred.reduce.tasks = 12
+  ),
+  copyFiles = TRUE,
+  readback  = FALSE
+)
+</code></pre>
+
+<pre><code class="r">rhls(&quot;/ln/tongx/housing/listplotbystate/_outputs&quot;)
+</code></pre>
+
+<pre><code>   permission owner      group     size          modtime                                                           file
+1  -rw-r--r-- tongx supergroup 197.6 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AL.pdf
+2  -rw-r--r-- tongx supergroup 213.2 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AR.pdf
+3  -rw-r--r-- tongx supergroup 51.46 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AZ.pdf
+4  -rw-r--r-- tongx supergroup 192.2 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf
+......
+</code></pre>
+
+<pre><code class="r">rhget(&quot;/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.VA.pdf&quot;, &quot;./&quot;)
+rhget(&quot;/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf&quot;, &quot;./&quot;)
+</code></pre>
+
+<p><a href="./plots/list.vs.time.CA.pdf">Time series plot of list price for California State</a>.</p>
+
+<p><a href="./plots/list.vs.time.VA.pdf">Time series plot of list price for Virginia State</a>.</p>
 
 </div>
 

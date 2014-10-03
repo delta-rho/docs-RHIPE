@@ -157,6 +157,7 @@ map1 <- expression({
     )
     value$list <- as.numeric(value$list)
     value$selling <- as.numeric(value$selling)
+    value$units <- as.numeric(value$units)
     rhcollect(key, value)
   })
 })
