@@ -7,7 +7,7 @@ regression.
 
 The basic idea is firstly, we wishto generate an observation sample with a size of *N*, *P* number of 
 explanatory variables and one response variables. Let's denote the number of the variables as *V*, 
-which equals to $P+1$. In summary, we wish to generate a dataframe with *N* rows and *V* collumns. 
+which equals to *P+1*. In summary, we wish to generate a dataframe with *N* rows and *V* collumns. 
 Secondly, We want to use the logistic regression method to analyze the dataframe. However, when the
 data size is quite large, it will be impractical to generate and analyse the whole data set in terms
 of the time cosuming and the memory limitation.
@@ -20,20 +20,90 @@ time which will be explained more in the later session.
 In this example, we will show how to do a sing run of the performance test, which means we only pick
 one possible value of *M* and one possible value of *V* to see how fast it is to go. 
 
-We choose $N = 2^(23)$, $V = 2^5$, and $M = 2^13$ to illustrate the single run.
+We choose $n = log2(N) = 23$, $v = log2(V) = 5$, and $m = log2(M) = 13$ to illustrate one single run.
 
-### Generate Datasets and Write to HDFS ###
+### Generate Datasets ###
 
-### There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. 
+The first step in a D/&R analysis is to choose a division method and create subsets. In this example,
+we devide the whole dataset to *R* sets, which $ log2(R) = 10$. So we will generate 2^10 matrices of 
+2^13 rows and 2^5 columns each. 
+
+Before we run the map function, we will set up some basic parameters:
+
+```{r,eval=FALSE,tidy=FALSE}
+n <- 23
+m <- 13
+v <- 5
+p <- 2^v - 1
+```
+
+#### Map ####
+
+```{r, eval=FALSE,tidy=FALSE}
+map1 <- expression({
+      for (r in map.values){
+        set.seed(r)
+        value = matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
+        rhcollect(r, value)
+      }
+    })
+```
+ 
+The input keys are numeric numbers as 1, 2, ...., *R*, which log2(R) = log2(N/M) = 10. They are the 
+elements of the list object `map.keys`. We specify the key value as a matrix with 2^13 rows and 
+2^5 columns. For each input key-value pair, `rhcollect` emits an intermediate key-value pair, which 
+is the same as the input key-value pair.
+
+The first step is to generate the subsets and we don't need the `reduce` function to this point. 
+Next, we will write the generated subsets to HDFS.
+
+#### Execution Function ####
+
+```{r eval=FALSE, tidy=FALSE}
+dir.dm  = "/ln/song273/tmp/multi.factor_n23/dm/n23v5m13"
+mr <- rhwatch(
+  map     = map1,
+  input   = c(2^(n-m),12),
+  output  = dir.dm,
+  jobname = dir.dm,
+  mapred  = list(
+    mapred.task.timeout=0,
+    mapred.reduce.tasks=0),
+  parameters = list(m = 2^m, p = p),
+  noeval  = TRUE,
+  readback = FALSE
+  )
+t  <- as.numeric(system.time({rhex(mr, async=FALSE)})[3])
+
+```
+
+Our output is saved on Before we move to the elased time measurement part, we can take a look at the files we created. We 
+can use 
+
+a  = rhread("/ln/song273/tmp/multi.factor_n23/dm/n23v5m13",max = 1)
+
+> str(a)
+List of 1
+ $ :List of 2
+  ..$ : num 936
+  ..$ : num [1:8192, 1:32] 0.0803 -1.5415 -1.1148 1.8888 1.9351 ...
+
+
+### Elapsed Time Measurement ###
+
+
+There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. 
 The first computation type is **O**, the elapsed time to read the subsets from the HDFS and make 
 them available to `glm.fit` in memory as an R objects. The other type, **L**, starts when **O** ends
 and it consists of `glm.fit` computations on the subsets by **map**, plus **reduce** gathering the 
 subset estimates and computing the means. However, we cannot measure **L** directly. So we measure 
 **O** in one run and **T = O + L** in another.
 
+#### The First Kind Of Elapsed Time -- **O** #####
 
+#### The Second Kind of Elapsed Time -- **T** ####
 
-
+#### Performance Test Results ####
 
 one The cluster which we are going to test the computation performance is the Deneb/Mimosa Cluster.The 
 Deneb cluster is maintained by system administrators at the Department of Statistics Purdue University.
@@ -65,13 +135,7 @@ cat(apply(y,1,function(X) paste(X,collapse=" | ")),sep = "\n")
 
 ### R code -- Set Up ###
 ```{r, eval=FALSE}
-## load libraries
-library(plyr)
-library(Rhipe)
-rhinit()
-rhoptions(readback = FALSE)
-rhoptions(zips = '/ln/share/RhipeLib.tar.gz')
-rhoptions(runner = 'sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh')
+
 
 # experiment name
 name <- "multi.factor_n21"
