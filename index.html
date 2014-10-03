@@ -1134,6 +1134,9 @@ loop.</p>
 
 <h4>Time Series Plot of Sold Units</h4>
 
+<p>The first type of plot we are going to plot is the time series plot of number of sold units condition
+on county for each state. First of all, let us have a look at what the plot is.</p>
+
 <p><a href="./plots/time.vs.unit.NC.pdf">Time series plot of number of units sold for North Carolina State</a>.</p>
 
 <p><a href="./plots/time.vs.unit.TX.pdf">Time series plot of number of units sold for Texas State</a>.</p>
@@ -1515,8 +1518,8 @@ We can see more details about the files on HDFS by <code>rhls()</code>.</p>
 </code></pre>
 
 <p>Comments: give description of the first two files. As we can see from the output, the size for one 
-output file is 170 mb. It would be impractical to read the whole data sets from HDFS to our R memory.
-We can only read one file from HDFS to the R memory by specify the argument <code>max</code> of RHIPE function 
+output file is 170 mb. It would be impractical to read the whole data sets from HDFS to the node
+memory. We can only read one file from HDFS by specify the argument <code>max</code> of RHIPE function 
 <code>rhread</code> equals to 1. Then we will use R function <code>str</code> to explore the structure.</p>
 
 <pre><code class="r">a  = rhread(&quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;,max = 1)
@@ -1560,7 +1563,7 @@ compute  &lt;- &quot;O&quot;
 </code></pre>
 
 <p>It is interesting to notice that <code>map2</code> is an expression with no command. That&#39;s because we only want
-to read the data from HDFS to R local memory without other operations and record the reading time .</p>
+to read the data from HDFS to the node memory without other operations and record the reading time .</p>
 
 <h5>Execution Function</h5>
 
@@ -1669,7 +1672,7 @@ timing[[2]] = list(compute=compute, t=t)
   ..$ t      : num 40.7
 </code></pre>
 
-<p>The elapsed time <strong>O</strong> we need to read the datasets from HDFS to our local working memory is 19.6 
+<p>The elapsed time <strong>O</strong> we need to read the datasets from HDFS to the node memory is 19.6 
 seconds and the whole elapsed time <strong>T</strong> which consists of the reading time and the analyzing time 
 is 40.7. That result is impressive! The cluster we use here to run the test is a very small one 
 with two nodes and 64 GB memory in total. You can definitely use RHIPE computation environment to 
