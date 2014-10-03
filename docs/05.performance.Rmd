@@ -131,8 +131,8 @@ rhls("/ln/song273/tmp/multi.factor_n23/dm/n23v5m13")
 14 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00011
 ```
 Comments: give description of the first two files. As we can see from the output, the size for one 
-output file is 170 mb. It would be impractical to read the whole data sets from HDFS to our R memory.
-We can only read one file from HDFS to the R memory by specify the argument `max` of RHIPE function 
+output file is 170 mb. It would be impractical to read the whole data sets from HDFS to the node
+memory. We can only read one file from HDFS by specify the argument `max` of RHIPE function 
 `rhread` equals to 1. Then we will use R function `str` to explore the structure.
 
 ```{r eval=FALSE, tidy=FALSE}
@@ -176,7 +176,7 @@ map2 <- expression({})
 ```
 
 It is interesting to notice that `map2` is an expression with no command. That's because we only want
-to read the data from HDFS to R local memory without other operations and record the reading time .
+to read the data from HDFS to the node memory without other operations and record the reading time .
 
 ##### Execution Function #####
 
@@ -287,7 +287,7 @@ List of 2
   ..$ compute: chr "T"
   ..$ t      : num 40.7
 ```
-The elapsed time **O** we need to read the datasets from HDFS to our local working memory is 19.6 
+The elapsed time **O** we need to read the datasets from HDFS to the node memory is 19.6 
 seconds and the whole elapsed time **T** which consists of the reading time and the analyzing time 
 is 40.7. That result is impressive! The cluster we use here to run the test is a very small one 
 with two nodes and 64 GB memory in total. You can definitely use RHIPE computation environment to 
