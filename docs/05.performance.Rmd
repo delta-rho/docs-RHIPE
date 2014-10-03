@@ -77,16 +77,64 @@ t  <- as.numeric(system.time({rhex(mr, async=FALSE)})[3])
 
 ```
 
-Our output is saved on Before we move to the elased time measurement part, we can take a look at the files we created. We 
-can use 
+The `rhwatch` function packages and executes our Rhipe MapReduce job. It consists of  several 
+arguments, such as `map`, `input`, `output`, `jobname`, `mapred`, `parameters`,`noeval` and 
+`readback`, most of which have been introduced in the `housing` extample. Here we have several new 
+arguments, like `parameters`, `jobname` and `noeval`. The argument `parameters` is a named list with 
+parameters to be passed to a mapreduce job which in our case, `map1` is an R expression, and we need
+to pass the values of `m` and `p` to the argument `map` in `rhwatch`. The argument `jobname` is the 
+name of the job, which is visible on the Jobtracker website. If not provided, Hadoop MapReduce uses
+the default name job_date_time_number e.g. job_201007281701_0274. If the argument `noeval` is set to
+be 'TRUE', then the Hadoop MapReduce job will not run, just return the job object. You can view `rhwatch`
+function for more details.
 
+Instead, the `rhex` function will submit the MapReduce job to the Hadoop MapReduce framework. The 
+following is the output of the last R command:
+
+```
+```
+
+Our  datasets have been created and are saved on HDFS now. We can see more details about the files 
+on HDFS by `rhls()`.
+
+```{r eval=FALSE, tidy=FALSE}
+rhls("/ln/song273/tmp/multi.factor_n23/dm/n23v5m13")
+```
+
+```
+   permission   owner      group     size          modtime                                                      file
+1  -rw-r--r-- song273 supergroup        0 2014-10-02 22:36     /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/_SUCCESS
+2  drwxrwxrwt song273 supergroup        0 2014-10-02 22:36        /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/_logs
+3  -rw-r--r-- song273 supergroup   178 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00000
+4  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00001
+5  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00002
+6  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00003
+7  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00004
+8  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00005
+9  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00006
+10 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00007
+11 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00008
+12 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00009
+13 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00010
+14 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00011
+```
+Comments: give description of the first two files. As we can see from the output, the size for one 
+output file is 170 mb. It would be impractical to read the whole data sets from HDFS to our R memory.
+We can only read one file from HDFS to the R memory by specify the argument `max` of RHIPE function 
+`rhread` equals to 1. Then we will use R function `str` to explore the structure.
+
+```{r eval=FALSE, tidy=FALSE}
 a  = rhread("/ln/song273/tmp/multi.factor_n23/dm/n23v5m13",max = 1)
+str(a)
+```
 
-> str(a)
+```
 List of 1
  $ :List of 2
   ..$ : num 936
   ..$ : num [1:8192, 1:32] 0.0803 -1.5415 -1.1148 1.8888 1.9351 ...
+```
+So 'a' is a list with two elements key and value. The value is a 8192 * 32 matrix.
 
 
 ### Elapsed Time Measurement ###
@@ -101,6 +149,7 @@ subset estimates and computing the means. However, we cannot measure **L** direc
 
 #### The First Kind Of Elapsed Time -- **O** #####
 
+
 #### The Second Kind of Elapsed Time -- **T** ####
 
 #### Performance Test Results ####
@@ -113,25 +162,6 @@ DataNode and TaskTracker, and each has 8 cores, 32 GB memory, 2 TB diske. Collec
 has 16 cores, 64 GB memory and 4 TB disk. In general, we will save 4 cores for the general management
 or storage, and the other 12 cores will be used for map/reduce jobs.
 
-
-### Data Structure ###
-```{r createtable, results='asis', echo=FALSE}
-cat("Variables | Description |Values ","--- | --- |---", sep="\n")
-x = c("N","observation sample size","2^21 , 2^23 , 2^25 , 2^27 ","V","Factor--Number of variables","2^4 , 2^5 , 2^6","M","Factor--Number of observations per subset","2^8 , 2^9 , 2^10 , ..., 2^16","O","Response variable--first type of elapsed time "," ","T","Response varibale--whole elapsed time"," ")
-x = matrix(x,ncol=3,byrow=TRUE)
-cat(apply(x,1,function(X) paste(X,collapse=" | ")),sep = "\n")
-```
-
-we will using the following notations in this performance experiment. 
-
-```{r createtable1, results='asis', echo=FALSE}
-cat("Variables | Description |Values ","--- | --- |---", sep="\n")
-y = c("n","log2(N)","21 , 23 , 25 , 27 ","p","V - 1: Number of explanatory variables","15 , 31 , 63","m","log2(M): log2 number of observations per subset","8 , 9 , 10 , ..., 16")
-y = matrix(y,ncol=3,byrow=TRUE)
-cat(apply(y,1,function(X) paste(X,collapse=" | ")),sep = "\n")
-```
-
-### Experimental Design ###
 
 ### R code -- Set Up ###
 ```{r, eval=FALSE}
@@ -194,13 +224,10 @@ Sys.sleep(time=sleep*10)
 ```{r,eval= FALSE}
 ## initialize timing
 timing = list()
-
-for (run in run.vec) {
   
   ## timing for O
   compute = "O"
-  for (m in m.vec) {
-    for (p in p.vec) {
+
       dir.dm = paste(dir.exp,"/dm/",'n',n,'p',p,"m",m, sep="")
       dir.nf = paste(dir.exp,"/nf/","run",run,'n',n,'p',p,"m",m, sep="")
       
@@ -220,13 +247,11 @@ for (run in run.vec) {
       timing[[length(timing)+1]] = list(compute=compute, n=n, p=p, m=m, run=run, t=t)
       
       Sys.sleep(time=sleep)
-    }}  # end of loop of m and p
+    # end of loop of m and p
   
   
   ## timing for T
   compute = "T"
-  for (m in m.vec) {
-    for (p in p.vec) {
       dir.dm = paste(dir.exp,"/dm/",'n',n,'p',p,"m",m, sep="")
       dir.gf = paste(dir.exp,"/gf/","run",run,'n',n,'p',p,"m",m, sep="")
       
@@ -261,11 +286,7 @@ for (run in run.vec) {
       t = as.numeric(system.time({rhex(gf.mr, async=FALSE)})[3])
       timing[[length(timing)+1]] = list(compute=compute, n=n, p=p, m=m, run=run, t=t)
       
-      Sys.sleep(time=sleep)
-    }}  # end of loop of m and p
-  
-}   # end of loop of run
-```
+
 
 ### R code -- Save the Results ###
 
