@@ -139,12 +139,36 @@
 <div class='tab-pane active' id='intro'>
 <h3>Intro</h3>
 
-<p>We&#39;ll demonstrate the <code>RHIPE</code> package with an analysis of housing data.
-The housing data set contains monthly median list and selling prices per square foot and number 
-of units sold for 2,883 counties in 49 states from October 2008 to March 2014, harvested from 
-Quandl&#39;s Zillow Housing Data.</p>
+<p>We introduce RHIPE using
+housing data that consist of 7 monthly variables on housing sales from Oct
+2008 to Mar 2014 for 2883 counties in the 48 U.S. states, excluding Hawaii and
+Alaska, but including the District of Columbia which for simplicity here we
+will refer to as a ``state&#39;&#39;.  The data were harvested from Quandl&#39;s Zillow
+Housing Data. The data contain 224,369 sales of housing units.</p>
 
-<p>Here are the first few lines of the raw text file:</p>
+<p>The variables are</p>
+
+<ul>
+<li><strong>fips</strong>: FIPS county code, an unique identifier for each U.S. county</li>
+<li><strong>county</strong>: county name</li>
+<li><strong>state</strong>: state abbreviation</li>
+<li><strong>date</strong>: time measured in months, from 1 to 66, the number of months</li>
+<li><strong>units</strong>: number of units sold</li>
+<li><strong>list</strong>: monthly median list price (dollars per square foot)</li>
+<li><strong>selling</strong>: monthly median selling (dollars per square foot)</li>
+</ul>
+
+<p>Many observations of the last three variables are missing: units 75%, list 22%,
+and selling 73%.</p>
+
+<p>The raw data are in a text file whose size is about 12 MB.
+It is available as <code>housing.txt</code> in our Tesseradata Github repository of the
+<code>RHIPE</code> documentation <a href="https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt">here</a>.   </p>
+
+<p>So the raw data are a table with 224,369 rows (units) and 7 columns (variables).
+In the text file, the fields in each row are separated by a comma, and there
+are not headers
+Here are the first few lines of the file:</p>
 
 <pre><code>06001,Alameda,CA,2008-10-01,NA,307.97872340425,325.8118
 06001,Alameda,CA,2008-11-01,NA,299.16666666667,NA
@@ -153,29 +177,12 @@ Quandl&#39;s Zillow Housing Data.</p>
 06001,Alameda,CA,2009-01-01,NA,288.5,291.5977
 </code></pre>
 
-<p>There are 224,369 rows and 7 fields. Each field is separated by a comma, and there is no header row.
-The meaning of each field is as follows:</p>
-
-<ul>
-<li><strong>fips</strong>: FIPS county code</li>
-<li><strong>county</strong>: county name</li>
-<li><strong>state</strong>: state abbreviation</li>
-<li><strong>date</strong>: date in &quot;YYYY-MM-DD&quot; format.  Each month&#39;s values are placed at the first day of the month</li>
-<li><strong>units</strong>: number of units sold</li>
-<li><strong>list</strong>: monthly median list price dollar per square foot</li>
-<li><strong>selling</strong>: monthly median selling price dollar per square foot</li>
-</ul>
-
-<p>The total size of the text file is around 12MB. It is available as 
-<code>housing.txt</code> in our Tesseradata Github repository of the <code>RHIPE</code> documentation 
-<a href="https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt">here</a>.   </p>
-
-<p>Note:</p>
-
-<p>A housing unit is a house, an apartment, a mobile home, a group of rooms, or a single room that is
-occupied (or if vacant, is intended for occupancy) as separate living quarters. Separate living 
-quarters are those in which the occupants live and eat separately from any other persons in the 
-building and which have direct access from the outside of the building or through a common hall.</p>
+<p>A housing unit is a house, an apartment, a mobile home, a group of rooms, or a
+single room that is occupied or intended to occupied  as
+separate living quarter. Separate living quarters are those in which the
+occupants live and eat separately from any other persons in the 
+building and which have direct access from the outside of the building or
+through a common hall.</p>
 
 </div>
 
@@ -184,7 +191,7 @@ building and which have direct access from the outside of the building or throug
 <h3>Write Text to HDFS</h3>
 
 <p>Begin by connecting via ssh to the machine from which you will issue commands to your HDFS.  This might
-be the frontend machine of your cluster, or it may be one of the Hadoop nodes.  Navigate to a directory
+be the front-end machine of your cluster, or it may be one of the Hadoop nodes.  Navigate to a directory
 where you can store files, such as your .RData and .Rhistory files.  This might be your home directory.
 Start an interactive R session.</p>
 
@@ -630,7 +637,7 @@ the analytic method and recombination in a second job.</p>
 
 <p>As we showed previously, we divided the whole data set to subsets by state, and then calculated the mean list
 and selling price for each state. According to different purpose of the data analysis, we sometime would
-like to divide the data set by diferent variables. So we are going to show that what if we divide our housing
+like to divide the data set by different variables. So we are going to show that what if we divide our housing
 data by county from the text file as well.</p>
 
 <p>The input keys are line numbers in the housing data text file.  They are the elements of the list
@@ -1515,8 +1522,8 @@ We can see more details about the files on HDFS by <code>rhls()</code>.</p>
 </code></pre>
 
 <p>Comments: give description of the first two files. As we can see from the output, the size for one 
-output file is 170 mb. It would be impractical to read the whole data sets from HDFS to our R memory.
-We can only read one file from HDFS to the R memory by specify the argument <code>max</code> of RHIPE function 
+output file is 170 mb. It would be impractical to read the whole data sets from HDFS to the node
+memory. We can only read one file from HDFS by specify the argument <code>max</code> of RHIPE function 
 <code>rhread</code> equals to 1. Then we will use R function <code>str</code> to explore the structure.</p>
 
 <pre><code class="r">a  = rhread(&quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;,max = 1)
@@ -1560,7 +1567,7 @@ compute  &lt;- &quot;O&quot;
 </code></pre>
 
 <p>It is interesting to notice that <code>map2</code> is an expression with no command. That&#39;s because we only want
-to read the data from HDFS to R local memory without other operations and record the reading time .</p>
+to read the data from HDFS to the node memory without other operations and record the reading time .</p>
 
 <h5>Execution Function</h5>
 
@@ -1669,7 +1676,7 @@ timing[[2]] = list(compute=compute, t=t)
   ..$ t      : num 40.7
 </code></pre>
 
-<p>The elapsed time <strong>O</strong> we need to read the datasets from HDFS to our local working memory is 19.6 
+<p>The elapsed time <strong>O</strong> we need to read the datasets from HDFS to the node memory is 19.6 
 seconds and the whole elapsed time <strong>T</strong> which consists of the reading time and the analyzing time 
 is 40.7. That result is impressive! The cluster we use here to run the test is a very small one 
 with two nodes and 64 GB memory in total. You can definitely use RHIPE computation environment to 
