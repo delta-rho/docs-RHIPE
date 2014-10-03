@@ -66,7 +66,7 @@
    <li class='nav-header unselectable' data-edit-href='01.housing.Rmd'>Housing Data</li>
       
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#introduction'>Introduction</a>
+         <a target='_self' class='nav-not-header' href='#intro'>Intro</a>
       </li>
 
 
@@ -106,14 +106,29 @@
 
 
       <li class='active'>
+         <a target='_self' class='nav-not-header' href='#plots-by-state'>Plots by State</a>
+      </li>
+
+
+      <li class='active'>
          <a target='_self' class='nav-not-header' href='#manage-jobs'>Manage Jobs</a>
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='04.performance.Rmd'>Tessera Cluster Performance Test</li>
+<li class='nav-header unselectable' data-edit-href='05.performance.Rmd'>Tessera Cluster Logistic Performance Test</li>
       
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#the-problem-description-and-the-denebmimosa-cluster'>The Problem Description and the Deneb/Mimosa Cluster</a>
+         <a target='_self' class='nav-not-header' href='#introduction'>Introduction</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#generate-datasets'>Generate Datasets</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#elapsed-time-measurement'>Elapsed Time Measurement</a>
       </li>
 
 
@@ -161,8 +176,8 @@
 
 <div class="col-md-9 tab-content" id="main-content">
 
-<div class='tab-pane active' id='introduction'>
-<h3>Introduction</h3>
+<div class='tab-pane active' id='intro'>
+<h3>Intro</h3>
 
 <p>We&#39;ll demonstrate the <code>RHIPE</code> package with an analysis of housing data.
 The housing data set contains monthly median list and selling prices per square foot and number 
@@ -321,6 +336,7 @@ map is the final output.</p>
     )
     value$list &lt;- as.numeric(value$list)
     value$selling &lt;- as.numeric(value$selling)
+    value$units &lt;- as.numeric(value$units)
     rhcollect(key, value)
   })
 })
@@ -1039,8 +1055,8 @@ reduce5 &lt;- expression(
 mr5 &lt;- rhwatch(
   map      = map5,
   reduce   = reduce5,
-  input    = rhfmt(&quot;/user/tongx/housing/bycounty&quot;, type = &quot;sequence&quot;),
-  output   = rhfmt(&quot;/user/tongx/housing/countytostate.map&quot;, type = &quot;map&quot;),
+  input    = rhfmt(&quot;/ln/tongx/housing/bycounty&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/ln/tongx/housing/countytostate.map&quot;, type = &quot;map&quot;),
   mapred   = list( 
     mapred.reduce.tasks = 10
   ),
@@ -1055,7 +1071,7 @@ division of the dataset as we did in sequence file, except that we would like to
 property in the output file. And this is the main difference between map file and sequence file. After
 the job is finished, we can access a map file with <code>rhmapfile</code> function.</p>
 
-<pre><code class="r">rst &lt;- rhmapfile(&quot;/user/tongx/housing/countytostate.map&quot;)
+<pre><code class="r">rst &lt;- rhmapfile(&quot;/ln/tongx/housing/countytostate.map&quot;)
 rst
 </code></pre>
 
@@ -1081,27 +1097,27 @@ object back from HDFS.</p>
 <p>Now let us have a deeper look at the output files on HDFS. Recall that &quot;/user/tongx/housing/countytostate&quot;
 is the sequence output files, and &quot;/user/tongx/housing/countytostate.map&quot; is the map output files.</p>
 
-<pre><code class="r">rhls(&quot;/ln/tmp/housing/countytostate&quot;)
+<pre><code class="r">rhls(&quot;/ln/tongx/housing/countytostate&quot;)
 </code></pre>
 
-<pre><code>   permission owner      group     size          modtime                                           file
-1  -rw-r--r-- tongx supergroup        0 2014-09-20 18:02     /user/tongx/housing/countytostate/_SUCCESS
-2  drwxrwxrwx tongx supergroup        0 2014-09-20 18:02        /user/tongx/housing/countytostate/_logs
-3  -rw-r--r-- tongx supergroup 235.1 kb 2014-09-20 18:02 /user/tongx/housing/countytostate/part-r-00000
-4  -rw-r--r-- tongx supergroup   969 kb 2014-09-20 18:02 /user/tongx/housing/countytostate/part-r-00001
-5  -rw-r--r-- tongx supergroup 1.698 mb 2014-09-20 18:02 /user/tongx/housing/countytostate/part-r-00002
+<pre><code>   permission owner      group     size          modtime                                         file
+1  -rw-r--r-- tongx supergroup        0 2014-09-20 18:02     /ln/tongx/housing/countytostate/_SUCCESS
+2  drwxrwxrwx tongx supergroup        0 2014-09-20 18:02        /ln/tongx/housing/countytostate/_logs
+3  -rw-r--r-- tongx supergroup 235.1 kb 2014-09-20 18:02 /ln/tongx/housing/countytostate/part-r-00000
+4  -rw-r--r-- tongx supergroup   969 kb 2014-09-20 18:02 /ln/tongx/housing/countytostate/part-r-00001
+5  -rw-r--r-- tongx supergroup 1.698 mb 2014-09-20 18:02 /ln/tongx/housing/countytostate/part-r-00002
 ......
 </code></pre>
 
-<pre><code class="r">rhls(&quot;/user/tongx/housing/countytostate.map&quot;)
+<pre><code class="r">rhls(&quot;/ln/tongx/housing/countytostate.map&quot;)
 </code></pre>
 
-<pre><code>   permission owner      group size          modtime                                               file
-1  -rw-r--r-- tongx supergroup    0 2014-09-28 13:52     /user/tongx/housing/countytostate.map/_SUCCESS
-2  drwxrwxrwx tongx supergroup    0 2014-09-28 13:51        /user/tongx/housing/countytostate.map/_logs
-3  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00000
-4  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00001
-5  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00002
+<pre><code>   permission owner      group size          modtime                                             file
+1  -rw-r--r-- tongx supergroup    0 2014-09-28 13:52     /ln/tongx/housing/countytostate.map/_SUCCESS
+2  drwxrwxrwx tongx supergroup    0 2014-09-28 13:51        /ln/tongx/housing/countytostate.map/_logs
+3  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00000
+4  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00001
+5  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00002
 ......
 </code></pre>
 
@@ -1111,12 +1127,12 @@ the output in <code>part-r-</code> files we got in sequence output files. We can
 function. The extra <code>index</code> file with size around 200 bytes records all indexing information by key of this 
 part file.</p>
 
-<pre><code class="r">rhls(&quot;/user/tongx/housing/countytostate.map/part-r-00000&quot;)
+<pre><code class="r">rhls(&quot;/ln/tongx/housing/countytostate.map/part-r-00000&quot;)
 </code></pre>
 
-<pre><code>  permission owner      group        size          modtime                                                     file
-1 -rw-r--r-- tongx supergroup    235.1 kb 2014-09-28 13:52  /user/tongx/housing/countytostate.map/part-r-00000/data
-2 -rw-r--r-- tongx supergroup   209 bytes 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00000/index
+<pre><code>  permission owner      group        size          modtime                                                   file
+1 -rw-r--r-- tongx supergroup    235.1 kb 2014-09-28 13:52  /ln/tongx/housing/countytostate.map/part-r-00000/data
+2 -rw-r--r-- tongx supergroup   209 bytes 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00000/index
 </code></pre>
 
 <p>Finally, we can access the subset of data frame of Indiana state by:</p>
@@ -1132,6 +1148,198 @@ part file.</p>
 5 2011-03-01    NA  55.27211       NA 18177  Wayne
 6 2011-04-01    NA  56.68348       NA 18177  Wayne
 </code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='plots-by-state'>
+<h3>Plots by State</h3>
+
+<h4>Time Series Plot of Sold Units</h4>
+
+<pre><code class="r">map6 &lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    value &lt;- subset(map.values[[r]], !is.na(as.numeric(units)))
+    if(nrow(value) != 0) {
+      rhcollect(map.keys[[r]], value)
+    }
+  })
+})
+</code></pre>
+
+<pre><code class="r">reduce6 &lt;- expression(
+  pre = {
+    onestate &lt;- data.frame()
+  },
+  reduce = {
+    onestate &lt;- do.call(rbind, reduce.values)
+  },
+  post = {
+    onestate$date &lt;- as.POSIXct(
+      x      = strptime(onestate$date, format = &quot;%Y-%m-%d&quot;), 
+      format = &#39;%Y%m%d&#39;, 
+      tz     = &quot;&quot;
+    )
+    trellis.device(pdf, 
+      file  = paste(&quot;./tmp/time.vs.unit&quot;, reduce.key, &quot;pdf&quot;, sep=&quot;.&quot;), 
+      color = TRUE,
+      paper = &quot;legal&quot;
+    )
+    b &lt;- xyplot(
+      log2(as.numeric(units)) ~ date | FIPS,
+      data   = onestate,
+      layout = c(4, 3),
+      cex    = 0.5,
+      pch    = 16,
+      xlab   = &quot;Time&quot;,
+      ylab   = &quot;Log of Number of Sold Units(log base 2)&quot;,
+      main   = paste(&quot;Sold Units vs Time in State &quot;, reduce.key, sep=&quot;&quot;)
+    )
+    print(b)
+    dev.off()    
+  }
+)
+</code></pre>
+
+<pre><code class="r">mr6 &lt;- rhwatch(
+  map       = map6,
+  reduce    = reduce6,
+  input     = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
+  output    = rhfmt(&quot;/ln/tongx/housing/timeplotbystate&quot;, type = &quot;sequence&quot;),
+  setup     = expression(
+    map = {
+    },
+    reduce = {
+      library(lattice)
+    }
+  ),
+  mapred    = list( 
+    mapred.reduce.tasks = 12
+  ),
+  copyFiles = TRUE,
+  readback  = FALSE
+)
+</code></pre>
+
+<pre><code class="r">rhls(&quot;/ln/tmp/housing/timeplotbystate&quot;)
+</code></pre>
+
+<pre><code>   permission owner      group        size          modtime                                           file
+1  -rw-r--r-- tongx supergroup           0 2014-10-02 21:20     /ln/tongx/housing/timeplotbystate/_SUCCESS
+2  drwxrwxrwx tongx supergroup           0 2014-10-02 21:20        /ln/tongx/housing/timeplotbystate/_logs
+3  drwxr-xr-x tongx supergroup           0 2014-10-02 21:20     /ln/tongx/housing/timeplotbystate/_outputs
+4  -rw-r--r-- tongx supergroup    94 bytes 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/part-r-00000
+5  -rw-r--r-- tongx supergroup    94 bytes 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/part-r-00001
+......
+</code></pre>
+
+<pre><code class="r">rhls(&quot;/ln/tmp/housing/timeplotbystate/_outputs&quot;)
+</code></pre>
+
+<pre><code>   permission owner      group     size          modtime                                                           file
+1  -rw-r--r-- tongx supergroup 53.21 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AL.pdf
+2  -rw-r--r-- tongx supergroup 136.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AR.pdf
+3  -rw-r--r-- tongx supergroup 31.86 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AZ.pdf
+4  -rw-r--r-- tongx supergroup 150.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CA.pdf
+5  -rw-r--r-- tongx supergroup 106.7 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CO.pdf
+......
+</code></pre>
+
+<pre><code class="r">rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.NC.pdf&quot;, &quot;./&quot;)
+rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;, &quot;./&quot;)
+</code></pre>
+
+<p><a href="./plots/time.vs.unit.NC.pdf">Time series plot of number of units sold for North Carolina State</a>.</p>
+
+<p><a href="./plots/time.vs.unit.TX.pdf">Time series plot of number of units sold for Texas State</a>.</p>
+
+<h4>Time Series Plot of List Price</h4>
+
+<pre><code class="r">map7 &lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    value &lt;- subset(
+      map.values[[r]], !is.na(as.numeric(list))
+    )
+    if(nrow(value) != 0) {
+      rhcollect(map.keys[[r]], value)
+    }
+  })
+})
+</code></pre>
+
+<pre><code class="r">reduce7 &lt;- expression(
+  pre = {
+    onestate &lt;- data.frame()
+  },
+  reduce = {
+    onestate &lt;- do.call(rbind, reduce.values)
+  },
+  post = {
+    onestate$date &lt;- as.POSIXct(
+      x      = strptime(onestate$date, format = &quot;%Y-%m-%d&quot;), 
+      format = &#39;%Y%m%d&#39;, 
+      tz     = &quot;&quot;
+    )
+    trellis.device(pdf, 
+      file  = paste(&quot;./tmp/list.vs.time&quot;, reduce.key, &quot;pdf&quot;, sep=&quot;.&quot;), 
+      color = TRUE,
+      paper = &quot;legal&quot;
+    )
+    b &lt;- xyplot(
+      log2(as.numeric(list)) ~ date | FIPS,
+      data   = onestate,
+      layout = c(4,3),
+      cex    = 0.5,
+      pch    = 16,
+      scale  = list(
+        y = list(relation = &quot;sliced&quot;) 
+      ),
+      xlab   = &quot;time&quot;,
+      ylab   = &quot;Log of list price (log base 2 dollar per square foot)&quot;,
+      main   = paste(&quot;List Price vs Time in State &quot;, reduce.key, sep=&quot;&quot;)
+    )
+    print(b)
+    dev.off()    
+  }
+)
+</code></pre>
+
+<pre><code class="r">mr7 &lt;- rhwatch(
+  map       = map7,
+  reduce    = reduce7,
+  input     = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
+  output    = rhfmt(&quot;/ln/tongx/housing/listplotbystate&quot;, type = &quot;sequence&quot;),
+  setup     = expression(
+    reduce = {
+      library(lattice)
+    }
+  ),
+  mapred    = list( 
+    mapred.reduce.tasks = 12
+  ),
+  copyFiles = TRUE,
+  readback  = FALSE
+)
+</code></pre>
+
+<pre><code class="r">rhls(&quot;/ln/tongx/housing/listplotbystate/_outputs&quot;)
+</code></pre>
+
+<pre><code>   permission owner      group     size          modtime                                                           file
+1  -rw-r--r-- tongx supergroup 197.6 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AL.pdf
+2  -rw-r--r-- tongx supergroup 213.2 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AR.pdf
+3  -rw-r--r-- tongx supergroup 51.46 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AZ.pdf
+4  -rw-r--r-- tongx supergroup 192.2 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf
+......
+</code></pre>
+
+<pre><code class="r">rhget(&quot;/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.VA.pdf&quot;, &quot;./&quot;)
+rhget(&quot;/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf&quot;, &quot;./&quot;)
+</code></pre>
+
+<p><a href="./plots/list.vs.time.CA.pdf">Time series plot of list price for California State</a>.</p>
+
+<p><a href="./plots/list.vs.time.VA.pdf">Time series plot of list price for Virginia State</a>.</p>
 
 </div>
 
@@ -1192,26 +1400,117 @@ we&#39;ll have to kill it.  Again, use the object returned by <code>rhex</code><
 </div>
 
 
-<div class='tab-pane' id='the-problem-description-and-the-denebmimosa-cluster'>
-<h3>The Problem Description and the Deneb/Mimosa Cluster</h3>
+<div class='tab-pane' id='introduction'>
+<h3>Introduction</h3>
 
-<p>Divide and Recombine (D &amp; R) is a statistical framework for the analysis of large complex data. The
-Elapsed Timing Experiment is a very good example for embarrassingly parallel computing and it is
-designed to improve the perormance of D &amp; R Computations on a Cluster. The time depends on many
-factors, so it presents an opportunity for optimizing the computation by making the best choice of
-the factors. However, this exmaple here mainly serve to illustrate the computation ability of the 
-Deneb cluster with Rhipe computation environment, so we will only consider two statistical factors that 
-measure characteristics of the dataset and the subsets.</p>
+<p>We&#39;ll demonstrate the computation ability of <code>RHIPE</code> package with a performance test by using logistic
+regression. </p>
 
-<p>The basic idea is to generate subsets first and then use logistic regression method to analyze each
-subset by R function <code>glm.fit</code> . There are two types of elapsed-time computation. The subsets are
-stored on the HDFS as R objects. The first computation type is <strong>O</strong>, the elapsed time to read the
-subsets from the HDFS and make them available to <code>glm.fit</code> in memory as an R objects. The other typ
-e, <strong>L</strong>, starts when <strong>O</strong> ends and it consists of <code>glm.fit</code> computations on the subsets by <strong>map</strong>
-, plus <strong>reduce</strong> gathering the subset estimates and computing the means. However, we cannot measure
-<strong>L</strong> directly. So we measure <strong>O</strong> in one run and <strong>T = O + L</strong> in another.</p>
+<p>The basic idea is firstly, we wishto generate an observation sample with a size of <em>N</em>, <em>P</em> number of 
+explanatory variables and one response variables. Let&#39;s denote the number of the variables as <em>V</em>, 
+which equals to <em>P+1</em>. In summary, we wish to generate a dataframe with <em>N</em> rows and <em>V</em> collumns. 
+Secondly, We want to use the logistic regression method to analyze the dataframe. However, when the
+data size is quite large, it will be impractical to generate and analyse the whole data set in terms
+of the time cosuming and the memory limitation.</p>
 
-<p>The cluster which we are going to test the computation performance is the Deneb/Mimosa Cluster.The 
+<p>Instead, we will use <code>RHIPE</code> package to generate subsets first and then use logistic regression 
+method to analyze each subset by R function <code>glm.fit</code>. The subset size is <em>M</em> and the number of 
+subsets is <em>R</em>. As a result, \(N = M * R\). We will use R function <code>system.time</code> to measure elapsed 
+time which will be explained more in the later session.</p>
+
+<p>In this example, we will show how to do a sing run of the performance test, which means we only pick
+one possible value of <em>M</em> and one possible value of <em>V</em> to see how fast it is to go. </p>
+
+<p>We choose \(n = log2(N) = 23\), \(v = log2(V) = 5\), and \(m = log2(M) = 13\) to illustrate one single run.</p>
+
+</div>
+
+
+<div class='tab-pane' id='generate-datasets'>
+<h3>Generate Datasets</h3>
+
+<p>The first step in a D/&amp;R analysis is to choose a division method and create subsets. In this example,
+we devide the whole dataset to <em>R</em> sets, which $ log2(R) = 10$. So we will generate 2<sup>10</sup> matrices of 
+2<sup>13</sup> rows and 2<sup>5</sup> columns each. </p>
+
+<p>Before we run the map function, we will set up some basic parameters:</p>
+
+<pre><code class="r">n &lt;- 23
+m &lt;- 13
+v &lt;- 5
+p &lt;- 2^v - 1
+</code></pre>
+
+<h4>Map</h4>
+
+<pre><code class="r">map1 &lt;- expression({
+      for (r in map.values){
+        set.seed(r)
+        value = matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
+        rhcollect(r, value)
+      }
+    })
+</code></pre>
+
+<p>The input keys are numeric numbers as 1, 2, ...., <em>R</em>, which log2(R) = log2(N/M) = 10. They are the 
+elements of the list object <code>map.keys</code>. We specify the key value as a matrix with 2<sup>13</sup> rows and 
+2<sup>5</sup> columns. For each input key-value pair, <code>rhcollect</code> emits an intermediate key-value pair, which 
+is the same as the input key-value pair.</p>
+
+<p>The first step is to generate the subsets and we don&#39;t need the <code>reduce</code> function to this point. 
+Next, we will write the generated subsets to HDFS.</p>
+
+<h4>Execution Function</h4>
+
+<pre><code class="r">dir.dm  = &quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;
+mr &lt;- rhwatch(
+  map     = map1,
+  input   = c(2^(n-m),12),
+  output  = dir.dm,
+  jobname = dir.dm,
+  mapred  = list(
+    mapred.task.timeout=0,
+    mapred.reduce.tasks=0),
+  parameters = list(m = 2^m, p = p),
+  noeval  = TRUE,
+  readback = FALSE
+  )
+t  &lt;- as.numeric(system.time({rhex(mr, async=FALSE)})[3])
+</code></pre>
+
+<p>Our output is saved on Before we move to the elased time measurement part, we can take a look at the files we created. We 
+can use </p>
+
+<p>a  = rhread(&quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;,max = 1)</p>
+
+<blockquote>
+<p>str(a)
+List of 1
+ $ :List of 2
+  ..$ : num 936
+  ..$ : num [1:8192, 1:32] 0.0803 -1.5415 -1.1148 1.8888 1.9351 ...</p>
+</blockquote>
+
+</div>
+
+
+<div class='tab-pane' id='elapsed-time-measurement'>
+<h3>Elapsed Time Measurement</h3>
+
+<p>There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. 
+The first computation type is <strong>O</strong>, the elapsed time to read the subsets from the HDFS and make 
+them available to <code>glm.fit</code> in memory as an R objects. The other type, <strong>L</strong>, starts when <strong>O</strong> ends
+and it consists of <code>glm.fit</code> computations on the subsets by <strong>map</strong>, plus <strong>reduce</strong> gathering the 
+subset estimates and computing the means. However, we cannot measure <strong>L</strong> directly. So we measure 
+<strong>O</strong> in one run and <strong>T = O + L</strong> in another.</p>
+
+<h4>The First Kind Of Elapsed Time -- <strong>O</strong></h4>
+
+<h4>The Second Kind of Elapsed Time -- <strong>T</strong></h4>
+
+<h4>Performance Test Results</h4>
+
+<p>one The cluster which we are going to test the computation performance is the Deneb/Mimosa Cluster.The 
 Deneb cluster is maintained by system administrators at the Department of Statistics Purdue University.
 It is used for teaching distributed parallel computing for the analysis of large complex data.
 There are two nodes of this cluster, one runs NameNode and the other runs JobTracker. Both run Hadoop
@@ -1297,15 +1596,7 @@ or storage, and the other 12 cores will be used for map/reduce jobs.</p>
 <div class='tab-pane' id='r-code----set-up'>
 <h3>R code -- Set Up</h3>
 
-<pre><code class="r">## load libraries
-library(plyr)
-library(Rhipe)
-rhinit()
-rhoptions(readback = FALSE)
-rhoptions(zips = &#39;/ln/share/RhipeLib.tar.gz&#39;)
-rhoptions(runner = &#39;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&#39;)
-
-# experiment name
+<pre><code class="r"># experiment name
 name &lt;- &quot;multi.factor_n21&quot;
 # top level directory for experiment on HDFS
 dir = &quot;/ln/song273/tmp&quot;

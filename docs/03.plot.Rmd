@@ -1,0 +1,199 @@
+### Plots by State ###
+
+#### Time Series Plot of Sold Units ####
+
+```{r eval=FALSE, tidy=FALSE}
+map6 <- expression({
+  lapply(seq_along(map.keys), function(r) {
+    value <- subset(map.values[[r]], !is.na(as.numeric(units)))
+    if(nrow(value) != 0) {
+      rhcollect(map.keys[[r]], value)
+    }
+  })
+})
+```
+
+
+```{r eval=FALSE, tidy=FALSE}
+reduce6 <- expression(
+  pre = {
+    onestate <- data.frame()
+  },
+  reduce = {
+    onestate <- do.call(rbind, reduce.values)
+  },
+  post = {
+    onestate$date <- as.POSIXct(
+      x      = strptime(onestate$date, format = "%Y-%m-%d"), 
+      format = '%Y%m%d', 
+      tz     = ""
+    )
+    trellis.device(pdf, 
+      file  = paste("./tmp/time.vs.unit", reduce.key, "pdf", sep="."), 
+      color = TRUE,
+      paper = "legal"
+    )
+    b <- xyplot(
+      log2(as.numeric(units)) ~ date | FIPS,
+      data   = onestate,
+      layout = c(4, 3),
+      cex    = 0.5,
+      pch    = 16,
+      xlab   = "Time",
+      ylab   = "Log of Number of Sold Units(log base 2)",
+      main   = paste("Sold Units vs Time in State ", reduce.key, sep="")
+    )
+    print(b)
+    dev.off()    
+  }
+)
+```
+
+
+```{r eval=FALSE, tidy=FALSE}
+mr6 <- rhwatch(
+  map       = map6,
+  reduce    = reduce6,
+  input     = rhfmt("/ln/tongx/housing/byState", type = "sequence"),
+  output    = rhfmt("/ln/tongx/housing/timeplotbystate", type = "sequence"),
+  setup     = expression(
+    map = {
+    },
+    reduce = {
+      library(lattice)
+    }
+  ),
+  mapred    = list( 
+    mapred.reduce.tasks = 12
+  ),
+  copyFiles = TRUE,
+  readback  = FALSE
+)
+```
+
+```{r eval=FALSE, tidy=FALSE}
+rhls("/ln/tmp/housing/timeplotbystate")
+```
+```
+   permission owner      group        size          modtime                                           file
+1  -rw-r--r-- tongx supergroup           0 2014-10-02 21:20     /ln/tongx/housing/timeplotbystate/_SUCCESS
+2  drwxrwxrwx tongx supergroup           0 2014-10-02 21:20        /ln/tongx/housing/timeplotbystate/_logs
+3  drwxr-xr-x tongx supergroup           0 2014-10-02 21:20     /ln/tongx/housing/timeplotbystate/_outputs
+4  -rw-r--r-- tongx supergroup    94 bytes 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/part-r-00000
+5  -rw-r--r-- tongx supergroup    94 bytes 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/part-r-00001
+......
+```
+```{r eval=FALSE, tidy=FALSE}
+rhls("/ln/tmp/housing/timeplotbystate/_outputs")
+```
+```
+   permission owner      group     size          modtime                                                           file
+1  -rw-r--r-- tongx supergroup 53.21 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AL.pdf
+2  -rw-r--r-- tongx supergroup 136.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AR.pdf
+3  -rw-r--r-- tongx supergroup 31.86 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AZ.pdf
+4  -rw-r--r-- tongx supergroup 150.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CA.pdf
+5  -rw-r--r-- tongx supergroup 106.7 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CO.pdf
+......
+```
+```{r eval=FALSE, tidy=FALSE}
+rhget("/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.NC.pdf", "./")
+rhget("/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf", "./")
+```
+
+[Time series plot of number of units sold for North Carolina State](./plots/time.vs.unit.NC.pdf).
+
+[Time series plot of number of units sold for Texas State](./plots/time.vs.unit.TX.pdf).
+
+#### Time Series Plot of List Price ####
+
+```{r eval=FALSE, tidy=FALSE}
+map7 <- expression({
+  lapply(seq_along(map.keys), function(r) {
+    value <- subset(
+      map.values[[r]], !is.na(as.numeric(list))
+    )
+    if(nrow(value) != 0) {
+      rhcollect(map.keys[[r]], value)
+    }
+  })
+})
+```
+
+
+```{r eval=FALSE, tidy=FALSE}
+reduce7 <- expression(
+  pre = {
+    onestate <- data.frame()
+  },
+  reduce = {
+    onestate <- do.call(rbind, reduce.values)
+  },
+  post = {
+    onestate$date <- as.POSIXct(
+      x      = strptime(onestate$date, format = "%Y-%m-%d"), 
+      format = '%Y%m%d', 
+      tz     = ""
+    )
+    trellis.device(pdf, 
+      file  = paste("./tmp/list.vs.time", reduce.key, "pdf", sep="."), 
+      color = TRUE,
+      paper = "legal"
+    )
+    b <- xyplot(
+      log2(as.numeric(list)) ~ date | FIPS,
+      data   = onestate,
+      layout = c(4,3),
+      cex    = 0.5,
+      pch    = 16,
+      scale  = list(
+        y = list(relation = "sliced") 
+      ),
+      xlab   = "time",
+      ylab   = "Log of list price (log base 2 dollar per square foot)",
+      main   = paste("List Price vs Time in State ", reduce.key, sep="")
+    )
+    print(b)
+    dev.off()    
+  }
+)
+```
+
+
+```{r eval=FALSE, tidy=FALSE}
+mr7 <- rhwatch(
+  map       = map7,
+  reduce    = reduce7,
+  input     = rhfmt("/ln/tongx/housing/byState", type = "sequence"),
+  output    = rhfmt("/ln/tongx/housing/listplotbystate", type = "sequence"),
+  setup     = expression(
+    reduce = {
+      library(lattice)
+    }
+  ),
+  mapred    = list( 
+    mapred.reduce.tasks = 12
+  ),
+  copyFiles = TRUE,
+  readback  = FALSE
+)
+```
+
+```{r eval=FALSE, tidy=FALSE}
+rhls("/ln/tongx/housing/listplotbystate/_outputs")
+```
+```
+   permission owner      group     size          modtime                                                           file
+1  -rw-r--r-- tongx supergroup 197.6 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AL.pdf
+2  -rw-r--r-- tongx supergroup 213.2 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AR.pdf
+3  -rw-r--r-- tongx supergroup 51.46 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AZ.pdf
+4  -rw-r--r-- tongx supergroup 192.2 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf
+......
+```
+```{r eval=FALSE, tidy=FALSE}
+rhget("/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.VA.pdf", "./")
+rhget("/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf", "./")
+```
+
+[Time series plot of list price for California State](./plots/list.vs.time.CA.pdf).
+
+[Time series plot of list price for Virginia State](./plots/list.vs.time.VA.pdf).
