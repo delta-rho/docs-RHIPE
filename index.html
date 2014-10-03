@@ -1055,8 +1055,8 @@ reduce5 &lt;- expression(
 mr5 &lt;- rhwatch(
   map      = map5,
   reduce   = reduce5,
-  input    = rhfmt(&quot;/user/tongx/housing/bycounty&quot;, type = &quot;sequence&quot;),
-  output   = rhfmt(&quot;/user/tongx/housing/countytostate.map&quot;, type = &quot;map&quot;),
+  input    = rhfmt(&quot;/ln/tongx/housing/bycounty&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/ln/tongx/housing/countytostate.map&quot;, type = &quot;map&quot;),
   mapred   = list( 
     mapred.reduce.tasks = 10
   ),
@@ -1071,7 +1071,7 @@ division of the dataset as we did in sequence file, except that we would like to
 property in the output file. And this is the main difference between map file and sequence file. After
 the job is finished, we can access a map file with <code>rhmapfile</code> function.</p>
 
-<pre><code class="r">rst &lt;- rhmapfile(&quot;/user/tongx/housing/countytostate.map&quot;)
+<pre><code class="r">rst &lt;- rhmapfile(&quot;/ln/tongx/housing/countytostate.map&quot;)
 rst
 </code></pre>
 
@@ -1097,27 +1097,27 @@ object back from HDFS.</p>
 <p>Now let us have a deeper look at the output files on HDFS. Recall that &quot;/user/tongx/housing/countytostate&quot;
 is the sequence output files, and &quot;/user/tongx/housing/countytostate.map&quot; is the map output files.</p>
 
-<pre><code class="r">rhls(&quot;/ln/tmp/housing/countytostate&quot;)
+<pre><code class="r">rhls(&quot;/ln/tongx/housing/countytostate&quot;)
 </code></pre>
 
-<pre><code>   permission owner      group     size          modtime                                           file
-1  -rw-r--r-- tongx supergroup        0 2014-09-20 18:02     /user/tongx/housing/countytostate/_SUCCESS
-2  drwxrwxrwx tongx supergroup        0 2014-09-20 18:02        /user/tongx/housing/countytostate/_logs
-3  -rw-r--r-- tongx supergroup 235.1 kb 2014-09-20 18:02 /user/tongx/housing/countytostate/part-r-00000
-4  -rw-r--r-- tongx supergroup   969 kb 2014-09-20 18:02 /user/tongx/housing/countytostate/part-r-00001
-5  -rw-r--r-- tongx supergroup 1.698 mb 2014-09-20 18:02 /user/tongx/housing/countytostate/part-r-00002
+<pre><code>   permission owner      group     size          modtime                                         file
+1  -rw-r--r-- tongx supergroup        0 2014-09-20 18:02     /ln/tongx/housing/countytostate/_SUCCESS
+2  drwxrwxrwx tongx supergroup        0 2014-09-20 18:02        /ln/tongx/housing/countytostate/_logs
+3  -rw-r--r-- tongx supergroup 235.1 kb 2014-09-20 18:02 /ln/tongx/housing/countytostate/part-r-00000
+4  -rw-r--r-- tongx supergroup   969 kb 2014-09-20 18:02 /ln/tongx/housing/countytostate/part-r-00001
+5  -rw-r--r-- tongx supergroup 1.698 mb 2014-09-20 18:02 /ln/tongx/housing/countytostate/part-r-00002
 ......
 </code></pre>
 
-<pre><code class="r">rhls(&quot;/user/tongx/housing/countytostate.map&quot;)
+<pre><code class="r">rhls(&quot;/ln/tongx/housing/countytostate.map&quot;)
 </code></pre>
 
-<pre><code>   permission owner      group size          modtime                                               file
-1  -rw-r--r-- tongx supergroup    0 2014-09-28 13:52     /user/tongx/housing/countytostate.map/_SUCCESS
-2  drwxrwxrwx tongx supergroup    0 2014-09-28 13:51        /user/tongx/housing/countytostate.map/_logs
-3  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00000
-4  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00001
-5  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00002
+<pre><code>   permission owner      group size          modtime                                             file
+1  -rw-r--r-- tongx supergroup    0 2014-09-28 13:52     /ln/tongx/housing/countytostate.map/_SUCCESS
+2  drwxrwxrwx tongx supergroup    0 2014-09-28 13:51        /ln/tongx/housing/countytostate.map/_logs
+3  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00000
+4  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00001
+5  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00002
 ......
 </code></pre>
 
@@ -1127,12 +1127,12 @@ the output in <code>part-r-</code> files we got in sequence output files. We can
 function. The extra <code>index</code> file with size around 200 bytes records all indexing information by key of this 
 part file.</p>
 
-<pre><code class="r">rhls(&quot;/user/tongx/housing/countytostate.map/part-r-00000&quot;)
+<pre><code class="r">rhls(&quot;/ln/tongx/housing/countytostate.map/part-r-00000&quot;)
 </code></pre>
 
-<pre><code>  permission owner      group        size          modtime                                                     file
-1 -rw-r--r-- tongx supergroup    235.1 kb 2014-09-28 13:52  /user/tongx/housing/countytostate.map/part-r-00000/data
-2 -rw-r--r-- tongx supergroup   209 bytes 2014-09-28 13:52 /user/tongx/housing/countytostate.map/part-r-00000/index
+<pre><code>  permission owner      group        size          modtime                                                   file
+1 -rw-r--r-- tongx supergroup    235.1 kb 2014-09-28 13:52  /ln/tongx/housing/countytostate.map/part-r-00000/data
+2 -rw-r--r-- tongx supergroup   209 bytes 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00000/index
 </code></pre>
 
 <p>Finally, we can access the subset of data frame of Indiana state by:</p>
