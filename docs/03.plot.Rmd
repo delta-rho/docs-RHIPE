@@ -1,6 +1,26 @@
 ### Plots by State ###
 
+After previous several sessions, we have seen how to do divide and recombine in `Rhipe`, how to 
+access the subset by key. Another useful and powerful aspect of `Rhipe` is that we can achieve
+parallel plotting on cluster. Visualizing each subset can help us to have a better understanding of
+the subsets as well as the whole dataset.
+
+For each subset by state, we would like to know what the number of sold units looks like over time
+conditional on county. So we will plot the sold units against time for each state. When we are 
+facing a relative small data set in base R, this plotting for each state has to be done either using
+a for loop or some other package like `plyr` in base R. But when we are facing a large data set that
+cannot be fit into the memory, previous visualization method will fail easily. 
+
+In `Rhipe`, on the other hand, we can specify multiple tasks, and in each tasks we can plot one or
+multiple plots. Later on we will see, in our housing example, we will specify 12 tasks to conduct 
+total 49 plots, one for each subset by state. So each task will handle about 4 plots which will 
+dramatically decreasing the total time to finish these 49 plots comparing with doing this using for
+loop.
+
 #### Time Series Plot of Sold Units ####
+
+The first plot is the time series plot of the number of sold units conditional on county in each state.
+The plotting function we are going to use is in a R package named `lattice`. Xiaosu will add more words ...
 
 ```{r eval=FALSE, tidy=FALSE}
 map6 <- expression({
@@ -13,6 +33,7 @@ map6 <- expression({
 })
 ```
 
+Xiaosu will add more words here to describe the details about the code.
 
 ```{r eval=FALSE, tidy=FALSE}
 reduce6 <- expression(
@@ -71,8 +92,10 @@ mr6 <- rhwatch(
 )
 ```
 
+Xiaosu will add more words here to talk about how to cope the pdf plots from HDFS to frontend node.
+
 ```{r eval=FALSE, tidy=FALSE}
-rhls("/ln/tmp/housing/timeplotbystate")
+rhls("/ln/tongx/housing/timeplotbystate")
 ```
 ```
    permission owner      group        size          modtime                                           file
@@ -84,7 +107,7 @@ rhls("/ln/tmp/housing/timeplotbystate")
 ......
 ```
 ```{r eval=FALSE, tidy=FALSE}
-rhls("/ln/tmp/housing/timeplotbystate/_outputs")
+rhls("/ln/tongx/housing/timeplotbystate/_outputs")
 ```
 ```
    permission owner      group     size          modtime                                                           file
@@ -99,6 +122,8 @@ rhls("/ln/tmp/housing/timeplotbystate/_outputs")
 rhget("/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.NC.pdf", "./")
 rhget("/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf", "./")
 ```
+
+The results are here:
 
 [Time series plot of number of units sold for North Carolina State](./plots/time.vs.unit.NC.pdf).
 

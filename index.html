@@ -133,16 +133,6 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#data-structure'>Data Structure</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#experimental-design'>Experimental Design</a>
-      </li>
-
-
-      <li class='active'>
          <a target='_self' class='nav-not-header' href='#r-code----set-up'>R code -- Set Up</a>
       </li>
 
@@ -1155,7 +1145,27 @@ part file.</p>
 <div class='tab-pane' id='plots-by-state'>
 <h3>Plots by State</h3>
 
+<p>After previous several sessions, we have seen how to do divide and recombine in <code>Rhipe</code>, how to 
+access the subset by key. Another useful and powerful aspect of <code>Rhipe</code> is that we can achieve
+parallel plotting on cluster. Visualizing each subset can help us to have a better understanding of
+the subsets as well as the whole dataset.</p>
+
+<p>For each subset by state, we would like to know what the number of sold units looks like over time
+conditional on county. So we will plot the sold units against time for each state. When we are 
+facing a relative small data set in base R, this plotting for each state has to be done either using
+a for loop or some other package like <code>plyr</code> in base R. But when we are facing a large data set that
+cannot be fit into the memory, previous visualization method will fail easily. </p>
+
+<p>In <code>Rhipe</code>, on the other hand, we can specify multiple tasks, and in each tasks we can plot one or
+multiple plots. Later on we will see, in our housing example, we will specify 12 tasks to conduct 
+total 49 plots, one for each subset by state. So each task will handle about 4 plots which will 
+dramatically decreasing the total time to finish these 49 plots comparing with doing this using for
+loop.</p>
+
 <h4>Time Series Plot of Sold Units</h4>
+
+<p>The first plot is the time series plot of the number of sold units conditional on county in each state.
+The plotting function we are going to use is in a R package named <code>lattice</code>. Xiaosu will add more words ...</p>
 
 <pre><code class="r">map6 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
@@ -1166,6 +1176,8 @@ part file.</p>
   })
 })
 </code></pre>
+
+<p>Xiaosu will add more words here to describe the details about the code.</p>
 
 <pre><code class="r">reduce6 &lt;- expression(
   pre = {
@@ -1221,7 +1233,9 @@ part file.</p>
 )
 </code></pre>
 
-<pre><code class="r">rhls(&quot;/ln/tmp/housing/timeplotbystate&quot;)
+<p>Xiaosu will add more words here to talk about how to cope the pdf plots from HDFS to frontend node.</p>
+
+<pre><code class="r">rhls(&quot;/ln/tongx/housing/timeplotbystate&quot;)
 </code></pre>
 
 <pre><code>   permission owner      group        size          modtime                                           file
@@ -1233,7 +1247,7 @@ part file.</p>
 ......
 </code></pre>
 
-<pre><code class="r">rhls(&quot;/ln/tmp/housing/timeplotbystate/_outputs&quot;)
+<pre><code class="r">rhls(&quot;/ln/tongx/housing/timeplotbystate/_outputs&quot;)
 </code></pre>
 
 <pre><code>   permission owner      group     size          modtime                                                           file
@@ -1248,6 +1262,8 @@ part file.</p>
 <pre><code class="r">rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.NC.pdf&quot;, &quot;./&quot;)
 rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;, &quot;./&quot;)
 </code></pre>
+
+<p>The results are here:</p>
 
 <p><a href="./plots/time.vs.unit.NC.pdf">Time series plot of number of units sold for North Carolina State</a>.</p>
 
@@ -1478,18 +1494,61 @@ mr &lt;- rhwatch(
 t  &lt;- as.numeric(system.time({rhex(mr, async=FALSE)})[3])
 </code></pre>
 
-<p>Our output is saved on Before we move to the elased time measurement part, we can take a look at the files we created. We 
-can use </p>
+<p>The <code>rhwatch</code> function packages and executes our Rhipe MapReduce job. It consists of  several 
+arguments, such as <code>map</code>, <code>input</code>, <code>output</code>, <code>jobname</code>, <code>mapred</code>, <code>parameters</code>,<code>noeval</code> and 
+<code>readback</code>, most of which have been introduced in the <code>housing</code> extample. Here we have several new 
+arguments, like <code>parameters</code>, <code>jobname</code> and <code>noeval</code>. The argument <code>parameters</code> is a named list with 
+parameters to be passed to a mapreduce job which in our case, <code>map1</code> is an R expression, and we need
+to pass the values of <code>m</code> and <code>p</code> to the argument <code>map</code> in <code>rhwatch</code>. The argument <code>jobname</code> is the 
+name of the job, which is visible on the Jobtracker website. If not provided, Hadoop MapReduce uses
+the default name job_date_time_number e.g. job_201007281701_0274. If the argument <code>noeval</code> is set to
+be &#39;TRUE&#39;, then the Hadoop MapReduce job will not run, just return the job object. You can view <code>rhwatch</code>
+function for more details.</p>
 
-<p>a  = rhread(&quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;,max = 1)</p>
+<p>Instead, the <code>rhex</code> function will submit the MapReduce job to the Hadoop MapReduce framework. The 
+following is the output of the last R command:</p>
 
-<blockquote>
-<p>str(a)
-List of 1
+<pre><code></code></pre>
+
+<p>Our  datasets have been created and are saved on HDFS now. We can see more details about the files 
+on HDFS by <code>rhls()</code>.</p>
+
+<pre><code class="r">rhls(&quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;)
+</code></pre>
+
+<pre><code>   permission   owner      group     size          modtime                                                      file
+1  -rw-r--r-- song273 supergroup        0 2014-10-02 22:36     /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/_SUCCESS
+2  drwxrwxrwt song273 supergroup        0 2014-10-02 22:36        /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/_logs
+3  -rw-r--r-- song273 supergroup   178 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00000
+4  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00001
+5  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00002
+6  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00003
+7  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00004
+8  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00005
+9  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00006
+10 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00007
+11 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00008
+12 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00009
+13 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00010
+14 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00011
+</code></pre>
+
+<p>Comments: give description of the first two files. As we can see from the output, the size for one 
+output file is 170 mb. It would be impractical to read the whole data sets from HDFS to our R memory.
+We can only read one file from HDFS to the R memory by specify the argument <code>max</code> of RHIPE function 
+<code>rhread</code> equals to 1. Then we will use R function <code>str</code> to explore the structure.</p>
+
+<pre><code class="r">a  = rhread(&quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;,max = 1)
+str(a)
+</code></pre>
+
+<pre><code>List of 1
  $ :List of 2
   ..$ : num 936
-  ..$ : num [1:8192, 1:32] 0.0803 -1.5415 -1.1148 1.8888 1.9351 ...</p>
-</blockquote>
+  ..$ : num [1:8192, 1:32] 0.0803 -1.5415 -1.1148 1.8888 1.9351 ...
+</code></pre>
+
+<p>So &#39;a&#39; is a list with two elements key and value. The value is a 8192 * 32 matrix.</p>
 
 </div>
 
@@ -1517,78 +1576,6 @@ There are two nodes of this cluster, one runs NameNode and the other runs JobTra
 DataNode and TaskTracker, and each has 8 cores, 32 GB memory, 2 TB diske. Collectively, the cluster 
 has 16 cores, 64 GB memory and 4 TB disk. In general, we will save 4 cores for the general management
 or storage, and the other 12 cores will be used for map/reduce jobs.</p>
-
-</div>
-
-
-<div class='tab-pane' id='data-structure'>
-<h3>Data Structure</h3>
-
-<table><thead>
-<tr>
-<th>Variables</th>
-<th>Description</th>
-<th>Values</th>
-</tr>
-</thead><tbody>
-<tr>
-<td>N</td>
-<td>observation sample size</td>
-<td>2<sup>21</sup> , 2<sup>23</sup> , 2<sup>25</sup> , 2<sup>27</sup></td>
-</tr>
-<tr>
-<td>V</td>
-<td>Factor--Number of variables</td>
-<td>2<sup>4</sup> , 2<sup>5</sup> , 2<sup>6</sup></td>
-</tr>
-<tr>
-<td>M</td>
-<td>Factor--Number of observations per subset</td>
-<td>2<sup>8</sup> , 2<sup>9</sup> , 2<sup>10</sup> , ..., 2<sup>16</sup></td>
-</tr>
-<tr>
-<td>O</td>
-<td>Response variable--first type of elapsed time</td>
-<td></td>
-</tr>
-<tr>
-<td>T</td>
-<td>Response varibale--whole elapsed time</td>
-<td></td>
-</tr>
-</tbody></table>
-
-<p>we will using the following notations in this performance experiment. </p>
-
-<table><thead>
-<tr>
-<th>Variables</th>
-<th>Description</th>
-<th>Values</th>
-</tr>
-</thead><tbody>
-<tr>
-<td>n</td>
-<td>log2(N)</td>
-<td>21 , 23 , 25 , 27</td>
-</tr>
-<tr>
-<td>p</td>
-<td>V - 1: Number of explanatory variables</td>
-<td>15 , 31 , 63</td>
-</tr>
-<tr>
-<td>m</td>
-<td>log2(M): log2 number of observations per subset</td>
-<td>8 , 9 , 10 , ..., 16</td>
-</tr>
-</tbody></table>
-
-</div>
-
-
-<div class='tab-pane' id='experimental-design'>
-<h3>Experimental Design</h3>
 
 </div>
 
@@ -1663,12 +1650,9 @@ Sys.sleep(time=sleep*10)
 <pre><code class="r">## initialize timing
 timing = list()
 
-for (run in run.vec) {
-
   ## timing for O
   compute = &quot;O&quot;
-  for (m in m.vec) {
-    for (p in p.vec) {
+
       dir.dm = paste(dir.exp,&quot;/dm/&quot;,&#39;n&#39;,n,&#39;p&#39;,p,&quot;m&quot;,m, sep=&quot;&quot;)
       dir.nf = paste(dir.exp,&quot;/nf/&quot;,&quot;run&quot;,run,&#39;n&#39;,n,&#39;p&#39;,p,&quot;m&quot;,m, sep=&quot;&quot;)
 
@@ -1688,13 +1672,11 @@ for (run in run.vec) {
       timing[[length(timing)+1]] = list(compute=compute, n=n, p=p, m=m, run=run, t=t)
 
       Sys.sleep(time=sleep)
-    }}  # end of loop of m and p
+    # end of loop of m and p
 
 
   ## timing for T
   compute = &quot;T&quot;
-  for (m in m.vec) {
-    for (p in p.vec) {
       dir.dm = paste(dir.exp,&quot;/dm/&quot;,&#39;n&#39;,n,&#39;p&#39;,p,&quot;m&quot;,m, sep=&quot;&quot;)
       dir.gf = paste(dir.exp,&quot;/gf/&quot;,&quot;run&quot;,run,&#39;n&#39;,n,&#39;p&#39;,p,&quot;m&quot;,m, sep=&quot;&quot;)
 
@@ -1729,10 +1711,7 @@ for (run in run.vec) {
       t = as.numeric(system.time({rhex(gf.mr, async=FALSE)})[3])
       timing[[length(timing)+1]] = list(compute=compute, n=n, p=p, m=m, run=run, t=t)
 
-      Sys.sleep(time=sleep)
-    }}  # end of loop of m and p
 
-}   # end of loop of run
 </code></pre>
 
 </div>
@@ -1741,7 +1720,9 @@ for (run in run.vec) {
 <div class='tab-pane' id='r-code----save-the-results'>
 <h3>R code -- Save the Results</h3>
 
-<pre><code class="r">timing = ldply(timing, as.data.frame)
+<pre><code>
+```r
+timing = ldply(timing, as.data.frame)
 rhsave(timing, file=paste(dir, &quot;/save/&quot;, name, &quot;.RData&quot;, sep=&quot;&quot;))
 save(timing, file=paste(dir.local, name, &quot;.RData&quot;, sep=&quot;&quot;))
 </code></pre>
