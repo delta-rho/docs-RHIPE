@@ -1417,7 +1417,7 @@ one possible value of <em>M</em> and one possible value of <em>V</em> to see how
 we devide the whole dataset to <em>R</em> sets, which $ log2(R) = 10$. So we will generate 2<sup>10</sup> matrices of 
 2<sup>13</sup> rows and 2<sup>5</sup> columns each. </p>
 
-<p>Before we run the map function, we will set up some basic parameters:</p>
+<p>Before we run the map function, we will set up some basic parameters in the front end R enviroment:</p>
 
 <pre><code class="r">n &lt;- 23
 m &lt;- 13
@@ -1428,58 +1428,71 @@ p &lt;- 2^v - 1
 <h4>Map</h4>
 
 <pre><code class="r">map1 &lt;- expression({
-      for (r in map.values){
-        set.seed(r)
-        value = matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
-        rhcollect(r, value)
-      }
-    })
+  for (r in map.values){
+    set.seed(r)
+    value &lt;- matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
+    rhcollect(r, value)
+  }
+})
 </code></pre>
 
-<p>The input keys are numeric numbers as 1, 2, ...., <em>R</em>, which log2(R) = log2(N/M) = 10. They are the 
-elements of the list object <code>map.keys</code>. We specify the key value as a matrix with 2<sup>13</sup> rows and 
-2<sup>5</sup> columns. For each input key-value pair, <code>rhcollect</code> emits an intermediate key-value pair, which 
-is the same as the input key-value pair.</p>
+<p>The input keys and values are the same for the sumulating data step. The keys are numeric
+numbers as 1, 2, ...., <em>R</em>, where <em>R</em> is the number of the subsets. In our example, 
+log2(R) = log2(N/M) = 10. They are the elements of the list object <code>map.keys</code>, which in this case, 
+<code>map.keys</code> and <code>map.values</code> would be the same. <code>rhcollect</code> emits an intermediate key-value pair, 
+which the keys are the same as the input key but values are a matrix with 2<sup>13</sup> rows and 2<sup>5</sup> columns.</p>
 
-<p>The first step is to generate the subsets and we don&#39;t need the <code>reduce</code> function to this point. 
-Next, we will write the generated subsets to HDFS.</p>
+<p>We don&#39;t need the <code>reduce</code> function to this point. Next we will write the generated subsets to HDFS.</p>
 
 <h4>Execution Function</h4>
 
 <pre><code class="r">dir.dm  = &quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;
-mr &lt;- rhwatch(
-  map     = map1,
-  input   = c(2^(n-m),12),
-  output  = dir.dm,
-  jobname = dir.dm,
-  mapred  = list(
-    mapred.task.timeout=0,
-    mapred.reduce.tasks=0),
-  parameters = list(m = 2^m, p = p),
-  noeval  = TRUE,
-  readback = FALSE
+mr1 &lt;- rhwatch(
+ map      = map1,
+ input    = c(2^(n-m),12),
+ output   = dir.dm,
+ jobname  = dir.dm,
+ mapred   = list(
+   mapred.task.timeout=0,
+   mapred.reduce.tasks=0),
+ parameters = list(m = 2^m, p = p),
+ noeval   = TRUE,
+ readback = FALSE
   )
-t  &lt;- as.numeric(system.time({rhex(mr, async=FALSE)})[3])
+t = as.numeric(system.time({rhex(mr1, async=FALSE)})[3])
 </code></pre>
 
 <p>The <code>rhwatch</code> function packages and executes our Rhipe MapReduce job. It consists of  several 
 arguments, such as <code>map</code>, <code>input</code>, <code>output</code>, <code>jobname</code>, <code>mapred</code>, <code>parameters</code>,<code>noeval</code> and 
 <code>readback</code>, most of which have been introduced in the <code>housing</code> extample. Here we have several new 
 arguments, like <code>parameters</code>, <code>jobname</code> and <code>noeval</code>. The argument <code>parameters</code> is a named list with 
-parameters to be passed to a mapreduce job which in our case, <code>map1</code> is an R expression, and we need
-to pass the values of <code>m</code> and <code>p</code> to the argument <code>map</code> in <code>rhwatch</code>. The argument <code>jobname</code> is the 
-name of the job, which is visible on the Jobtracker website. If not provided, Hadoop MapReduce uses
-the default name job_date_time_number e.g. job_201007281701_0274. If the argument <code>noeval</code> is set to
-be &#39;TRUE&#39;, then the Hadoop MapReduce job will not run, just return the job object. You can view <code>rhwatch</code>
-function for more details.</p>
+parameters to be passed to a mapreduce job. It is an very important argument because it passes all 
+the possible values we will need in the Hadoop MapReduce jobs to HDFS. in our case, we specify the 
+values of <code>m</code> and <code>p</code> in the front end R, but Hadoop doesn&#39;t have these values. So the argument 
+<code>parameter</code> will packages <code>m</code> and <code>p</code> as a list and distribute it to HDFS.  The argument <code>jobname</code> is
+not neccesary to be set. It is the name of the job, which is visible on the Jobtracker website. If 
+not provided, Hadoop MapReduce uses the default name job_date_time_number e.g. job_201007281701_0274.
+If the argument <code>noeval</code> is set to be &#39;TRUE&#39;, then the Hadoop MapReduce job will not run, just return
+the job object. </p>
+
+<p>We need to talk about more about the input type.</p>
 
 <p>Instead, the <code>rhex</code> function will submit the MapReduce job to the Hadoop MapReduce framework. The 
 following is the output of the last R command:</p>
 
-<pre><code></code></pre>
+<pre><code>Saving 3 parameters to /tmp/rhipe-temp-params-9c1baeab3c1733577290e65dd92fce78 (use rhclean to delete all temp files)
+</code></pre>
 
-<p>Our  datasets have been created and are saved on HDFS now. We can see more details about the files 
-on HDFS by <code>rhls()</code>.</p>
+<p>The <code>t</code> is the time needed by Hadoop to finish the generating step and the unit of <code>t</code> is second.</p>
+
+<pre><code class="r">t
+</code></pre>
+
+<pre><code>[1] 21.847
+</code></pre>
+
+<p>It is pretty fast to generate 2 GB data. Our  datasets have been created and are saved on HDFS now.
+We can see more details about the files on HDFS by <code>rhls()</code>.</p>
 
 <pre><code class="r">rhls(&quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;)
 </code></pre>
@@ -1516,7 +1529,8 @@ str(a)
   ..$ : num [1:8192, 1:32] 0.0803 -1.5415 -1.1148 1.8888 1.9351 ...
 </code></pre>
 
-<p>So &#39;a&#39; is a list with two elements key and value. The value is a 8192 * 32 matrix.</p>
+<p>So &#39;a&#39; is a list with two elements key and value. The key is one random number between 1 and 2<sup>10.</sup> 
+The value is a 8192 * 32 matrix.</p>
 
 </div>
 
@@ -1536,8 +1550,8 @@ subset estimates and computing the means. However, we cannot measure <strong>L</
 <p>First, we will initialize a list called <code>timing</code> to store these two different kinds of elapsed time
 and create a numeric object <code>compute</code> to lable <strong>O</strong> and <strong>T</strong> seperately.</p>
 
-<pre><code class="r">timing &lt;- list()
-compute = &quot;O&quot;
+<pre><code class="r">timing   &lt;- list()
+compute  &lt;- &quot;O&quot;
 </code></pre>
 
 <h5>Map</h5>
@@ -1545,20 +1559,123 @@ compute = &quot;O&quot;
 <pre><code class="r">map2 &lt;- expression({})
 </code></pre>
 
-<p>It is interesting to notice that <code>map2</code> is an expression with no command. That&#39;s because we have 
-already created the data, we don&#39;t need new key-value pairs in the reading part. </p>
+<p>It is interesting to notice that <code>map2</code> is an expression with no command. That&#39;s because we only want
+to read the data from HDFS to R local memory without other operations and record the reading time .</p>
+
+<h5>Execution Function</h5>
+
+<pre><code class="r">dir.dm  &lt;- &quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;
+dir.nf  &lt;- &quot;/ln/song273/tmp/multi.factor_n23/nf/n23v5m13&quot;
+mr2 &lt;- rhwatch(
+ map      = map2,
+ input    = dir.dm,
+ output   = dir.nf,
+ jobname  = dir.dm,
+ mapred   = list(
+   mapred.reduce.tasks=0,
+   rhipe_map_buff_size=2^15),
+ parameters = list(p = p),
+ noeval   = TRUE,
+ readback = FALSE
+  )
+t &lt;- as.numeric(system.time({rhex(mr2, async=FALSE)})[3])
+timing[[1]] &lt;- list(compute=compute,t=t)
+</code></pre>
+
+<pre><code>Saving 1 parameter to /tmp/rhipe-temp-params-c677abd27e3b1654c25dccadaa7e3483 (use rhclean to delete all temp files)
+
+</code></pre>
+
+<p>The <code>dir.dm</code> and <code>dir.nf</code> specify the <code>input</code> and <code>output</code> argument of <code>rhwatch</code> function. We need 
+to talk more about the argument <code>rhipe_map_buff_size</code> later. So <code>t</code> records the first type elapsed 
+time <strong>O</strong> and we save the value of <code>t</code> to the <code>timing</code> list. Also, we need to explain the meaning
+of saving 1 parameter and the file.</p>
 
 <h4>The Second Kind of Elapsed Time -- <strong>T</strong></h4>
 
+<p>We first specify the value of <code>compute</code> to identify the second kind of elapsed time <strong>T</strong>.</p>
+
+<pre><code class="r">compute  &lt;- &quot;T&quot;
+</code></pre>
+
+<h5>Map</h5>
+
+<pre><code class="r">map3 &lt;- expression({
+ for (v in map.values) {
+  value = glm.fit(v[,1:p],v[,p+1],family=binomial())$coef
+  rhcollect(1, value)
+ }
+})
+</code></pre>
+
+<p>The input key for map3 function is still the same as before: 1, 2, ..., 2<sup>10</sup> and the input value is 
+a dataframe with 2<sup>13</sup> rows and 2<sup>5</sup> collumns. The </p>
+
+<h5>Reduce</h5>
+
+<pre><code class="r">reduce3 &lt;- expression(
+  pre = {
+    v = rep(0,p) 
+    nsub = 0
+  },
+  reduce = {
+    v = v + colSums(matrix(unlist(reduce.values), ncol=p, byrow=TRUE)) 
+    nsub = nsub + length(reduce.values)
+  },
+  post = {
+   rhcollect(reduce.key, v/nsub)
+  }
+)
+</code></pre>
+
+<h5>Exectution Function</h5>
+
+<pre><code class="r">dir.dm  = &quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;
+dir.gf  = &quot;/ln/song273/tmp/multi.factor_n23/gf/n23v5m13&quot;
+
+mr3 &lt;- rhwatch(
+  map      = map3,
+  reduce   = reduce3,
+  input    = dir.dm,
+  output   = dir.gf,
+  mapred   = list(
+    mapred.reduce.tasks=1,
+    rhipe_map_buff_size=10
+  ),
+ parameters = list(p=p),
+ jobname    = dir.gf,
+ noeval     = TRUE
+)
+
+t &lt;- as.numeric(system.time({rhex(mr3, async=FALSE)})[3])
+timing[[2]] = list(compute=compute, t=t)
+</code></pre>
+
+<pre><code>Saving 2 parameters to /tmp/rhipe-temp-params-17085d733c859950748a8598d1fc5222 (use rhclean to delete all temp files)
+
+</code></pre>
+
 <h4>Performance Test Results</h4>
 
-<p>one The cluster which we are going to test the computation performance is the Deneb/Mimosa Cluster.The 
-Deneb cluster is maintained by system administrators at the Department of Statistics Purdue University.
-It is used for teaching distributed parallel computing for the analysis of large complex data.
-There are two nodes of this cluster, one runs NameNode and the other runs JobTracker. Both run Hadoop
-DataNode and TaskTracker, and each has 8 cores, 32 GB memory, 2 TB diske. Collectively, the cluster 
-has 16 cores, 64 GB memory and 4 TB disk. In general, we will save 4 cores for the general management
-or storage, and the other 12 cores will be used for map/reduce jobs.</p>
+<pre><code class="r">str(timing)
+</code></pre>
+
+<pre><code>List of 2
+ $ :List of 2
+  ..$ compute: chr &quot;O&quot;
+  ..$ t      : num 19.6
+ $ :List of 2
+  ..$ compute: chr &quot;T&quot;
+  ..$ t      : num 40.7
+</code></pre>
+
+<p>The elapsed time <strong>O</strong> we need to read the datasets from HDFS to our local working memory is 19.6 
+seconds and the whole elapsed time <strong>T</strong> which consists of the reading time and the analyzing time 
+is 40.7. That result is impressive! The cluster we use here to run the test is a very small one 
+with two nodes and 64 GB memory in total. You can definitely use RHIPE computation environment to 
+generalize this one sing run  to a full cluster performance test. If you want to explore more about
+the performance test, you can go to the <a href="http://tesseradata.org/#">Tessera website</a>, 
+which is an open source environment for large complex data analysis.</p>
 
 </div>
 
