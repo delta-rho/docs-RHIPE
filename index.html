@@ -111,7 +111,7 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#manage-jobs'>Manage Jobs</a>
+         <a target='_self' class='nav-not-header' href='#manage-rhipe-jobs'>Manage RHIPE Jobs</a>
       </li>
 
 
@@ -1134,6 +1134,10 @@ loop.</p>
 
 <h4>Time Series Plot of Sold Units</h4>
 
+<p><a href="./plots/time.vs.unit.NC.pdf">Time series plot of number of units sold for North Carolina State</a>.</p>
+
+<p><a href="./plots/time.vs.unit.TX.pdf">Time series plot of number of units sold for Texas State</a>.</p>
+
 <p>The first plot is the time series plot of the number of sold units conditional on county in each state.
 The plotting function we are going to use is in a R package named <code>lattice</code>. Xiaosu will add more words ...</p>
 
@@ -1175,7 +1179,7 @@ The plotting function we are going to use is in a R package named <code>lattice<
       pch    = 16,
       xlab   = &quot;Time&quot;,
       ylab   = &quot;Log of Number of Sold Units(log base 2)&quot;,
-      main   = paste(&quot;Sold Units vs Time in State &quot;, reduce.key, sep=&quot;&quot;)
+      main   = reduce.key,
     )
     print(b)
     dev.off()    
@@ -1233,13 +1237,11 @@ The plotting function we are going to use is in a R package named <code>lattice<
 rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;, &quot;./&quot;)
 </code></pre>
 
-<p>The results are here:</p>
-
-<p><a href="./plots/time.vs.unit.NC.pdf">Time series plot of number of units sold for North Carolina State</a>.</p>
-
-<p><a href="./plots/time.vs.unit.TX.pdf">Time series plot of number of units sold for Texas State</a>.</p>
-
 <h4>Time Series Plot of List Price</h4>
+
+<p><a href="./plots/list.vs.time.CA.pdf">Time series plot of list price for California State</a>.</p>
+
+<p><a href="./plots/list.vs.time.VA.pdf">Time series plot of list price for Virginia State</a>.</p>
 
 <pre><code class="r">map7 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
@@ -1266,7 +1268,7 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
       format = &#39;%Y%m%d&#39;, 
       tz     = &quot;&quot;
     )
-    trellis.device(pdf, 
+    trellis.device(pdf,
       file  = paste(&quot;./tmp/list.vs.time&quot;, reduce.key, &quot;pdf&quot;, sep=&quot;.&quot;), 
       color = TRUE,
       paper = &quot;legal&quot;
@@ -1280,9 +1282,9 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
       scale  = list(
         y = list(relation = &quot;sliced&quot;) 
       ),
-      xlab   = &quot;time&quot;,
-      ylab   = &quot;Log of list price (log base 2 dollar per square foot)&quot;,
-      main   = paste(&quot;List Price vs Time in State &quot;, reduce.key, sep=&quot;&quot;)
+      xlab   = &quot;Time&quot;,
+      ylab   = &quot;Log of List Price (log base 2 dollars per square foot)&quot;,
+      main   = reduce.key, 
     )
     print(b)
     dev.off()    
@@ -1323,15 +1325,11 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
 rhget(&quot;/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf&quot;, &quot;./&quot;)
 </code></pre>
 
-<p><a href="./plots/list.vs.time.CA.pdf">Time series plot of list price for California State</a>.</p>
-
-<p><a href="./plots/list.vs.time.VA.pdf">Time series plot of list price for Virginia State</a>.</p>
-
 </div>
 
 
-<div class='tab-pane' id='manage-jobs'>
-<h3>Manage Jobs</h3>
+<div class='tab-pane' id='manage-rhipe-jobs'>
+<h3>Manage RHIPE Jobs</h3>
 
 <p>As you submit more Rhipe jobs, you&#39;ll need to check their status and manage them.  In this short
 section, we&#39;ll introduce two new functions to do just that. </p>

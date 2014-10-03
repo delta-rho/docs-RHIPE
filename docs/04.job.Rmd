@@ -1,4 +1,4 @@
-### Manage Jobs ###
+### Manage RHIPE Jobs ###
 
 As you submit more Rhipe jobs, you'll need to check their status and manage them.  In this short
 section, we'll introduce two new functions to do just that. 
