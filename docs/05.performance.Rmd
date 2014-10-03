@@ -139,7 +139,6 @@ So 'a' is a list with two elements key and value. The value is a 8192 * 32 matri
 
 ### Elapsed Time Measurement ###
 
-
 There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. 
 The first computation type is **O**, the elapsed time to read the subsets from the HDFS and make 
 them available to `glm.fit` in memory as an R objects. The other type, **L**, starts when **O** ends
@@ -147,7 +146,24 @@ and it consists of `glm.fit` computations on the subsets by **map**, plus **redu
 subset estimates and computing the means. However, we cannot measure **L** directly. So we measure 
 **O** in one run and **T = O + L** in another.
 
-#### The First Kind Of Elapsed Time -- **O** #####
+#### The First Kind Of Elapsed Time -- **O** ####
+
+First, we will initialize a list called `timing` to store these two different kinds of elapsed time
+and create a numeric object `compute` to lable **O** and **T** seperately.
+
+```{r eval=FALSE, tidy=FALSE}
+timing <- list()
+compute = "O"
+```
+
+##### Map #####
+
+```{r eval=FALSE, tidy=FALSE}
+map2 <- expression({})
+```
+
+It is interesting to notice that `map2` is an expression with no command. That's because we have 
+already created the data, we don't need new key-value pairs in the reading part. 
 
 
 #### The Second Kind of Elapsed Time -- **T** ####
@@ -162,157 +178,3 @@ DataNode and TaskTracker, and each has 8 cores, 32 GB memory, 2 TB diske. Collec
 has 16 cores, 64 GB memory and 4 TB disk. In general, we will save 4 cores for the general management
 or storage, and the other 12 cores will be used for map/reduce jobs.
 
-
-### R code -- Set Up ###
-```{r, eval=FALSE}
-
-
-# experiment name
-name <- "multi.factor_n21"
-# top level directory for experiment on HDFS
-dir = "/ln/song273/tmp"
-# directory for this experiment on HDFS
-dir.exp = file.path(dir, name)
-# directory for local file system
-dir.local = "/home/median/u41/song273/timetest/"
-# break time in seconds between jobs
-sleep = 10
-# number of replicate runs
-run.vec = 1:3
-
-## subset factors 
-# log2 number of observations
-n = 21
-# number of predictor variables
-p.vec = 2^(4:6) - 1
-# log2 number of observations per subset
-m.vec = seq(8, 16, by=1)
-```
-### R code -- Generate Dataset ###
-```{r,eval=FALSE}
-for (m in m.vec) {
-  for (p in p.vec) {
-    dir.dm = paste(dir.exp,"/dm/",'n',n,'p',p,'m',m, sep="")
-    
-    dm = list()
-    dm$map = expression({
-      for (r in map.values){
-        set.seed(r)
-        value = matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
-        rhcollect(r, value) # key is subset id
-      }
-    })
-    dm$input = c(2^(n-m), 12)
-    dm$output = dir.dm
-    dm$jobname = dm$output
-    dm$mapred = list( 
-      mapred.task.timeout=0
-      , mapred.reduce.tasks=0 
-    )
-    dm$parameters = list(m=2^m, p=p)
-    dm$noeval = TRUE
-    dm.mr = do.call('rhwatch', dm)
-    t = as.numeric(system.time({rhex(dm.mr, async=FALSE)})[3])
-    Sys.sleep(time=sleep)
-}}
-
-
-Sys.sleep(time=sleep*10)
-```
-
-### R code -- Timing ###
-```{r,eval= FALSE}
-## initialize timing
-timing = list()
-  
-  ## timing for O
-  compute = "O"
-
-      dir.dm = paste(dir.exp,"/dm/",'n',n,'p',p,"m",m, sep="")
-      dir.nf = paste(dir.exp,"/nf/","run",run,'n',n,'p',p,"m",m, sep="")
-      
-      nf = list()
-      nf$map = expression({})
-      nf$mapred = list(
-        mapred.reduce.tasks=1
-        , rhipe_map_buff_size=2^15
-      )
-      nf$parameters = list(p=p)
-      nf$input = dir.dm
-      nf$output = dir.nf
-      nf$jobname = nf$output
-      nf$noeval = TRUE
-      nf.mr = do.call('rhwatch', nf)
-      t = as.numeric(system.time({rhex(nf.mr, async=FALSE)})[3])
-      timing[[length(timing)+1]] = list(compute=compute, n=n, p=p, m=m, run=run, t=t)
-      
-      Sys.sleep(time=sleep)
-    # end of loop of m and p
-  
-  
-  ## timing for T
-  compute = "T"
-      dir.dm = paste(dir.exp,"/dm/",'n',n,'p',p,"m",m, sep="")
-      dir.gf = paste(dir.exp,"/gf/","run",run,'n',n,'p',p,"m",m, sep="")
-      
-      gf = list()
-      gf$map = expression({
-        for (v in map.values) {
-          value = glm.fit(v[,1:p],v[,p+1],family=binomial())$coef
-          rhcollect(1, value)
-        }
-      })
-      gf$reduce = expression(
-        pre = { 
-          v = rep(0,p) 
-          nsub = 0
-        },
-        reduce = { 
-          v = v + colSums(matrix(unlist(reduce.values), ncol=p, byrow=TRUE)) 
-          nsub = nsub + length(reduce.values)
-        },
-        post = { rhcollect(reduce.key, v/nsub) }
-      )
-      gf$mapred = list(
-        mapred.reduce.tasks=1
-        , rhipe_map_buff_size=2^15
-      )
-      gf$parameters = list(p=p)
-      gf$input = dir.dm
-      gf$output = dir.gf
-      gf$jobname = gf$output
-      gf$noeval = TRUE
-      gf.mr = do.call('rhwatch', gf)
-      t = as.numeric(system.time({rhex(gf.mr, async=FALSE)})[3])
-      timing[[length(timing)+1]] = list(compute=compute, n=n, p=p, m=m, run=run, t=t)
-      
-
-
-### R code -- Save the Results ###
-
-
-```{r,eval=FALSE}
-timing = ldply(timing, as.data.frame)
-rhsave(timing, file=paste(dir, "/save/", name, ".RData", sep=""))
-save(timing, file=paste(dir.local, name, ".RData", sep=""))
-
-```
-
-### Results ###
-
-```{r,eval=FALSE}
-head(timing)
-```
-```
-  compute  n  p m run      t
-1       O 21 15 8   1 20.644
-2       O 21 31 8   1 19.601
-3       O 21 63 8   1 21.530
-4       O 21 15 9   1 19.581
-5       O 21 31 9   1 19.521
-6       O 21 63 9   1 21.493
-```
-
-### Visualize the Results ###
-
-![alt text](./plots/08.timing.pdf)
