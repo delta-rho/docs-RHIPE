@@ -1180,8 +1180,8 @@ part file.</p>
       format = &#39;%Y%m%d&#39;, 
       tz     = &quot;&quot;
     )
-    trellis.device(postscript, 
-      file  = paste(&quot;./tmp/time.vs.unit&quot;, reduce.key, &quot;ps&quot;, sep=&quot;.&quot;), 
+    trellis.device(pdf, 
+      file  = paste(&quot;./tmp/time.vs.unit&quot;, reduce.key, &quot;pdf&quot;, sep=&quot;.&quot;), 
       color = TRUE,
       paper = &quot;legal&quot;
     )
@@ -1253,7 +1253,7 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
 
 <p><a href="./plots/time.vs.unit.TX.pdf">Time series plot of number of units sold for Texas State</a>.</p>
 
-<h4>Scatter Plot of Sold Units vs. List Price</h4>
+<h4>Time Series Plot of List Price</h4>
 
 <pre><code class="r">map7 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
@@ -1280,8 +1280,8 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
       format = &#39;%Y%m%d&#39;, 
       tz     = &quot;&quot;
     )
-    trellis.device(postscript, 
-      file  = paste(&quot;./tmp/list.vs.time&quot;, reduce.key, &quot;ps&quot;, sep=&quot;.&quot;), 
+    trellis.device(pdf, 
+      file  = paste(&quot;./tmp/list.vs.time&quot;, reduce.key, &quot;pdf&quot;, sep=&quot;.&quot;), 
       color = TRUE,
       paper = &quot;legal&quot;
     )

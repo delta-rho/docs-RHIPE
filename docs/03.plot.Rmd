@@ -28,8 +28,8 @@ reduce6 <- expression(
       format = '%Y%m%d', 
       tz     = ""
     )
-    trellis.device(postscript, 
-      file  = paste("./tmp/time.vs.unit", reduce.key, "ps", sep="."), 
+    trellis.device(pdf, 
+      file  = paste("./tmp/time.vs.unit", reduce.key, "pdf", sep="."), 
       color = TRUE,
       paper = "legal"
     )
@@ -104,7 +104,7 @@ rhget("/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf", "./")
 
 [Time series plot of number of units sold for Texas State](./plots/time.vs.unit.TX.pdf).
 
-#### Scatter Plot of Sold Units vs. List Price ####
+#### Time Series Plot of List Price ####
 
 ```{r eval=FALSE, tidy=FALSE}
 map7 <- expression({
@@ -134,8 +134,8 @@ reduce7 <- expression(
       format = '%Y%m%d', 
       tz     = ""
     )
-    trellis.device(postscript, 
-      file  = paste("./tmp/list.vs.time", reduce.key, "ps", sep="."), 
+    trellis.device(pdf, 
+      file  = paste("./tmp/list.vs.time", reduce.key, "pdf", sep="."), 
       color = TRUE,
       paper = "legal"
     )
