@@ -19,6 +19,9 @@ loop.
 
 #### Time Series Plot of Sold Units ####
 
+The first type of plot we are going to plot is the time series plot of number of sold units condition
+on county for each state. First of all, let us have a look at what the plot is.
+
 [Time series plot of number of units sold for North Carolina State](./plots/time.vs.unit.NC.pdf).
 
 [Time series plot of number of units sold for Texas State](./plots/time.vs.unit.TX.pdf).
