@@ -2,7 +2,7 @@
 
 ## Linkup between RHIPE and Hadoop ##
 
-### Set up ###
+### Intro ###
 
 This tutorial covers an implementation of Divide and Recombine (D&R) in the R statistical programming 
 environment, an R package called `Rhipe`. This is one component of the Tessera environment for the 

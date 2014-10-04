@@ -30,11 +30,11 @@ In the text file, the fields in each row are separated by a comma, and there
 are not headers
 Here are the first few lines of the file:
 ```
-06001,Alameda,CA,2008-10-01,NA,307.97872340425,325.8118
-06001,Alameda,CA,2008-11-01,NA,299.16666666667,NA
-06001,Alameda,CA,2008-11-01,NA,NA,318.115
-06001,Alameda,CA,2008-12-01,NA,289.88149498633,305.7878
-06001,Alameda,CA,2009-01-01,NA,288.5,291.5977
+"01001","Autauga","AL",1,27,96.616541353383,99.1324
+"01001","Autauga","AL",2,28,96.856993190152,NA
+"01001","Autauga","AL",3,NA,NA,95.8209
+"01001","Autauga","AL",4,16,NA,NA
+"01001","Autauga","AL",5,NA,98.055555555556,96.3528
 ```
 
 A housing unit is a house, an apartment, a mobile home, a group of rooms, or a
@@ -121,9 +121,10 @@ With our data on the HDFS, we are ready to start a D\&R analysis.
 
 The first step in a D\&R analysis is to choose a division method and create subsets.  We'll
 divide the housing data by state.  Rhipe allows us to read the raw text file on HDFS and 
-create a copy of the data broken into subsets using a MapReduce job.  The original data file will remain on HDFS.
-The data within each subset will be stored as R objects, rather than raw text.  This will 
-allow us to apply subsequent data analytic and visual methods using familiar R commands.
+create a copy of the data broken into subsets using a MapReduce job.  The original data file
+will remain on HDFS. The data within each subset will be stored as R objects, rather than raw
+text.  This will allow us to apply subsequent data analytic and visual methods using familiar
+R commands.
 
 In the MapReduce framework, we keep track of subsets as key-value pairs.  The key is a identifier for
 the subset.  It's usually a small data object, like a single number or character string.  There
@@ -163,10 +164,11 @@ map1 <- expression({
 ```
 
 The input keys are line numbers in the housing data text file.  They are the elements of the list
-object `map.keys`.  The input values are the lines of text, which are the elements of the list object `map.values`.
-This is the default when the input is a raw text file.  For each input key-value pair, `rhcollect` emits an
-intermediate key-value pair, where the key is the state name (the third field in the comma-separated
-line) and the value is all other fields in the line, stored as a data frame with a single row.
+object `map.keys`.  The input values are the lines of text, which are the elements of the list 
+object `map.values`. This is the default when the input is a raw text file.  For each input key-value 
+pair, `rhcollect` emits an intermediate key-value pair, where the key is the state name (the third 
+field in the comma-separated line) and the value is all other fields in the line, stored as a data 
+frame with a single row.
 
 #### Reduce ####
 
@@ -387,15 +389,6 @@ and in `post` we use `rhcollect` to emit the final output so that it will be wri
 
 #### Execution Function ####
 
-In `rhwatch()` this time, we've changed several arguments. First, in the `rhfmt` of `input` argument,
-`type` is specified to be "sequence", since the input file to this mapreduce job is the output
-from our division. This indicates to Rhipe that the input is not a raw text file, but rather a 
-file already organized as key-value pairs.  Also we request 5 reduce tasks for this job using
-the `mapred.reduce.tasks` option.  Finally, we assign
-`readback` to be `TRUE`. By doing this, the final results not only will be saved on HDFS, but also
-will be read back from HDFS (without using `rhread()`) and assigned to an object in our interactive R
-session.  We've named that object `stateMeans`.
-
 ```{r eval=FALSE, tidy=FALSE}
 stateMeans <- rhwatch(
   map      = map2,
@@ -408,6 +401,15 @@ stateMeans <- rhwatch(
   readback = TRUE
 )
 ```
+
+In `rhwatch()` this time, we've changed several arguments. First, in the `rhfmt` of `input` argument,
+`type` is specified to be "sequence", since the input file to this mapreduce job is the output
+from our division. This indicates to Rhipe that the input is not a raw text file, but rather a 
+file already organized as key-value pairs.  Also we request 5 reduce tasks for this job using
+the `mapred.reduce.tasks` option.  Finally, we assign
+`readback` to be `TRUE`. By doing this, the final results not only will be saved on HDFS, but also
+will be read back from HDFS (without using `rhread()`) and assigned to an object in our interactive R
+session.  We've named that object `stateMeans`.
 
 Just as before, once we submit the job, we see job status information.
 
@@ -620,11 +622,6 @@ calculated them by state.
 
 #### Map ####
 
-In the map expression, we create a single row data frame for each county. The data frame has five
-columns: FIPS, listMean, saleMean, state, and county name. FIPS code, state name, and county name 
-can be found in the attributes of each element of `map.values`. In order to combine all means by
-county into one data frame, we will assign 1 to be the key for all intermediate key-value pairs.
-
 ```{r eval=FALSE, tidy=FALSE}
 map4 <- expression({
   lapply(seq_along(map.keys), function(r) {
@@ -641,11 +638,12 @@ map4 <- expression({
 })
 ```
 
-#### Reduce ####
+In the map expression, we create a single row data frame for each county. The data frame has five
+columns: FIPS, listMean, saleMean, state, and county name. FIPS code, state name, and county name 
+can be found in the attributes of each element of `map.values`. In order to combine all means by
+county into one data frame, we will assign 1 to be the key for all intermediate key-value pairs.
 
-We can use the same reduce expression which we used to find the means by state. The final output
-consists of one key-value pair, where the key is 1, and value is the data frame with all county
-means.
+#### Reduce ####
 
 ```{r eval=FALSE, tidy=FALSE}
 reduce4 <- expression(
@@ -660,6 +658,10 @@ reduce4 <- expression(
   }
 )
 ```
+
+We can use the same reduce expression which we used to find the means by state. The final output
+consists of one key-value pair, where the key is 1, and value is the data frame with all county
+means.
 
 #### Execution Function ####
 
@@ -799,6 +801,7 @@ reduce7 <- expression(
 ```
 
 In the map expression, we calculated the sum of the sold units for each key
+
 ```{r eval=FALSE, tidy=FALSE}
 mr7 <- rhwatch(
   map       = map7,
@@ -983,10 +986,6 @@ we also want to make the FIPS code and county name columns of our data frame aga
 
 #### Reduce ####
 
-We can use the same reduce expression that we used in the first division by state.  But keep in mind
-that this time, the intermediate key-value pairs are different.  Before there was one key-value pair
-for each line of the text file, but now there is one for each county.
-
 ```{r eval=FALSE, tidy=FALSE}
 reduce5 <- expression(
   pre = {
@@ -1001,10 +1000,11 @@ reduce5 <- expression(
 )
 ```
 
-#### Execution Function ####
+We can use the same reduce expression that we used in the first division by state.  But keep in mind
+that this time, the intermediate key-value pairs are different.  Before there was one key-value pair
+for each line of the text file, but now there is one for each county.
 
-Let's do something new in the `rhwatch` function.  We'll set the `noeval` argument to indicate
-that we don't want to run this job, we just want to package it to be run later.
+#### Execution Function ####
  
 ```{r eval=FALSE, tidy=FALSE}
 mr5 <- rhwatch(
@@ -1019,6 +1019,9 @@ mr5 <- rhwatch(
   noeval = TRUE
 )
 ```
+
+Here we did something new in the `rhwatch` function.  We set the `noeval` argument to indicate
+that we don't want to run this job, we just want to package it to be run later.
 
 You won't see any output, because no commands have been sent to Hadoop.  Instead, the packaged
 job has been stored in the `mr5` object.  When we're ready to run the job, we call `rhex()`.
