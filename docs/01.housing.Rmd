@@ -1,6 +1,6 @@
 ## Housing Data ##
 
-### Intro ###
+### Information about Data ###
 
 We introduce RHIPE using
 housing data that consist of 7 monthly variables on housing sales from Oct
@@ -45,11 +45,6 @@ building and which have direct access from the outside of the building or
 through a common hall.
 
 ### Write Text to HDFS ###
-
-Begin by connecting via ssh to the machine from which you will issue commands to your HDFS.  This might
-be the front-end machine of your cluster, or it may be one of the Hadoop nodes.  Navigate to a directory
-where you can store files, such as your .RData and .Rhistory files.  This might be your home directory.
-Start an interactive R session.
 
 You can double-check the name of your local working directory with the `getwd` command.  Mine is
 called "/home/median/u41/tongx" but yours will be different.

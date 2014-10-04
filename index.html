@@ -73,7 +73,7 @@
 <li class='nav-header unselectable' data-edit-href='01.housing.Rmd'>Housing Data</li>
       
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#intro'>Intro</a>
+         <a target='_self' class='nav-not-header' href='#information-about-data'>Information about Data</a>
       </li>
 
 
@@ -156,11 +156,25 @@
 <div class='tab-pane active' id='set-up'>
 <h3>Set up</h3>
 
+<p>This tutorial covers an implementation of Divide and Recombine (D&amp;R) in the R statistical programming 
+environment, an R package called <code>Rhipe</code>. This is one component of the Tessera environment for the 
+analysis of large complex data.</p>
+
+<p>We are going to demonstrate how to process <code>Rhipe</code> jobs on a cluster which is running Linux operating 
+system. The cluster is consist of two types of servers. One is an initiating R server which is the
+front-end. Another one is the Hadoop servers where the HDFS is sitting and also where <code>Rhipe</code> job will 
+be distributed to. We call those servers as back-end. The front-end may or may not be one of the Hadoop 
+servers, either situation will be fine for <code>Rhipe</code> job. And this set up will be decided by the cluster 
+administrator.</p>
+
+<p>Begin by connecting via ssh to the initiating R server from your laptop. Start an interactive R session 
+on initiating R server.</p>
+
 </div>
 
 
-<div class='tab-pane' id='intro'>
-<h3>Intro</h3>
+<div class='tab-pane' id='information-about-data'>
+<h3>Information about Data</h3>
 
 <p>We introduce RHIPE using
 housing data that consist of 7 monthly variables on housing sales from Oct
@@ -212,11 +226,6 @@ through a common hall.</p>
 
 <div class='tab-pane' id='write-text-to-hdfs'>
 <h3>Write Text to HDFS</h3>
-
-<p>Begin by connecting via ssh to the machine from which you will issue commands to your HDFS.  This might
-be the front-end machine of your cluster, or it may be one of the Hadoop nodes.  Navigate to a directory
-where you can store files, such as your .RData and .Rhistory files.  This might be your home directory.
-Start an interactive R session.</p>
 
 <p>You can double-check the name of your local working directory with the <code>getwd</code> command.  Mine is
 called &quot;/home/median/u41/tongx&quot; but yours will be different.</p>

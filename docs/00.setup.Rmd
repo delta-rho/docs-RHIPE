@@ -4,3 +4,16 @@
 
 ### Set up ###
 
+This tutorial covers an implementation of Divide and Recombine (D&R) in the R statistical programming 
+environment, an R package called `Rhipe`. This is one component of the Tessera environment for the 
+analysis of large complex data.
+
+We are going to demonstrate how to process `Rhipe` jobs on a cluster which is running Linux operating 
+system. The cluster is consist of two types of servers. One is an initiating R server which is the
+front-end. Another one is the Hadoop servers where the HDFS is sitting and also where `Rhipe` job will 
+be distributed to. We call those servers as back-end. The front-end may or may not be one of the Hadoop 
+servers, either situation will be fine for `Rhipe` job. And this set up will be decided by the cluster 
+administrator.
+
+Begin by connecting via ssh to the initiating R server from your laptop. Start an interactive R session 
+on initiating R server.
