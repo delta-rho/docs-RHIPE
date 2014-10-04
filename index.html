@@ -63,7 +63,14 @@
    
    <div class="col-md-3 well">
    <ul class = "nav nav-list" id="toc">
-   <li class='nav-header unselectable' data-edit-href='01.housing.Rmd'>Housing Data</li>
+   <li class='nav-header unselectable' data-edit-href='00.setup.Rmd'>Linkup between RHIPE and Hadoop</li>
+      
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#set-up'>Set up</a>
+      </li>
+
+
+<li class='nav-header unselectable' data-edit-href='01.housing.Rmd'>Housing Data</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#intro'>Intro</a>
@@ -92,6 +99,16 @@
 
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#compute-county-means'>Compute County Means</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#read-and-divide-by-time'>Read and Divide by Time</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#compute-total-sold'>Compute Total Sold</a>
       </li>
 
 
@@ -136,12 +153,18 @@
 
 <div class="col-md-9 tab-content" id="main-content">
 
-<div class='tab-pane active' id='intro'>
+<div class='tab-pane active' id='set-up'>
+<h3>Set up</h3>
+
+</div>
+
+
+<div class='tab-pane' id='intro'>
 <h3>Intro</h3>
 
 <p>We introduce RHIPE using
 housing data that consist of 7 monthly variables on housing sales from Oct
-2008 to Mar 2014 for 2883 counties in the 48 U.S. states, excluding Hawaii and
+2008 to Mar 2014 for 2883 counties in the 49 U.S. states, excluding Hawaii and
 Alaska, but including the District of Columbia which for simplicity here we
 will refer to as a ``state&#39;&#39;.  The data were harvested from Quandl&#39;s Zillow
 Housing Data. The data contain 224,369 sales of housing units.</p>
@@ -840,6 +863,196 @@ can speed up this job and future jobs which read its output.</p>
 4 01069 87.64237       NaN    AL      Houston
 5 01087 74.35722       NaN    AL        Macon
 6 01113 70.92100       NaN    AL      Russell
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='read-and-divide-by-time'>
+<h3>Read and Divide by Time</h3>
+
+<p>Same as before, we can create the subsets of dataset divided by time variable. But here one of
+potential problem that we may face is that what if some of the subsets are very large? This is
+a very general problem if we are dealing with a large and complex dataset. In fact, <code>Rhipe</code> is 
+able to write any size of subset to HDFS, but only can read less than 256 Mb subset from HDFS.
+In other words, we are able to create any size of subset in a mapreduce job, but we will get 
+issue when we are trying to read and apply analysis method on oversize subset.</p>
+
+<p>In this example, we are assuming that each subset of data by time is oversize, so we are going
+to create multiple subsets for each month.</p>
+
+<h4>Map</h4>
+
+<pre><code class="r">map6 &lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    line = strsplit(map.values[[r]], &quot;,&quot;)[[1]]
+    key &lt;- line[[4]]
+    value &lt;- as.data.frame(rbind(line[-4]), stringsAsFactors = FALSE)
+    rhcollect(key, value)
+  })
+})
+</code></pre>
+
+<h4>Reduce</h4>
+
+<pre><code class="r">reduce6 &lt;- expression(
+  pre = {
+  },
+  reduce = {
+    tmp &lt;- data.frame()
+    tmp &lt;- rbind(tmp, do.call(rbind, reduce.values))
+    names(tmp) &lt;- c(
+      &quot;fips&quot;, &quot;county&quot;, &quot;state&quot;, 
+      &quot;sold&quot;, &quot;list&quot;, &quot;selling&quot;
+    )
+    tmp$list &lt;- as.numeric(tmp$list)
+    tmp$selling &lt;- as.numeric(tmp$selling)
+    rhcollect(reduce.key, tmp)
+  },
+  post = {
+  }
+)
+</code></pre>
+
+<h4>Execution Function</h4>
+
+<pre><code class="r">mr6 &lt;- rhwatch(
+  map      = map6,
+  reduce   = reduce6,
+  input    = rhfmt(&quot;/ln/tmp/housing/housing.txt&quot;, type = &quot;text&quot;),
+  output   = rhfmt(&quot;/ln/tmp/housing/bytime&quot;, type = &quot;sequence&quot;),
+  mapred   = list(
+    mapred.reduce.tasks = 10,
+    rhipe_reduce_buff_size = 500
+  ),
+  readback = FALSE
+)
+</code></pre>
+
+</div>
+
+
+<div class='tab-pane' id='compute-total-sold'>
+<h3>Compute Total Sold</h3>
+
+<p>We then would like to calculate the total sold units for every month over all states.</p>
+
+<h4>Without Combiner</h4>
+
+<pre><code class="r">map7 &lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    key &lt;- map.keys[[r]]
+    value &lt;- sum(as.numeric(map.values[[r]]$sold), na.rm = TRUE)
+    rhcollect(key, value)
+  })
+})
+reduce7 &lt;- expression(
+  pre = {
+    count &lt;- 0
+  },
+  reduce = {
+    count &lt;- count + sum(unlist(reduce.values), na.rm = TRUE)
+  },
+  post = {
+    rhcollect(reduce.key, count)
+  }
+)
+</code></pre>
+
+<p>In the map expression, we calculated the sum of the sold units for each key</p>
+
+<pre><code class="r">mr7 &lt;- rhwatch(
+  map       = map7,
+  reduce    = reduce7,
+  input     = rhfmt(&quot;/ln/tmp/housing/bytime&quot;, type = &quot;sequence&quot;),
+  output    = rhfmt(&quot;/ln/tmp/housing/soldbytime&quot;, type = &quot;sequence&quot;),
+  mapred    = list(
+    mapred.reduce.tasks = 10
+  ),
+  jobname   = &quot;total sold unit for each month&quot;,
+  mon.sec   = 10,
+  combiner  = FALSE,
+  readback  = FALSE
+)
+</code></pre>
+
+<p>The default for combiner is <code>FALSE</code>, which is what we have used before.</p>
+
+<h4>Combiner as an Optimization</h4>
+
+<p>Between the map phase and reduce phase of a MapReduce job, Hadoop sends all the intermediate values
+for a given key to the reducer. The intermediate values for a given key are located on several compute 
+nodes and need to be shuffled (sent across the network) to the node assigned the processing of that
+intermediate key. This involves a lot of network transfer.</p>
+
+<p>Some operations do not need access to all of the data (intermediate values), i.e they can compute on 
+subsets and order does not matter, i.e associative and commutative operations. For example, the minimum, 
+or the sum, of some numbers. In these cases, a combiner can be useful.</p>
+
+<p>The idea of the combiner is that the reduce is first run locally on mapper outputs before they are sent 
+for the final reduce. When the combiner is enabled, the reduction occurs just after the map phase on a 
+subset of intermediate values for a given intermediate keys. The output of this is then sent to the 
+reducer. This greatly reduces network transfer and accelerates the job speed, especially if the output 
+from a map contains a lot of data.</p>
+
+<h4>Enabling Combiner in RHIPE</h4>
+
+<p>Combiner can be enabled in <code>Rhipe</code> by specifying <code>combiner = TRUE</code> when calling function <code>rhwatch()</code>.</p>
+
+<p>To be able to use a combiner, our reduce expression needs to pass the same data type as it receives,
+i.e the two arguments in the function rhcollect() in your map expression need to be of the same type as 
+those in the function rhcollect() in your reduce expression. For example, if you pass a string as the key
+and a numeric vector as the value in the map expression, you need to pass a string as key and a numeric 
+vector as the value in the reduce expression as well.</p>
+
+<p>We will demonstrate the usage of combiners through the following examples.</p>
+
+<h4>With Combiner</h4>
+
+<pre><code class="r">mr8 &lt;- rhwatch(
+  map       = map7,
+  reduce    = reduce7,
+  input     = rhfmt(&quot;/ln/tmp/housing/bytime&quot;, type = &quot;sequence&quot;),
+  output    = rhfmt(&quot;/ln/tmp/housing/soldbytime.combiner&quot;, type = &quot;sequence&quot;),
+  mapred    = list(
+    mapred.reduce.tasks = 10
+  ),
+  jobname   = &quot;total sold unit for each month with combiner&quot;,
+  mon.sec   = 10,
+  combiner  = TRUE,
+  readback  = FALSE
+)
+</code></pre>
+
+<pre><code class="r">rst.comb &lt;- rhread(&quot;/ln/tmp/housing/soldbytime.combiner&quot;)
+rst &lt;- rhread(&quot;/ln/tmp/housing/soldbytime&quot;)
+identical(rst, rst.comb)
+</code></pre>
+
+<pre><code>[1] TRUE
+</code></pre>
+
+<pre><code class="r">df &lt;- data.frame(  
+  time  = sapply(rst, &quot;[[&quot;, 1),
+  total = sapply(rst, &quot;[[&quot;, 2)
+)
+df &lt;- df[order(df$time, decreasing = FALSE), ]  
+df.comb &lt;- data.frame(  
+  time  = sapply(rst.comb, &quot;[[&quot;, 1),
+  total = sapply(rst.comb, &quot;[[&quot;, 2)
+)
+df.comb &lt;- df.comb[order(df.comb$time, decreasing = FALSE), ]
+head(df.comb)
+head(df)
+</code></pre>
+
+<pre><code>         time  total
+45 2008-10-01 272879
+50 2008-11-01 201648
+59 2008-12-01 229829
+51 2009-01-01 180674
+60 2009-02-01 187276
+1  2009-03-01 219149
 </code></pre>
 
 </div>
