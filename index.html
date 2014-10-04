@@ -230,8 +230,8 @@ through a common hall.</p>
 <div class='tab-pane' id='write-text-to-hdfs'>
 <h3>Write Text to HDFS</h3>
 
-<p>You can double-check the name of your local working directory with the <code>getwd</code> command.  Mine is
-called &quot;/home/median/u41/tongx&quot; but yours will be different.</p>
+<p>First of all, you can double-check the name of your local working directory with the <code>getwd</code> command
+in R.  Mine is called &quot;/home/median/u41/tongx&quot; but yours will be different.</p>
 
 <pre><code class="r">getwd()
 </code></pre>
@@ -239,7 +239,8 @@ called &quot;/home/median/u41/tongx&quot; but yours will be different.</p>
 <pre><code>[1] &quot;/home/median/u41/tongx&quot;
 </code></pre>
 
-<p>Download the data file to your local working directory with the following command:</p>
+<p>Recall that this directory is on the initiating R server. Then download the data file to your 
+local working directory with the following command:</p>
 
 <pre><code class="r">system(&quot;wget https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt&quot;)
 </code></pre>

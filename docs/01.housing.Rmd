@@ -46,8 +46,8 @@ through a common hall.
 
 ### Write Text to HDFS ###
 
-You can double-check the name of your local working directory with the `getwd` command.  Mine is
-called "/home/median/u41/tongx" but yours will be different.
+First of all, you can double-check the name of your local working directory with the `getwd` command
+in R.  Mine is called "/home/median/u41/tongx" but yours will be different.
 
 ```{r eval=FALSE, tidy=FALSE}
 getwd()
@@ -56,7 +56,8 @@ getwd()
 [1] "/home/median/u41/tongx"
 ```
 
-Download the data file to your local working directory with the following command:
+Recall that this directory is on the initiating R server. Then download the data file to your 
+local working directory with the following command:
 
 ```{r eval=FALSE, tidy=FALSE}
 system("wget https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt")
