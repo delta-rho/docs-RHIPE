@@ -10,7 +10,7 @@ will refer to as a ``state''.  The data were harvested from Quandl's Zillow
 Housing Data. The data contain 224,369 sales of housing units.
 
 The variables are
-- **fips**: FIPS county code, an unique identifier for each U.S. county
+- **FIPS**: FIPS county code, an unique identifier for each U.S. county
 - **county**: county name
 - **state**: state abbreviation
 - **date**: time measured in months, from 1 to 66, the number of months
@@ -153,7 +153,7 @@ map1 <- expression({
     key <- line[3]
     value <- as.data.frame(rbind(line[-3]), stringsAsFactors = FALSE)
     names(value) <- c(
-      "fips", "county", "date", 
+      "FIPS", "county", "date", 
       "units", "list", "selling"
     )
     value$list <- as.numeric(value$list)

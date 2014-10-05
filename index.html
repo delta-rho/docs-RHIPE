@@ -189,7 +189,7 @@ Housing Data. The data contain 224,369 sales of housing units.</p>
 <p>The variables are</p>
 
 <ul>
-<li><strong>fips</strong>: FIPS county code, an unique identifier for each U.S. county</li>
+<li><strong>FIPS</strong>: FIPS county code, an unique identifier for each U.S. county</li>
 <li><strong>county</strong>: county name</li>
 <li><strong>state</strong>: state abbreviation</li>
 <li><strong>date</strong>: time measured in months, from 1 to 66, the number of months</li>
@@ -335,7 +335,7 @@ map is the final output.</p>
     key &lt;- line[3]
     value &lt;- as.data.frame(rbind(line[-3]), stringsAsFactors = FALSE)
     names(value) &lt;- c(
-      &quot;fips&quot;, &quot;county&quot;, &quot;date&quot;, 
+      &quot;FIPS&quot;, &quot;county&quot;, &quot;date&quot;, 
       &quot;units&quot;, &quot;list&quot;, &quot;selling&quot;
     )
     value$list &lt;- as.numeric(value$list)
