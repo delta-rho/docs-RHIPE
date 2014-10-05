@@ -25,16 +25,16 @@ The raw data are in a text file whose size is about 12 MB.
 It is available as `housing.txt` in our Tesseradata Github repository of the
 `RHIPE` documentation [here](https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt).   
 
-So the raw data are a table with 224,369 rows (units) and 7 columns (variables).
+So the raw data are a table with 190,278 rows (units) and 7 columns (variables).
 In the text file, the fields in each row are separated by a comma, and there
 are not headers
 Here are the first few lines of the file:
 ```
-"01001","Autauga","AL",1,27,96.616541353383,99.1324
-"01001","Autauga","AL",2,28,96.856993190152,NA
-"01001","Autauga","AL",3,NA,NA,95.8209
-"01001","Autauga","AL",4,16,NA,NA
-"01001","Autauga","AL",5,NA,98.055555555556,96.3528
+01001,Autauga,AL,1,27,96.616541353383,99.1324
+01001,Autauga,AL,2,28,96.856993190152,95.8209
+01001,Autauga,AL,3,16,98.055555555556,96.3528
+01001,Autauga,AL,4,23,97.747480735033,95.2189
+01001,Autauga,AL,5,22,97.747480735033,92.7127
 ```
 
 A housing unit is a house, an apartment, a mobile home, a group of rooms, or a
