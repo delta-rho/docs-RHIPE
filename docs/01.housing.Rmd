@@ -21,7 +21,7 @@ The variables are
 Many observations of the last three variables are missing: units 75%, list 22%,
 and selling 73%.
  
-The raw data are in a text file whose size is about 12 MB.
+The raw data are in a text file whose size is about 8 MB.
 It is available as `housing.txt` in our Tesseradata Github repository of the
 `RHIPE` documentation [here](https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt).   
 
