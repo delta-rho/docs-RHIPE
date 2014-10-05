@@ -198,8 +198,8 @@ Housing Data. The data contain 224,369 sales of housing units.</p>
 <li><strong>selling</strong>: monthly median selling (dollars per square foot)</li>
 </ul>
 
-<p>Many observations of the last three variables are missing: units 75%, list 22%,
-and selling 73%.</p>
+<p>Many observations of the last three variables are missing: units 68%, list 7%,
+and selling 68%.</p>
 
 <p>The raw data are in a text file whose size is about 8 MB.
 It is available as <code>housing.txt</code> in our Tesseradata Github repository of the
@@ -288,7 +288,7 @@ Make sure you specify the same directory as you used in the last step.</p>
 </code></pre>
 
 <pre><code>  permission owner      group     size          modtime                            file
-1 -rw-rw-rw- tongx supergroup 11.82 mb 2014-09-17 11:11   /ln/tongx/housing/housing.txt
+1 -rw-rw-rw- tongx supergroup 7.683 mb 2014-09-17 11:11   /ln/tongx/housing/housing.txt
 </code></pre>
 
 <p><code>rhls()</code> is very similar to the bash command <code>ls</code>.  It will list all content under a given address. 
@@ -772,7 +772,7 @@ attributes of the data frame.</p>
 </code></pre>
 
 <pre><code>$names
-[1] &quot;time&quot;             &quot;sold&quot;            &quot;list&quot;             &quot;selling&quot;
+[1] &quot;time&quot;             &quot;units&quot;            &quot;list&quot;             &quot;selling&quot;
 
 $row.names
  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32
@@ -893,12 +893,12 @@ can speed up this job and future jobs which read its output.</p>
 <p>Same as before, we can create the subsets of dataset divided by time variable. But here one of
 potential problem that we may face is that what if some of the subsets are very large? This is
 a very general problem if we are dealing with a large and complex dataset. In fact, <code>Rhipe</code> is 
-able to write any size of subset to HDFS, but only can read less than 256 Mb subset from HDFS.
-In other words, we are able to create any size of subset in a mapreduce job, but we will get 
-issue when we are trying to read and apply analysis method on oversize subset.</p>
+able to write any size of one subset to HDFS, but only can read one subset less than 256 Mb 
+from HDFS. In other words, we are able to create any size of subset in a mapreduce job, but we
+will get issue when we are trying to read and apply analysis method on oversize subset.</p>
 
-<p>In this example, we are assuming that each subset of data by time is oversize, so we are going
-to create multiple subsets for each month.</p>
+<p>In this example, we are assuming that each subset by time is oversize. One way to overcome this
+issue is that we are going to create multiple subsets for each month. </p>
 
 <h4>Map</h4>
 
@@ -912,26 +912,47 @@ to create multiple subsets for each month.</p>
 })
 </code></pre>
 
+<p>There is not too much difference in the map expression comparing with the map expression in previous 
+two division sessions. We used the fourth column in each row of text file as the key which is the index
+of month, and rest of columns saved as a data frame was collected as corresponding value.</p>
+
 <h4>Reduce</h4>
 
 <pre><code class="r">reduce6 &lt;- expression(
   pre = {
   },
   reduce = {
-    tmp &lt;- data.frame()
-    tmp &lt;- rbind(tmp, do.call(rbind, reduce.values))
-    names(tmp) &lt;- c(
+    time500 &lt;- do.call(rbind, reduce.values)
+    names(time500) &lt;- c(
       &quot;fips&quot;, &quot;county&quot;, &quot;state&quot;, 
-      &quot;sold&quot;, &quot;list&quot;, &quot;selling&quot;
+      &quot;units&quot;, &quot;list&quot;, &quot;selling&quot;
     )
-    tmp$list &lt;- as.numeric(tmp$list)
-    tmp$selling &lt;- as.numeric(tmp$selling)
-    rhcollect(reduce.key, tmp)
+    time500$list &lt;- as.numeric(time500$list)
+    time500$selling &lt;- as.numeric(time500$selling)
+    rhcollect(reduce.key, time500)
   },
   post = {
   }
 )
 </code></pre>
+
+<p>Here, the reduce expression is not similar as before. We left <code>pre</code> and <code>post</code> as empty. Recall that <code>pre</code> 
+and <code>post</code> in reduce expression will be executed only once for each unique key. <code>reduce</code> part, on the other 
+hand, will be executed repeatedly until all intermediate values associated with the current key have been 
+processed. And we actually can control how many intermediate values to be executed in <code>reduce</code> every time. 
+Suppose we want to execute 500 intermediate values for each key at one time, then the <code>reduce.values</code> is a 
+list only includes 500 intermediate values for corresponding <code>reduce.key</code>. In other words, we use the 
+property that intermediate values for a given key can be executed by part in <code>reduce</code> to create 
+multiple subsets for a given key. Previously we only created one subset for a given key, like a state or 
+county.</p>
+
+<p>What we have done above in <code>reduce</code> is for a given key, for every 500 (later one we will illustrate where 
+we specified this 500) intermediate value corresponding to this key, we created a data.frame named
+<code>time500</code> which is the row-bind of all these 500 rows(recall that each value is a data frame with single 
+row from map output) for this key. Then we collected <code>time500</code> as value with the key. Then is the next
+500 rows for the same key, repeatedly until all rows for this key has been processed. If for one key we
+have 1324 values(rows), then finally we will get three key-value pairs with same key by using this reduce
+expression.</p>
 
 <h4>Execution Function</h4>
 
@@ -948,6 +969,36 @@ to create multiple subsets for each month.</p>
 )
 </code></pre>
 
+<p>In <code>rhwatch</code> this time, we add one more argument in <code>mapred</code> list. <code>rhipe_reduce_buff_size</code> is the 
+argument used to control how many intermediate values for one key we want to process at one time. It is
+where we specified that process 500 rows for one key at one time, as we mentioned in reduce expression.</p>
+
+<p>Let us examine if we got what we want. Recall that we have 2,883 counties in total, and each county has
+66 monthly observations. If we only create one subset for each month, there should be 66 subsets, each of
+which is a data frame with 2,883 rows.</p>
+
+<pre><code class="r">rst &lt;- rhread(&quot;/ln/tongx/housing/bytime&quot;)
+</code></pre>
+
+<pre><code>Read 396 objects(8.85 MB) in 2.76 seconds
+</code></pre>
+
+<p>But we got 396 subsets in <code>rst</code>, which is 66 times 6. And if you examine the <code>rst</code> more carefully, it is
+not hard to find that for each month, we created 6 subsets.</p>
+
+<pre><code class="r">rows &lt;- unlist(lapply(rst, function(r){dim(r[[2]])[1]}))
+rows
+</code></pre>
+
+<pre><code>  [1] 500 500 500 500 500 383 500 500 500 500 500 383 500 500 500 500 500 383 500 500 500 500
+ [23] 500 383 500 500 500 500 500 383 500 500 500 500 500 383 500 500 500 500 500 383 500 500
+......
+</code></pre>
+
+<p>What we got above is the number of rows in each subset. We can see that we always have five <code>500</code> and one 
+<code>383</code> as one replicate, which together will be the total number of rows for one month. This means we ran 
+our <code>reduce</code> in reduce expression six times for each key.</p>
+
 </div>
 
 
@@ -961,7 +1012,7 @@ to create multiple subsets for each month.</p>
 <pre><code class="r">map7 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
     key &lt;- map.keys[[r]]
-    value &lt;- sum(as.numeric(map.values[[r]]$sold), na.rm = TRUE)
+    value &lt;- sum(as.numeric(map.values[[r]]$units), na.rm = TRUE)
     rhcollect(key, value)
   })
 })
