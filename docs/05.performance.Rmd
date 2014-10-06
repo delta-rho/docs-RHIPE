@@ -1,41 +1,48 @@
-## Tessera Cluster Logistic Performance Test ##
+## The Cluster Performance Test ##
 
 ### Introduction ###
 
 We'll demonstrate the computation ability of `RHIPE` package with a performance test by using logistic
 regression. 
 
-The basic idea is firstly, we wishto generate an observation sample with a size of *N*, *P* number of 
-explanatory variables and one response variables. Let's denote the number of the variables as *V*, 
-which equals to *P+1*. In summary, we wish to generate a dataframe with *N* rows and *V* collumns. 
-Secondly, We want to use the logistic regression method to analyze the dataframe. However, when the
-data size is quite large, it will be impractical to generate and analyse the whole data set in terms
-of the time cosuming and the memory limitation.
+The basic idea is firstly, we wish to generate an observation sample with a size of *N*, *V* number 
+of variables, which means there are *V-1* explanatory variables.  In summary, we wish to generate a 
+dataframe with *N* rows and *V* collumns. Secondly, we want to use the logistic regression method to
+analyze the dataframe. However, when the data size is quite large, it will be impractical to generate
+and analyse the whole data set in terms of the time cosuming and the memory limitation.
 
 Instead, we will use `RHIPE` package to generate subsets first and then use logistic regression 
-method to analyze each subset by R function `glm.fit`. The subset size is *M* and the number of 
-subsets is *R*. As a result, $N = M * R$. We will use R function `system.time` to measure elapsed 
-time which will be explained more in the later session.
+method to analyze each subset by R function `glm.fit`. The subset observation sample size is *M* and
+the number of subsets is *R*. As a result, $N = M * R$. Each subset contains a sub-dataframe with *M*
+rows and *V* collumns. We will use R function `system.time` to measure elapsed time which will be 
+explained more in the later session.
 
 In this example, we will show how to do a sing run of the performance test, which means we only pick
 one possible value of *M* and one possible value of *V* to see how fast it is to go. 
 
-We choose $n = log2(N) = 23$, $v = log2(V) = 5$, and $m = log2(M) = 13$ to illustrate one single run.
+We choose $n = log2(N) = 25$, $v = log2(V) = 5$, $m = log2(M) = 13$, and $log2(R) = 12$ to illustrate
+one single run. So the size for the whole dataset is $2^25 * 2^5 * 2^3 = 8GB$. We will generate each
+subset with the size of $2^13 * 2^5 * 2^3 = 2MB$
 
 ### Generate Datasets ###
 
-The first step in a D/&R analysis is to choose a division method and create subsets. In this example,
-we devide the whole dataset to *R* sets, which $ log2(R) = 10$. So we will generate 2^10 matrices of 
-2^13 rows and 2^5 columns each. 
+As we mentioned in the `Housing Data` example, the first step in a D/&R analysis is to choose a 
+division method and create subsets. In this example, we devide the whole dataset to *R* sets, where
+$ log2(R) = 12$. So we will generate 2^12 matrices with 2^13 rows and 2^5 columns each. 
 
-Before we run the map function, we will set up some basic parameters in the front end R enviroment:
+Before we run the map function, we will set up some basic parameters in the front end of R enviroment:
 
 ```{r,eval=FALSE,tidy=FALSE}
-n <- 23
+n <- 25
 m <- 13
 v <- 5
 p <- 2^v - 1
+
 ```
+
+Here we define an R object called `p`, the value of which equals to $2^v - 1$. As introduced in the
+last part, `2^v` is the number of variables, so `p` is the number of the explanatory variables. We 
+introduce `p` here to make the following codes much easier to write and understand.
 
 #### Map ####
 
@@ -49,13 +56,18 @@ map1 <- expression({
 })
 ```
  
-The input keys and values are the same for the sumulating data step. The keys are numeric
-numbers as 1, 2, ...., *R*, where *R* is the number of the subsets. In our example, 
-log2(R) = log2(N/M) = 10. They are the elements of the list object `map.keys`, which in this case, 
-`map.keys` and `map.values` would be the same. `rhcollect` emits an intermediate key-value pair, 
-which the keys are the same as the input key but values are a matrix with 2^13 rows and 2^5 columns.
+In this case, we don't have an existing data which is different from the `Housing Data` example. 
+Creating a dataset by randomly simulation is the part of the `map` job.The input keys and values are
+the same by default for the sumulating data step. The keys are numeric numbers 1, 2, ...., *R*, 
+where *R* is the number of the subsets. In our example, log2(R) = log2(N/M) = 12. They are the 
+elements of the list object `map.keys`, which in this case, `map.keys` and `map.values` would be the
+same. The output keys from the `map1` function are the same as the input keys. This is defined by the
+`map1` function. The output value for each key is a matrix with 2^13 rows and 2^5 columns. As we have
+explained before in the `Housing Data` example, the output key-value pairs from the `map` function 
+are also called intermediate key-value pairs. So `rhcollect` emits these intermediate key-value 
+pairs.
 
-We don't need the `reduce` function to this point. Next we will write the generated subsets to HDFS.
+There is no reducer step for the generation part. Next we will write the generated subsets to HDFS.
 
 #### Execution Function ####
 
@@ -70,13 +82,26 @@ mr1 <- rhwatch(
    mapred.task.timeout=0,
    mapred.reduce.tasks=0),
  parameters = list(m = 2^m, p = p),
- noeval   = TRUE,
  readback = FALSE
   )
-t = as.numeric(system.time({rhex(mr1, async=FALSE)})[3])
 ```
 
-The `rhwatch` function packages and executes our Rhipe MapReduce job. It consists of  several 
+We have introduced the `rhwatch` function before. In this case, `rhwatch` function will submit our 
+MapReduce jobs to finish the data generation part and write the subsets to HDFS. There are three types
+of the `input` as Text file input, Sequence file input and lapply input. For `Housing Data` example,
+the `input` type is Text file input and in our performance example, the type of `input` is lapply 
+input because we are generating numeric data. The argument `input` in our performance test example 
+is a vector consisting of two elements. The first element specifies the input key would be from 1 to 
+$2^(n-m)$ for `map1` function. Also, it specifies how many tasks you would like Hadoop MapReduce
+Framework to run because each task conresponds to one key-value pair. In our performance test example,
+each task is to generate a subset with 2^13 rows and 2^5 columns. The second element of the vector 
+`input` specifies the numbers of mappers you would like to use. So each mapper would run $2^(n-m)/12$
+tasks, where `12` is the value of the second element of `input`. So the value of the second element
+would definitely affect the performance test and it is worthy to carry out an experiment to test its
+effect. 
+
+Once you try the `Housing Data` example, you have run into most arguments of `rhwatch`. Most of the arguments
+of `rhwatch` function have been introduced in the It consists of  several 
 arguments, such as `map`, `input`, `output`, `jobname`, `mapred`, `parameters`,`noeval` and 
 `readback`, most of which have been introduced in the `housing` extample. Here we have several new 
 arguments, like `parameters`, `jobname` and `noeval`. The argument `parameters` is a named list with 
@@ -273,7 +298,7 @@ Saving 2 parameters to /tmp/rhipe-temp-params-17085d733c859950748a8598d1fc5222 (
 
 ```
 
-#### Performance Test Results ####
+### Performance Test Results ###
 ```{r eval=FALSE, tidy=FALSE}
 str(timing)
 ```
