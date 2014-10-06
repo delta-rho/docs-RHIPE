@@ -28,7 +28,7 @@ on county for each state. First of all, let us have a look at what the plot look
 
 For each state we created the time series plot of the number of sold units conditional on county.
 The plotting function we are going to use is in a R package named `lattice` which is a very powerful
-visulization method in R. 
+visualization method in R. 
 
 ```{r eval=FALSE, tidy=FALSE}
 map11 <- expression({
@@ -41,7 +41,9 @@ map11 <- expression({
 })
 ```
 
-Xiaosu will add more words here to describe the details about the code.
+In map expression, we read in each subset by state, and then we only collected subsets that is not all `NA`
+for `units` variable. This can help us illuminate the number of key-value pairs that are transferred to 
+reducer.
 
 ```{r eval=FALSE, tidy=FALSE}
 ylab <- "Log of Number of Sold Units(log base 2)"
@@ -79,6 +81,19 @@ reduce11 <- expression(
 )
 ```
 
+In reduce expression, we did the actual plotting task. One thing should be noticed is that we defined two
+string variables `xlab` and `ylab` in our initiating R global environment. We will use this two string 
+variables as the labels for x axis and y axis respectively. Later on we will show how to let every
+task be aware of these two objects. In the `post`, we called the `xyplot` function in `lattice` package to 
+plot the `units` against `date`, and created a pdf plot file under the location or path of `./tmp/`. 
+
+What is this `./tmp/` directory? It is a temporary working directory on each reducer. Recall that on the 
+initiating R server(front-end), we have a concept of R local working directory. This temporary working 
+directory is the same concept but on each sever of the Hadoop severs(back-end). Why we want to save the plots 
+to this specific directory on each hadoop sever? Because `Rhipe` can copy all files in this particular 
+directory to HDFS, then we can copy those files from HDFS to our R local working directory on initiating R 
+sever. Finally, you can choose to view those files either through the Internet or copy them to your laptop to 
+view them.
 
 ```{r eval=FALSE, tidy=FALSE}
 mr11 <- rhwatch(
@@ -105,7 +120,20 @@ mr11 <- rhwatch(
 )
 ```
 
-Xiaosu will add more words here to talk about how to cope the pdf plots from HDFS to frontend node.
+In the execution function, we saw a group of new arguments shown up. Let's go through them one by one. First 
+is `setup` argument. It is an expression of R code to be run before map and reduce. Here the `map` in `setup`
+is empty, but we called `lattice` library in `reduce`, because we would like to use the `xyplot` function in
+reduce expression. `setup` is a very good place for us to set up for map and reduce respectively,like calling
+library.
+
+Second is `parameters` argument. This argument is how we distributed the `xlab` and `ylab` to every map and 
+reduce task. Basically we group all objects as a list which we would like to use in each task. Then in map
+or reduce expression, we can just use these objects in `parameters` as they have been already defined.
+
+The last one is `copyFiles`. As we discussed before, when `copyFiles` is `TRUE`, all files created in 
+`./tmp/` on each Hadoop severs will be copied to the output directory on HDFS.
+
+Once the job is finished, let's see what we have in the output directory on HDFS.
 
 ```{r eval=FALSE, tidy=FALSE}
 rhls("/ln/tongx/housing/timeplotbystate")
@@ -119,6 +147,10 @@ rhls("/ln/tongx/housing/timeplotbystate")
 5  -rw-r--r-- tongx supergroup    94 bytes 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/part-r-00001
 ......
 ```
+
+Different than all the results we had before, here we got an extra directory named `_outputs` in output directory.
+When we went into it, we found following information:
+
 ```{r eval=FALSE, tidy=FALSE}
 rhls("/ln/tongx/housing/timeplotbystate/_outputs")
 ```
@@ -130,13 +162,23 @@ rhls("/ln/tongx/housing/timeplotbystate/_outputs")
 4  -rw-r--r-- tongx supergroup 150.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CA.pdf
 5  -rw-r--r-- tongx supergroup 106.7 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CO.pdf
 ......
+
+Yes, all the pdf plots are saved here, on HDFS! The last step would be copy those pdf files from HDFS to our R local
+working directory on initiating R server.
+
 ```
 ```{r eval=FALSE, tidy=FALSE}
 rhget("/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.NC.pdf", "./")
 rhget("/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf", "./")
 ```
 
+The function that used to copy from HDFS to R local working directory is `rhget`, which is the opposite operation as 
+`rhput` we used in previous session. Here we only showed copying two of those pdf files.
+
 #### Time Series Plot of List Price ####
+
+The second type of plot we are going to plot is the time series plot of list price condition on county for each state.
+Again, let us have a look at what the plot looks like.
 
 [Time series plot of list price for California State](./plots/list.vs.time.CA.pdf).
 
@@ -155,6 +197,8 @@ map12 <- expression({
 })
 ```
 
+Same as before, we read in each subset by state in map expression, and then we only collected subsets that is not all 
+`NA` for `list` variable.
 
 ```{r eval=FALSE, tidy=FALSE}
 ylab <- "Log of List Price (log base 2 dollars per square foot)"
@@ -192,6 +236,7 @@ reduce12 <- expression(
 )
 ```
 
+Very similar reduce expression, we did the actual plotting task. This time we changed the `ylab`. 
 
 ```{r eval=FALSE, tidy=FALSE}
 mr12 <- rhwatch(
@@ -227,6 +272,8 @@ rhls("/ln/tongx/housing/listplotbystate/_outputs")
 4  -rw-r--r-- tongx supergroup 192.2 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf
 ......
 ```
+Still, all results of plotting will be located in `_outputs` of output directory.
+
 ```{r eval=FALSE, tidy=FALSE}
 rhget("/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.VA.pdf", "./")
 rhget("/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf", "./")

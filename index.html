@@ -132,7 +132,7 @@
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='05.performance.Rmd'>Tessera Cluster Logistic Performance Test</li>
+<li class='nav-header unselectable' data-edit-href='05.performance.Rmd'>The Cluster Performance Test</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#introduction'>Introduction</a>
@@ -146,6 +146,11 @@
 
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#elapsed-time-measurement'>Elapsed Time Measurement</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#performance-test-results'>Performance Test Results</a>
       </li>
 
    </ul>
@@ -1467,8 +1472,9 @@ on county for each state. First of all, let us have a look at what the plot look
 
 <p><a href="./plots/time.vs.unit.TX.pdf">Time series plot of number of units sold for Texas State</a>.</p>
 
-<p>The first plot is the time series plot of the number of sold units conditional on county in each state.
-The plotting function we are going to use is in a R package named <code>lattice</code>. Xiaosu will add more words ...</p>
+<p>For each state we created the time series plot of the number of sold units conditional on county.
+The plotting function we are going to use is in a R package named <code>lattice</code> which is a very powerful
+visualization method in R. </p>
 
 <pre><code class="r">map11 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
@@ -1480,9 +1486,13 @@ The plotting function we are going to use is in a R package named <code>lattice<
 })
 </code></pre>
 
-<p>Xiaosu will add more words here to describe the details about the code.</p>
+<p>In map expression, we read in each subset by state, and then we only collected subsets that is not all <code>NA</code>
+for <code>units</code> variable. This can help us illuminate the number of key-value pairs that are transferred to 
+reducer.</p>
 
-<pre><code class="r">reduce11 &lt;- expression(
+<pre><code class="r">ylab &lt;- &quot;Log of Number of Sold Units(log base 2)&quot;
+xlab &lt;- &quot;Month&quot;
+reduce11 &lt;- expression(
   pre = {
     onestate &lt;- data.frame()
   },
@@ -1490,24 +1500,23 @@ The plotting function we are going to use is in a R package named <code>lattice<
     onestate &lt;- do.call(rbind, reduce.values)
   },
   post = {
-    onestate$date &lt;- as.POSIXct(
-      x      = strptime(onestate$date, format = &quot;%Y-%m-%d&quot;), 
-      format = &#39;%Y%m%d&#39;, 
-      tz     = &quot;&quot;
-    )
     trellis.device(pdf, 
       file  = paste(&quot;./tmp/time.vs.unit&quot;, reduce.key, &quot;pdf&quot;, sep=&quot;.&quot;), 
       color = TRUE,
       paper = &quot;legal&quot;
     )
     b &lt;- xyplot(
-      log2(as.numeric(units)) ~ date | FIPS,
+      log2(as.numeric(units)) ~ as.numeric(date) | FIPS,
       data   = onestate,
       layout = c(4, 3),
       cex    = 0.5,
       pch    = 16,
-      xlab   = &quot;Time&quot;,
-      ylab   = &quot;Log of Number of Sold Units(log base 2)&quot;,
+      scales = list(
+        x = list(tick.number = 5),
+        y = list(relation = &quot;sliced&quot;) 
+      ),
+      xlab   = xlab,
+      ylab   = ylab,
       main   = reduce.key,
     )
     print(b)
@@ -1516,27 +1525,58 @@ The plotting function we are going to use is in a R package named <code>lattice<
 )
 </code></pre>
 
+<p>In reduce expression, we did the actual plotting task. One thing should be noticed is that we defined two
+string variables <code>xlab</code> and <code>ylab</code> in our initiating R global environment. We will use this two string 
+variables as the labels for x axis and y axis respectively. Later on we will show how to let every
+task be aware of these two objects. In the <code>post</code>, we called the <code>xyplot</code> function in <code>lattice</code> package to 
+plot the <code>units</code> against <code>date</code>, and created a pdf plot file under the location or path of <code>./tmp/</code>. </p>
+
+<p>What is this <code>./tmp/</code> directory? It is a temporary working directory on each reducer. Recall that on the 
+initiating R server(front-end), we have a concept of R local working directory. This temporary working 
+directory is the same concept but on each sever of the Hadoop severs(back-end). Why we want to save the plots 
+to this specific directory on each hadoop sever? Because <code>Rhipe</code> can copy all files in this particular 
+directory to HDFS, then we can copy those files from HDFS to our R local working directory on initiating R 
+sever. Finally, you can choose to view those files either through the Internet or copy them to your laptop to 
+view them.</p>
+
 <pre><code class="r">mr11 &lt;- rhwatch(
-  map       = map11,
-  reduce    = reduce11,
-  input     = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
-  output    = rhfmt(&quot;/ln/tongx/housing/timeplotbystate&quot;, type = &quot;sequence&quot;),
-  setup     = expression(
+  map        = map11,
+  reduce     = reduce11,
+  input      = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
+  output     = rhfmt(&quot;/ln/tongx/housing/timeplotbystate&quot;, type = &quot;sequence&quot;),
+  setup      = expression(
     map = {
     },
-    reduce = {
+    reduce   = {
       library(lattice)
     }
-  ),
-  mapred    = list( 
+  ),
+  parameters = list(
+    xlab = xlab,
+    ylab = ylab
+  ),
+  mapred     = list( 
     mapred.reduce.tasks = 12
   ),
-  copyFiles = TRUE,
-  readback  = FALSE
+  copyFiles  = TRUE,
+  readback   = FALSE
 )
 </code></pre>
 
-<p>Xiaosu will add more words here to talk about how to cope the pdf plots from HDFS to frontend node.</p>
+<p>In the execution function, we saw a group of new arguments shown up. Let&#39;s go through them one by one. First 
+is <code>setup</code> argument. It is an expression of R code to be run before map and reduce. Here the <code>map</code> in <code>setup</code>
+is empty, but we called <code>lattice</code> library in <code>reduce</code>, because we would like to use the <code>xyplot</code> function in
+reduce expression. <code>setup</code> is a very good place for us to set up for map and reduce respectively,like calling
+library.</p>
+
+<p>Second is <code>parameters</code> argument. This argument is how we distributed the <code>xlab</code> and <code>ylab</code> to every map and 
+reduce task. Basically we group all objects as a list which we would like to use in each task. Then in map
+or reduce expression, we can just use these objects in <code>parameters</code> as they have been already defined.</p>
+
+<p>The last one is <code>copyFiles</code>. As we discussed before, when <code>copyFiles</code> is <code>TRUE</code>, all files created in 
+<code>./tmp/</code> on each Hadoop severs will be copied to the output directory on HDFS.</p>
+
+<p>Once the job is finished, let&#39;s see what we have in the output directory on HDFS.</p>
 
 <pre><code class="r">rhls(&quot;/ln/tongx/housing/timeplotbystate&quot;)
 </code></pre>
@@ -1550,6 +1590,9 @@ The plotting function we are going to use is in a R package named <code>lattice<
 ......
 </code></pre>
 
+<p>Different than all the results we had before, here we got an extra directory named <code>_outputs</code> in output directory.
+When we went into it, we found following information:</p>
+
 <pre><code class="r">rhls(&quot;/ln/tongx/housing/timeplotbystate/_outputs&quot;)
 </code></pre>
 
@@ -1560,13 +1603,23 @@ The plotting function we are going to use is in a R package named <code>lattice<
 4  -rw-r--r-- tongx supergroup 150.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CA.pdf
 5  -rw-r--r-- tongx supergroup 106.7 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CO.pdf
 ......
+
+Yes, all the pdf plots are saved here, on HDFS! The last step would be copy those pdf files from HDFS to our R local
+working directory on initiating R server.
+
 </code></pre>
 
 <pre><code class="r">rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.NC.pdf&quot;, &quot;./&quot;)
 rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;, &quot;./&quot;)
 </code></pre>
 
+<p>The function that used to copy from HDFS to R local working directory is <code>rhget</code>, which is the opposite operation as 
+<code>rhput</code> we used in previous session. Here we only showed copying two of those pdf files.</p>
+
 <h4>Time Series Plot of List Price</h4>
+
+<p>The second type of plot we are going to plot is the time series plot of list price condition on county for each state.
+Again, let us have a look at what the plot looks like.</p>
 
 <p><a href="./plots/list.vs.time.CA.pdf">Time series plot of list price for California State</a>.</p>
 
@@ -1584,7 +1637,12 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
 })
 </code></pre>
 
-<pre><code class="r">reduce12 &lt;- expression(
+<p>Same as before, we read in each subset by state in map expression, and then we only collected subsets that is not all 
+<code>NA</code> for <code>list</code> variable.</p>
+
+<pre><code class="r">ylab &lt;- &quot;Log of List Price (log base 2 dollars per square foot)&quot;
+xlab &lt;- &quot;Month&quot;
+reduce12 &lt;- expression(
   pre = {
     onestate &lt;- data.frame()
   },
@@ -1592,27 +1650,23 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
     onestate &lt;- do.call(rbind, reduce.values)
   },
   post = {
-    onestate$date &lt;- as.POSIXct(
-      x      = strptime(onestate$date, format = &quot;%Y-%m-%d&quot;), 
-      format = &#39;%Y%m%d&#39;, 
-      tz     = &quot;&quot;
-    )
     trellis.device(pdf,
       file  = paste(&quot;./tmp/list.vs.time&quot;, reduce.key, &quot;pdf&quot;, sep=&quot;.&quot;), 
       color = TRUE,
       paper = &quot;legal&quot;
     )
     b &lt;- xyplot(
-      log2(as.numeric(list)) ~ date | FIPS,
+      log2(as.numeric(list)) ~ as.numeric(date) | FIPS,
       data   = onestate,
       layout = c(4,3),
       cex    = 0.5,
       pch    = 16,
-      scale  = list(
+      scales = list(
+        x = list(tick.number = 7),
         y = list(relation = &quot;sliced&quot;) 
       ),
-      xlab   = &quot;Time&quot;,
-      ylab   = &quot;Log of List Price (log base 2 dollars per square foot)&quot;,
+      xlab   = xlab,
+      ylab   = ylab,
       main   = reduce.key, 
     )
     print(b)
@@ -1620,6 +1674,8 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
   }
 )
 </code></pre>
+
+<p>Very similar reduce expression, we did the actual plotting task. This time we changed the <code>ylab</code>. </p>
 
 <pre><code class="r">mr12 &lt;- rhwatch(
   map       = map12,
@@ -1631,6 +1687,10 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
       library(lattice)
     }
   ),
+  parameters = list(
+    xlab = xlab,
+    ylab = ylab
+  ),
   mapred    = list( 
     mapred.reduce.tasks = 12
   ),
@@ -1649,6 +1709,8 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
 4  -rw-r--r-- tongx supergroup 192.2 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf
 ......
 </code></pre>
+
+<p>Still, all results of plotting will be located in <code>_outputs</code> of output directory.</p>
 
 <pre><code class="r">rhget(&quot;/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.VA.pdf&quot;, &quot;./&quot;)
 rhget(&quot;/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf&quot;, &quot;./&quot;)
@@ -1719,22 +1781,24 @@ we&#39;ll have to kill it.  Again, use the object returned by <code>rhex</code><
 <p>We&#39;ll demonstrate the computation ability of <code>RHIPE</code> package with a performance test by using logistic
 regression. </p>
 
-<p>The basic idea is firstly, we wishto generate an observation sample with a size of <em>N</em>, <em>P</em> number of 
-explanatory variables and one response variables. Let&#39;s denote the number of the variables as <em>V</em>, 
-which equals to <em>P+1</em>. In summary, we wish to generate a dataframe with <em>N</em> rows and <em>V</em> collumns. 
-Secondly, We want to use the logistic regression method to analyze the dataframe. However, when the
-data size is quite large, it will be impractical to generate and analyse the whole data set in terms
-of the time cosuming and the memory limitation.</p>
+<p>The basic idea is firstly, we wish to generate an observation sample with a size of <em>N</em>, <em>V</em> number 
+of variables, which means there are <em>V-1</em> explanatory variables.  In summary, we wish to generate a 
+dataframe with <em>N</em> rows and <em>V</em> collumns. Secondly, we want to use the logistic regression method to
+analyze the dataframe. However, when the data size is quite large, it will be impractical to generate
+and analyse the whole data set in terms of the time cosuming and the memory limitation.</p>
 
 <p>Instead, we will use <code>RHIPE</code> package to generate subsets first and then use logistic regression 
-method to analyze each subset by R function <code>glm.fit</code>. The subset size is <em>M</em> and the number of 
-subsets is <em>R</em>. As a result, \(N = M * R\). We will use R function <code>system.time</code> to measure elapsed 
-time which will be explained more in the later session.</p>
+method to analyze each subset by R function <code>glm.fit</code>. The subset observation sample size is <em>M</em> and
+the number of subsets is <em>R</em>. As a result, \(N = M * R\). Each subset contains a sub-dataframe with <em>M</em>
+rows and <em>V</em> collumns. We will use R function <code>system.time</code> to measure elapsed time which will be 
+explained more in the later session.</p>
 
 <p>In this example, we will show how to do a sing run of the performance test, which means we only pick
 one possible value of <em>M</em> and one possible value of <em>V</em> to see how fast it is to go. </p>
 
-<p>We choose \(n = log2(N) = 23\), \(v = log2(V) = 5\), and \(m = log2(M) = 13\) to illustrate one single run.</p>
+<p>We choose \(n = log2(N) = 25\), \(v = log2(V) = 5\), \(m = log2(M) = 13\), and \(log2(R) = 12\) to illustrate
+one single run. So the size for the whole dataset is \(2^25 * 2^5 * 2^3 = 8GB\). We will generate each
+subset with the size of \(2^13 * 2^5 * 2^3 = 2MB\)</p>
 
 </div>
 
@@ -1742,17 +1806,21 @@ one possible value of <em>M</em> and one possible value of <em>V</em> to see how
 <div class='tab-pane' id='generate-datasets'>
 <h3>Generate Datasets</h3>
 
-<p>The first step in a D/&amp;R analysis is to choose a division method and create subsets. In this example,
-we devide the whole dataset to <em>R</em> sets, which $ log2(R) = 10$. So we will generate 2<sup>10</sup> matrices of 
-2<sup>13</sup> rows and 2<sup>5</sup> columns each. </p>
+<p>As we mentioned in the <code>Housing Data</code> example, the first step in a D/&amp;R analysis is to choose a 
+division method and create subsets. In this example, we devide the whole dataset to <em>R</em> sets, where
+$ log2(R) = 12$. So we will generate 2<sup>12</sup> matrices with 2<sup>13</sup> rows and 2<sup>5</sup> columns each. </p>
 
-<p>Before we run the map function, we will set up some basic parameters in the front end R enviroment:</p>
+<p>Before we run the map function, we will set up some basic parameters in the front end of R enviroment:</p>
 
-<pre><code class="r">n &lt;- 23
+<pre><code class="r">n &lt;- 25
 m &lt;- 13
 v &lt;- 5
 p &lt;- 2^v - 1
 </code></pre>
+
+<p>Here we define an R object called <code>p</code>, the value of which equals to \(2^v - 1\). As introduced in the
+last part, <code>2^v</code> is the number of variables, so <code>p</code> is the number of the explanatory variables. We 
+introduce <code>p</code> here to make the following codes much easier to write and understand.</p>
 
 <h4>Map</h4>
 
@@ -1765,13 +1833,18 @@ p &lt;- 2^v - 1
 })
 </code></pre>
 
-<p>The input keys and values are the same for the sumulating data step. The keys are numeric
-numbers as 1, 2, ...., <em>R</em>, where <em>R</em> is the number of the subsets. In our example, 
-log2(R) = log2(N/M) = 10. They are the elements of the list object <code>map.keys</code>, which in this case, 
-<code>map.keys</code> and <code>map.values</code> would be the same. <code>rhcollect</code> emits an intermediate key-value pair, 
-which the keys are the same as the input key but values are a matrix with 2<sup>13</sup> rows and 2<sup>5</sup> columns.</p>
+<p>In this case, we don&#39;t have an existing data which is different from the <code>Housing Data</code> example. 
+Creating a dataset by randomly simulation is the part of the <code>map</code> job.The input keys and values are
+the same by default for the sumulating data step. The keys are numeric numbers 1, 2, ...., <em>R</em>, 
+where <em>R</em> is the number of the subsets. In our example, log2(R) = log2(N/M) = 12. They are the 
+elements of the list object <code>map.keys</code>, which in this case, <code>map.keys</code> and <code>map.values</code> would be the
+same. The output keys from the <code>map1</code> function are the same as the input keys. This is defined by the
+<code>map1</code> function. The output value for each key is a matrix with 2<sup>13</sup> rows and 2<sup>5</sup> columns. As we have
+explained before in the <code>Housing Data</code> example, the output key-value pairs from the <code>map</code> function 
+are also called intermediate key-value pairs. So <code>rhcollect</code> emits these intermediate key-value 
+pairs.</p>
 
-<p>We don&#39;t need the <code>reduce</code> function to this point. Next we will write the generated subsets to HDFS.</p>
+<p>There is no reducer step for the generation part. Next we will write the generated subsets to HDFS.</p>
 
 <h4>Execution Function</h4>
 
@@ -1785,13 +1858,26 @@ mr1 &lt;- rhwatch(
    mapred.task.timeout=0,
    mapred.reduce.tasks=0),
  parameters = list(m = 2^m, p = p),
- noeval   = TRUE,
  readback = FALSE
   )
-t = as.numeric(system.time({rhex(mr1, async=FALSE)})[3])
 </code></pre>
 
-<p>The <code>rhwatch</code> function packages and executes our Rhipe MapReduce job. It consists of  several 
+<p>We have introduced the <code>rhwatch</code> function before. In this case, <code>rhwatch</code> function will submit our 
+MapReduce jobs to finish the data generation part and write the subsets to HDFS. There are three types
+of the <code>input</code> as Text file input, Sequence file input and lapply input. For <code>Housing Data</code> example,
+the <code>input</code> type is Text file input and in our performance example, the type of <code>input</code> is lapply 
+input because we are generating numeric data. The argument <code>input</code> in our performance test example 
+is a vector consisting of two elements. The first element specifies the input key would be from 1 to 
+\(2^(n-m)\) for <code>map1</code> function. Also, it specifies how many tasks you would like Hadoop MapReduce
+Framework to run because each task conresponds to one key-value pair. In our performance test example,
+each task is to generate a subset with 2<sup>13</sup> rows and 2<sup>5</sup> columns. The second element of the vector 
+<code>input</code> specifies the numbers of mappers you would like to use. So each mapper would run \(2^(n-m)/12\)
+tasks, where <code>12</code> is the value of the second element of <code>input</code>. So the value of the second element
+would definitely affect the performance test and it is worthy to carry out an experiment to test its
+effect. </p>
+
+<p>Once you try the <code>Housing Data</code> example, you have run into most arguments of <code>rhwatch</code>. Most of the arguments
+of <code>rhwatch</code> function have been introduced in the It consists of  several 
 arguments, such as <code>map</code>, <code>input</code>, <code>output</code>, <code>jobname</code>, <code>mapred</code>, <code>parameters</code>,<code>noeval</code> and 
 <code>readback</code>, most of which have been introduced in the <code>housing</code> extample. Here we have several new 
 arguments, like <code>parameters</code>, <code>jobname</code> and <code>noeval</code>. The argument <code>parameters</code> is a named list with 
@@ -1984,7 +2070,11 @@ timing[[2]] = list(compute=compute, t=t)
 
 </code></pre>
 
-<h4>Performance Test Results</h4>
+</div>
+
+
+<div class='tab-pane' id='performance-test-results'>
+<h3>Performance Test Results</h3>
 
 <pre><code class="r">str(timing)
 </code></pre>
