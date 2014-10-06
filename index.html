@@ -1819,7 +1819,7 @@ p &lt;- 2^v - 1
 </code></pre>
 
 <p>Here we define an R object called <code>p</code>, the value of which equals to \(2^v - 1\). As introduced in the
-last part, <code>2^v</code> is the number of variables, so <code>p</code> is the number of the explanatory variables. We 
+last part, \(2^v\) is the number of variables, so <code>p</code> is the number of the explanatory variables. We 
 introduce <code>p</code> here to make the following codes much easier to write and understand.</p>
 
 <h4>Map</h4>
@@ -1834,13 +1834,13 @@ introduce <code>p</code> here to make the following codes much easier to write a
 </code></pre>
 
 <p>In this case, we don&#39;t have an existing data which is different from the <code>Housing Data</code> example. 
-Creating a dataset by randomly simulation is the part of the <code>map</code> job.The input keys and values are
-the same by default for the sumulating data step. The keys are numeric numbers 1, 2, ...., <em>R</em>, 
-where <em>R</em> is the number of the subsets. In our example, log2(R) = log2(N/M) = 12. They are the 
-elements of the list object <code>map.keys</code>, which in this case, <code>map.keys</code> and <code>map.values</code> would be the
-same. The output keys from the <code>map1</code> function are the same as the input keys. This is defined by the
-<code>map1</code> function. The output value for each key is a matrix with 2<sup>13</sup> rows and 2<sup>5</sup> columns. As we have
-explained before in the <code>Housing Data</code> example, the output key-value pairs from the <code>map</code> function 
+Creating a dataset by randomly simulation is the part of the <code>map</code> job. The input keys and values are
+the same by default for the sumulating data step. The keys are numeric numbers 1, 2, ...., <em>R</em>,  where
+<em>R</em> is the number of the subsets. In our example, log2(R) = log2(N/M) = 12. They are the elements of
+the list object <code>map.keys</code>, which in this case, <code>map.keys</code> and <code>map.values</code> would be the same. The 
+output keys from the <code>map1</code> function are the same as the input keys. This is defined by the <code>map1</code> 
+function. The output value for each key is a matrix with 2<sup>13</sup> rows and 2<sup>5</sup> columns. As we have
+explained in the <code>Housing Data</code> example, the output key-value pairs from the <code>map</code> function 
 are also called intermediate key-value pairs. So <code>rhcollect</code> emits these intermediate key-value 
 pairs.</p>
 
@@ -1848,7 +1848,7 @@ pairs.</p>
 
 <h4>Execution Function</h4>
 
-<pre><code class="r">dir.dm  = &quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;
+<pre><code class="r">dir.dm  = &quot;/ln/song273/tmp/multi.factor_n25/dm/n25v5m13&quot;
 mr1 &lt;- rhwatch(
  map      = map1,
  input    = c(2^(n-m),12),
@@ -1864,88 +1864,67 @@ mr1 &lt;- rhwatch(
 
 <p>We have introduced the <code>rhwatch</code> function before. In this case, <code>rhwatch</code> function will submit our 
 MapReduce jobs to finish the data generation part and write the subsets to HDFS. There are three types
-of the <code>input</code> as Text file input, Sequence file input and lapply input. For <code>Housing Data</code> example,
-the <code>input</code> type is Text file input and in our performance example, the type of <code>input</code> is lapply 
-input because we are generating numeric data. The argument <code>input</code> in our performance test example 
-is a vector consisting of two elements. The first element specifies the input key would be from 1 to 
-\(2^(n-m)\) for <code>map1</code> function. Also, it specifies how many tasks you would like Hadoop MapReduce
-Framework to run because each task conresponds to one key-value pair. In our performance test example,
-each task is to generate a subset with 2<sup>13</sup> rows and 2<sup>5</sup> columns. The second element of the vector 
-<code>input</code> specifies the numbers of mappers you would like to use. So each mapper would run \(2^(n-m)/12\)
-tasks, where <code>12</code> is the value of the second element of <code>input</code>. So the value of the second element
-would definitely affect the performance test and it is worthy to carry out an experiment to test its
-effect. </p>
+of the <code>input</code> as Text file input, Sequence file input and lapply input. The first two types of input
+have been introduced in the <code>Housing Data</code> example. And in our performance example, the type of 
+<code>input</code> is lapply input because we are generating numeric data. The argument <code>input</code> in our 
+performance test example is a vector consisting of two elements. The first element specifies the 
+input key would be from 1 to \(2^(n-m)\) for <code>map1</code> function. Also, it specifies how many tasks you 
+would like Hadoop MapReduce Framework to run because each task conresponds to one key-value pair. 
+In our performance test example, each task is to generate a subset with 2<sup>13</sup> rows and 2<sup>5</sup> columns. 
+The second element of the vector <code>input</code> specifies the numbers of mappers you would like to use. So 
+each mapper would run \(2^(n-m)/12\) tasks, where <code>12</code> is the value of the second element of <code>input</code>. 
+So the value of the second element would definitely affect the performance test and it is worthy to 
+carry out an experiment to test its effect. </p>
 
-<p>Once you try the <code>Housing Data</code> example, you have run into most arguments of <code>rhwatch</code>. Most of the arguments
-of <code>rhwatch</code> function have been introduced in the It consists of  several 
-arguments, such as <code>map</code>, <code>input</code>, <code>output</code>, <code>jobname</code>, <code>mapred</code>, <code>parameters</code>,<code>noeval</code> and 
-<code>readback</code>, most of which have been introduced in the <code>housing</code> extample. Here we have several new 
-arguments, like <code>parameters</code>, <code>jobname</code> and <code>noeval</code>. The argument <code>parameters</code> is a named list with 
-parameters to be passed to a mapreduce job. It is an very important argument because it passes all 
-the possible values we will need in the Hadoop MapReduce jobs to HDFS. in our case, we specify the 
-values of <code>m</code> and <code>p</code> in the front end R, but Hadoop doesn&#39;t have these values. So the argument 
-<code>parameter</code> will packages <code>m</code> and <code>p</code> as a list and distribute it to HDFS.  The argument <code>jobname</code> is
-not neccesary to be set. It is the name of the job, which is visible on the Jobtracker website. If 
-not provided, Hadoop MapReduce uses the default name job_date_time_number e.g. job_201007281701_0274.
-If the argument <code>noeval</code> is set to be &#39;TRUE&#39;, then the Hadoop MapReduce job will not run, just return
-the job object. </p>
+<p>Once you try the <code>Housing Data</code> example, you have run into most arguments of <code>rhwatch</code>. There are some
+arguments of <code>rhwatch</code> are not been used at all which means they don&#39;t have a default value such as 
+the argument <code>parameters</code>.  But in some cases, they are very important. The argument <code>parameters</code> is
+a list with parameters to be passed to a mapreduce job. It is an very important argument because it 
+passes all the possible values we will need in the Hadoop MapReduce jobs to HDFS. in our case, we 
+specify the values of <code>m</code> and <code>p</code> in the front end R, but Hadoop doesn&#39;t have these values in the 
+back end. So the argument <code>parameter</code> will packages <code>m</code> and <code>p</code> as a list and distribute it to HDFS.
+The argument <code>jobname</code> is not neccesary to be set. It is the name of the job, which is visible on 
+the Jobtracker website. If not provided, Hadoop MapReduce uses the default name job_date_time_number
+e.g. job_201007281701_0274.</p>
 
-<p>We need to talk about more about the input type.</p>
+<pre><code>[Sun Oct  5 22:30:58 2014] Name:/ln/song273/tmp/multi.factor_n25/dm/n25v5m13 Job: job_201405301308_5050  State: RUNNING Duration: 30.455
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_5050
+             pct numtasks pending running complete killed failed_attempts
+map    0.9999999       12       0      12        0      0               0
+reduce 0.0000000        0       0       0        0      0               0
+       killed_attempts
+map                  0
+reduce               0
+Waiting 5 seconds
 
-<p>Instead, the <code>rhex</code> function will submit the MapReduce job to the Hadoop MapReduce framework. The 
-following is the output of the last R command:</p>
-
-<pre><code>Saving 3 parameters to /tmp/rhipe-temp-params-9c1baeab3c1733577290e65dd92fce78 (use rhclean to delete all temp files)
 </code></pre>
 
-<p>The <code>t</code> is the time needed by Hadoop to finish the generating step and the unit of <code>t</code> is second.</p>
+<p>Our subsets have been created and are saved on HDFS now. We will use <code>rhls()</code> to see more details 
+about files on HDFS.</p>
 
-<pre><code class="r">t
+<pre><code class="r">rhls(&quot;/ln/song273/tmp/multi.factor_n25/dm/n25v5m13&quot;)
 </code></pre>
 
-<pre><code>[1] 21.847
+<pre><code>   permission   owner      group     size          modtime
+1  -rw-r--r-- song273 supergroup        0 2014-10-05 22:32     /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/_SUCCESS
+2  drwxrwxrwt song273 supergroup        0 2014-10-05 22:30        /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/_logs
+3  -rw-r--r-- song273 supergroup   690 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00000
+4  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00001
+5  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00002
+6  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00003
+7  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00004
+8  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00005
+9  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00006
+10 -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00007
+11 -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00008
+12 -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00009
+13 -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00010
+14 -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00011
+
 </code></pre>
 
-<p>It is pretty fast to generate 2 GB data. Our  datasets have been created and are saved on HDFS now.
-We can see more details about the files on HDFS by <code>rhls()</code>.</p>
-
-<pre><code class="r">rhls(&quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;)
-</code></pre>
-
-<pre><code>   permission   owner      group     size          modtime                                                      file
-1  -rw-r--r-- song273 supergroup        0 2014-10-02 22:36     /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/_SUCCESS
-2  drwxrwxrwt song273 supergroup        0 2014-10-02 22:36        /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/_logs
-3  -rw-r--r-- song273 supergroup   178 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00000
-4  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00001
-5  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00002
-6  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00003
-7  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00004
-8  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00005
-9  -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00006
-10 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00007
-11 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00008
-12 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00009
-13 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00010
-14 -rw-r--r-- song273 supergroup   170 mb 2014-10-02 22:36 /ln/song273/tmp/multi.factor_n23/dm/n23v5m13/part-m-00011
-</code></pre>
-
-<p>Comments: give description of the first two files. As we can see from the output, the size for one 
-output file is 170 mb. It would be impractical to read the whole data sets from HDFS to the node
-memory. We can only read one file from HDFS by specify the argument <code>max</code> of RHIPE function 
-<code>rhread</code> equals to 1. Then we will use R function <code>str</code> to explore the structure.</p>
-
-<pre><code class="r">a  = rhread(&quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;,max = 1)
-str(a)
-</code></pre>
-
-<pre><code>List of 1
- $ :List of 2
-  ..$ : num 936
-  ..$ : num [1:8192, 1:32] 0.0803 -1.5415 -1.1148 1.8888 1.9351 ...
-</code></pre>
-
-<p>So &#39;a&#39; is a list with two elements key and value. The key is one random number between 1 and 2<sup>10.</sup> 
-The value is a 8192 * 32 matrix.</p>
+<p>It generates 12 files with ending name &quot;00000&quot; to &quot;00011&quot;. Most of their size is 682 Mb. Each file
+consists of \(2^12 / 12\) subsets. </p>
 
 </div>
 
@@ -1962,25 +1941,25 @@ subset estimates and computing the means. However, we cannot measure <strong>L</
 
 <h4>The First Kind Of Elapsed Time -- <strong>O</strong></h4>
 
-<p>First, we will initialize a list called <code>timing</code> to store these two different kinds of elapsed time
-and create a numeric object <code>compute</code> to lable <strong>O</strong> and <strong>T</strong> seperately.</p>
-
 <pre><code class="r">timing   &lt;- list()
 compute  &lt;- &quot;O&quot;
 </code></pre>
+
+<p>First, we will initialize a list called <code>timing</code> to store these two different kinds of elapsed time
+and create a numeric object <code>compute</code> to lable <strong>O</strong> and <strong>T</strong> seperately. </p>
 
 <h5>Map</h5>
 
 <pre><code class="r">map2 &lt;- expression({})
 </code></pre>
 
-<p>It is interesting to notice that <code>map2</code> is an expression with no command. That&#39;s because we only want
-to read the data from HDFS to the node memory without other operations and record the reading time .</p>
+<p>It is important to notice that <code>map2</code> is an expression with no command. That&#39;s because we only want
+to read the data from HDFS to the front end without other operations and then record the reading time .</p>
 
 <h5>Execution Function</h5>
 
-<pre><code class="r">dir.dm  &lt;- &quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;
-dir.nf  &lt;- &quot;/ln/song273/tmp/multi.factor_n23/nf/n23v5m13&quot;
+<pre><code class="r">dir.dm  &lt;- &quot;/ln/song273/tmp/multi.factor_n25/dm/n25v5m13&quot;
+dir.nf  &lt;- &quot;/ln/song273/tmp/multi.factor_n25/nf/n25v5m13&quot;
 mr2 &lt;- rhwatch(
  map      = map2,
  input    = dir.dm,
@@ -2001,17 +1980,22 @@ timing[[1]] &lt;- list(compute=compute,t=t)
 
 </code></pre>
 
+<p>The <code>noeval</code> is another very useful argument for <code>rhwatch</code>. By default it is set to be &#39;FALSE&#39;.
+In our example, we set <code>noeval</code> equals to &#39;TRUE&#39;, which means the  Hadoop MapReduce job will not run,
+and <code>rhwatch</code> just return an R object that contains all the information required by Rhipe to run a 
+MapReduce job. Instead, the <code>rhex</code> function will submit the MapReduce job to the Hadoop MapReduce 
+framework. </p>
+
 <p>The <code>dir.dm</code> and <code>dir.nf</code> specify the <code>input</code> and <code>output</code> argument of <code>rhwatch</code> function. We need 
 to talk more about the argument <code>rhipe_map_buff_size</code> later. So <code>t</code> records the first type elapsed 
-time <strong>O</strong> and we save the value of <code>t</code> to the <code>timing</code> list. Also, we need to explain the meaning
-of saving 1 parameter and the file.</p>
+time <strong>O</strong> and we save the value of <code>t</code> to the <code>timing</code> list. </p>
 
 <h4>The Second Kind of Elapsed Time -- <strong>T</strong></h4>
 
-<p>We first specify the value of <code>compute</code> to identify the second kind of elapsed time <strong>T</strong>.</p>
-
 <pre><code class="r">compute  &lt;- &quot;T&quot;
 </code></pre>
+
+<p>We first specify the value of <code>compute</code> to identify the second kind of elapsed time <strong>T</strong>.</p>
 
 <h5>Map</h5>
 
@@ -2023,8 +2007,12 @@ of saving 1 parameter and the file.</p>
 })
 </code></pre>
 
-<p>The input key for map3 function is still the same as before: 1, 2, ..., 2<sup>10</sup> and the input value is 
-a dataframe with 2<sup>13</sup> rows and 2<sup>5</sup> collumns. The </p>
+<p>The input to our <code>map3</code> is the final output we created in the previous section which the key is from
+1 to \(2^13\) and the input value is a dataframe with \(2^13\) rows and \(2^5\) collumns. For each subset,
+we apply the same action : take the coefficient of the logistic regression for the subset. They are 
+stored in a single row dataframe to be recombined in the reduce step below. This single row dataframe
+has <code>p</code> collumns. We use the same key for all the subsets so that they wil appear together in the 
+reduce step. As before, <code>rhcollect</code> emits intermediate key-value pairs.</p>
 
 <h5>Reduce</h5>
 
@@ -2043,10 +2031,18 @@ a dataframe with 2<sup>13</sup> rows and 2<sup>5</sup> collumns. The </p>
 )
 </code></pre>
 
+<p>In the reduce step, we recombine the coefficients from different subset together and sum them up by 
+collumn using R function <code>colSums</code> and and get the estimate of the coefficients by the sample mean.</p>
+
+<p>The input key is the placeholder value 1, which is left unchanged as the output key. The input values
+are the single row data frames for each subset, and the output values is the single row data frames
+consisting of the mean estimate for the coefficients. In <code>post</code>, we use <code>rhcollect</code> to emit the final
+output so that it will be written to HDFS.</p>
+
 <h5>Exectution Function</h5>
 
-<pre><code class="r">dir.dm  = &quot;/ln/song273/tmp/multi.factor_n23/dm/n23v5m13&quot;
-dir.gf  = &quot;/ln/song273/tmp/multi.factor_n23/gf/n23v5m13&quot;
+<pre><code class="r">dir.dm  = &quot;/ln/song273/tmp/multi.factor_n25/dm/n25v5m13&quot;
+dir.gf  = &quot;/ln/song273/tmp/multi.factor_n25/gf/n25v5m13&quot;
 
 mr3 &lt;- rhwatch(
   map      = map3,
@@ -2066,9 +2062,12 @@ t &lt;- as.numeric(system.time({rhex(mr3, async=FALSE)})[3])
 timing[[2]] = list(compute=compute, t=t)
 </code></pre>
 
-<pre><code>Saving 2 parameters to /tmp/rhipe-temp-params-17085d733c859950748a8598d1fc5222 (use rhclean to delete all temp files)
-
+<pre><code>Saving 2 parameters to /tmp/rhipe-temp-params-4c3905d5e34c9689c92490e17cb6162b (use rhclean to delete all temp files)
 </code></pre>
+
+<p>After the job completes successfully, we record the whole elapsed time <strong>T</strong> and save it to the R 
+object <code>t</code>. Then we will save <code>t</code> and its label <strong>T</strong> as the second component of list <code>timing</code>. Till
+now, we have finished the single run of the cluster performance test.</p>
 
 </div>
 
@@ -2076,25 +2075,33 @@ timing[[2]] = list(compute=compute, t=t)
 <div class='tab-pane' id='performance-test-results'>
 <h3>Performance Test Results</h3>
 
-<pre><code class="r">str(timing)
+<pre><code class="r">library(plyr)
+df.timing &lt;- ldply(timing, as.data.frame)
+df.timing
 </code></pre>
 
-<pre><code>List of 2
- $ :List of 2
-  ..$ compute: chr &quot;O&quot;
-  ..$ t      : num 19.6
- $ :List of 2
-  ..$ compute: chr &quot;T&quot;
-  ..$ t      : num 40.7
+<pre><code> compute       t
+1       O  55.120
+2       T 147.923
+
 </code></pre>
 
-<p>The elapsed time <strong>O</strong> we need to read the datasets from HDFS to the node memory is 19.6 
-seconds and the whole elapsed time <strong>T</strong> which consists of the reading time and the analyzing time 
-is 40.7. That result is impressive! The cluster we use here to run the test is a very small one 
-with two nodes and 64 GB memory in total. You can definitely use RHIPE computation environment to 
-generalize this one sing run  to a full cluster performance test. If you want to explore more about
-the performance test, you can go to the <a href="http://tesseradata.org/#">Tessera website</a>, 
-which is an open source environment for large complex data analysis.</p>
+<p>We can change the structure of <code>timing</code> from list to a dataframe and rename it <code>df.timing</code>. The data
+frame structure can make the analysis much easier than the list structure. The R function <code>ldply</code> can
+easily finish the converting. Also in your future cluster performance test, you are also recommended
+to change your data structure from list to dataframe to do the analysis. The reason we define <code>timing</code>
+as a list is because for the cluster performance test, you will have a lot of factors to consider, 
+like the number of the sample observations, the subset size, the number of vairables and so on, and
+<code>list</code> structure will make the saving process much easier. And after the performance test, you can 
+easily change a list to a dataframe by <code>ldply</code>.</p>
+
+<p>As we can see from the <code>df.timing</code> dataframe, the elapsed time <strong>O</strong> we need to read the datasets 
+from HDFS to the front end is 55.12 seconds and the whole elapsed time <strong>T</strong> which consists of the 
+reading time and the analyzing time is 147.923 seconds, which is less than 2.5 mins. That result is 
+impressive! The cluster we use here to run the test is a very small one with two nodes and 64 GB 
+memory in total. You can definitely use RHIPE computation environment to generalize this one sing 
+run to a full cluster performance test. If you want to explore more about the performance test, you 
+can check the reference paper for more details. </p>
 
 </div>
 
