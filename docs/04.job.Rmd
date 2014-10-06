@@ -6,11 +6,11 @@ section, we'll introduce two new functions to do just that.
 First, let's submit a simple job:
 
 ```{r eval=FALSE, tidy=FALSE}
-map6 <- expression(
+map13 <- expression(
   while(TRUE) {}
 )
-mr6 <- rhwatch(
-  map      = map6,
+mr13 <- rhwatch(
+  map      = map13,
   input    = rhfmt("/ln/tongx/housing/housing.txt", type = "text"),
   output   = rhfmt("/ln/tongx/housing/tmp", type = "sequence"),
   mapred   = list(

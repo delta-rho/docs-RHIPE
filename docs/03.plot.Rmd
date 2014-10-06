@@ -8,29 +8,30 @@ the subsets as well as the whole dataset.
 For each subset by state, we would like to know what the number of sold units looks like over time
 conditional on county. So we will plot the sold units against time for each state. When we are 
 facing a relative small data set in base R, this plotting for each state has to be done either using
-a for loop or some other package like `plyr` in base R. But when we are facing a large data set that
+a for loop or some other package like `plyr` package. But when we are facing a large data set that
 cannot be fit into the memory, previous visualization method will fail easily. 
 
 In `Rhipe`, on the other hand, we can specify multiple tasks, and in each tasks we can plot one or
 multiple plots. Later on we will see, in our housing example, we will specify 12 tasks to conduct 
-total 49 plots, one for each subset by state. So each task will handle about 4 plots which will 
+total 49 plots, one plot for state. So each task will handle about 4 plots which will 
 dramatically decreasing the total time to finish these 49 plots comparing with doing this using for
 loop.
 
 #### Time Series Plot of Sold Units ####
 
 The first type of plot we are going to plot is the time series plot of number of sold units condition
-on county for each state. First of all, let us have a look at what the plot is.
+on county for each state. First of all, let us have a look at what the plot looks like.
 
 [Time series plot of number of units sold for North Carolina State](./plots/time.vs.unit.NC.pdf).
 
 [Time series plot of number of units sold for Texas State](./plots/time.vs.unit.TX.pdf).
 
-The first plot is the time series plot of the number of sold units conditional on county in each state.
-The plotting function we are going to use is in a R package named `lattice`. Xiaosu will add more words ...
+For each state we created the time series plot of the number of sold units conditional on county.
+The plotting function we are going to use is in a R package named `lattice` which is a very powerful
+visulization method in R. 
 
 ```{r eval=FALSE, tidy=FALSE}
-map6 <- expression({
+map11 <- expression({
   lapply(seq_along(map.keys), function(r) {
     value <- subset(map.values[[r]], !is.na(as.numeric(units)))
     if(nrow(value) != 0) {
@@ -43,7 +44,9 @@ map6 <- expression({
 Xiaosu will add more words here to describe the details about the code.
 
 ```{r eval=FALSE, tidy=FALSE}
-reduce6 <- expression(
+ylab <- "Log of Number of Sold Units(log base 2)"
+xlab <- "Month"
+reduce11 <- expression(
   pre = {
     onestate <- data.frame()
   },
@@ -51,24 +54,23 @@ reduce6 <- expression(
     onestate <- do.call(rbind, reduce.values)
   },
   post = {
-    onestate$date <- as.POSIXct(
-      x      = strptime(onestate$date, format = "%Y-%m-%d"), 
-      format = '%Y%m%d', 
-      tz     = ""
-    )
     trellis.device(pdf, 
       file  = paste("./tmp/time.vs.unit", reduce.key, "pdf", sep="."), 
       color = TRUE,
       paper = "legal"
     )
     b <- xyplot(
-      log2(as.numeric(units)) ~ date | FIPS,
+      log2(as.numeric(units)) ~ as.numeric(date) | FIPS,
       data   = onestate,
       layout = c(4, 3),
       cex    = 0.5,
       pch    = 16,
-      xlab   = "Time",
-      ylab   = "Log of Number of Sold Units(log base 2)",
+      scales = list(
+        x = list(tick.number = 5),
+        y = list(relation = "sliced") 
+      ),
+      xlab   = xlab,
+      ylab   = ylab,
       main   = reduce.key,
     )
     print(b)
@@ -79,23 +81,27 @@ reduce6 <- expression(
 
 
 ```{r eval=FALSE, tidy=FALSE}
-mr6 <- rhwatch(
-  map       = map6,
-  reduce    = reduce6,
-  input     = rhfmt("/ln/tongx/housing/byState", type = "sequence"),
-  output    = rhfmt("/ln/tongx/housing/timeplotbystate", type = "sequence"),
-  setup     = expression(
+mr11 <- rhwatch(
+  map        = map11,
+  reduce     = reduce11,
+  input      = rhfmt("/ln/tongx/housing/byState", type = "sequence"),
+  output     = rhfmt("/ln/tongx/housing/timeplotbystate", type = "sequence"),
+  setup      = expression(
     map = {
     },
-    reduce = {
+    reduce   = {
       library(lattice)
     }
-  ),
-  mapred    = list( 
+  ),
+  parameters = list(
+    xlab = xlab,
+    ylab = ylab
+  ),
+  mapred     = list( 
     mapred.reduce.tasks = 12
   ),
-  copyFiles = TRUE,
-  readback  = FALSE
+  copyFiles  = TRUE,
+  readback   = FALSE
 )
 ```
 
@@ -137,7 +143,7 @@ rhget("/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf", "./")
 [Time series plot of list price for Virginia State](./plots/list.vs.time.VA.pdf).
 
 ```{r eval=FALSE, tidy=FALSE}
-map7 <- expression({
+map12 <- expression({
   lapply(seq_along(map.keys), function(r) {
     value <- subset(
       map.values[[r]], !is.na(as.numeric(list))
@@ -151,7 +157,9 @@ map7 <- expression({
 
 
 ```{r eval=FALSE, tidy=FALSE}
-reduce7 <- expression(
+ylab <- "Log of List Price (log base 2 dollars per square foot)"
+xlab <- "Month"
+reduce12 <- expression(
   pre = {
     onestate <- data.frame()
   },
@@ -159,27 +167,23 @@ reduce7 <- expression(
     onestate <- do.call(rbind, reduce.values)
   },
   post = {
-    onestate$date <- as.POSIXct(
-      x      = strptime(onestate$date, format = "%Y-%m-%d"), 
-      format = '%Y%m%d', 
-      tz     = ""
-    )
     trellis.device(pdf,
       file  = paste("./tmp/list.vs.time", reduce.key, "pdf", sep="."), 
       color = TRUE,
       paper = "legal"
     )
     b <- xyplot(
-      log2(as.numeric(list)) ~ date | FIPS,
+      log2(as.numeric(list)) ~ as.numeric(date) | FIPS,
       data   = onestate,
       layout = c(4,3),
       cex    = 0.5,
       pch    = 16,
-      scale  = list(
+      scales = list(
+        x = list(tick.number = 7),
         y = list(relation = "sliced") 
       ),
-      xlab   = "Time",
-      ylab   = "Log of List Price (log base 2 dollars per square foot)",
+      xlab   = xlab,
+      ylab   = ylab,
       main   = reduce.key, 
     )
     print(b)
@@ -190,9 +194,9 @@ reduce7 <- expression(
 
 
 ```{r eval=FALSE, tidy=FALSE}
-mr7 <- rhwatch(
-  map       = map7,
-  reduce    = reduce7,
+mr12 <- rhwatch(
+  map       = map12,
+  reduce    = reduce12,
   input     = rhfmt("/ln/tongx/housing/byState", type = "sequence"),
   output    = rhfmt("/ln/tongx/housing/listplotbystate", type = "sequence"),
   setup     = expression(
@@ -200,6 +204,10 @@ mr7 <- rhwatch(
       library(lattice)
     }
   ),
+  parameters = list(
+    xlab = xlab,
+    ylab = ylab
+  ),
   mapred    = list( 
     mapred.reduce.tasks = 12
   ),

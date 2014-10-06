@@ -103,12 +103,12 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#read-and-divide-by-time'>Read and Divide by Time</a>
+         <a target='_self' class='nav-not-header' href='#read-and-divide-by-month'>Read and Divide by Month</a>
       </li>
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#compute-total-sold'>Compute Total Sold</a>
+         <a target='_self' class='nav-not-header' href='#compute-total-sold-units'>Compute Total Sold Units</a>
       </li>
 
 
@@ -169,7 +169,7 @@ cluster administrator.</p>
 <p>Begin by connecting via ssh to the initiating R server from your laptop or desktop. Now you are sitting 
 on the initiating R server, then start an interactive R session. In later on sessions, we will mention 
 about a local R current working directory. Local here means on the front-end, not your laptop or desktop.
-So this working directory is on the initiating R server. All files like dataset, results, or plots you created will be transported between this working directory on the initiating R server and the HDFS on the
+So this working directory is on the initiating R server. All files like dataset, results, or plots you created will be transferred between this working directory on the initiating R server and the HDFS on the
 back-end. In summary, you will sit in front of your laptop starting an R session on initiating R server 
 and submitting <code>Rhipe</code> job which will be distributed to the back-end Hadoop servers.</p>
 
@@ -408,8 +408,8 @@ case, we&#39;ve specified 10 reduce tasks using <code>mapred.reduce.tasks</code>
 of key-value pairs corresponding to the 49 states in our data set, 10 at a time will be processed
 in parallel.  Specifying 10 reduce tasks also means that the output written to HDFS will be broken
 into 10 files (we&#39;ll come back to this point in the next section).  Finally, <code>readback = FALSE</code> 
-tells Rhipe not to read the final output from HDFS into our interactive R session.  We&#39;ll do that
-with a separate command. </p>
+tells Rhipe not to read the final output from HDFS into global environment of our interactive R 
+session.  We&#39;ll do that with a separate command. </p>
 
 <pre><code>Saving 1 parameter to /tmp/rhipe-temp-params-bbb96e029776c9953476a54c74d9eaf7 (use rhclean to delete all temp files)
 [Thu Sep 18 22:25:52 2014] Name:2014-09-18 22:25:52 Job: job_201405301308_4709  State: PREP Duration: 0.203
@@ -887,8 +887,8 @@ can speed up this job and future jobs which read its output.</p>
 </div>
 
 
-<div class='tab-pane' id='read-and-divide-by-time'>
-<h3>Read and Divide by Time</h3>
+<div class='tab-pane' id='read-and-divide-by-month'>
+<h3>Read and Divide by Month</h3>
 
 <p>Same as before, we can create the subsets of dataset divided by time variable. But here one of
 potential problem that we may face is that what if some of the subsets are very large? This is
@@ -902,7 +902,7 @@ issue is that we are going to create multiple subsets for each month. </p>
 
 <h4>Map</h4>
 
-<pre><code class="r">map6 &lt;- expression({
+<pre><code class="r">map5 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
     line = strsplit(map.values[[r]], &quot;,&quot;)[[1]]
     key &lt;- line[[4]]
@@ -918,7 +918,7 @@ of month, and rest of columns saved as a data frame was collected as correspondi
 
 <h4>Reduce</h4>
 
-<pre><code class="r">reduce6 &lt;- expression(
+<pre><code class="r">reduce5 &lt;- expression(
   pre = {
   },
   reduce = {
@@ -956,9 +956,9 @@ expression.</p>
 
 <h4>Execution Function</h4>
 
-<pre><code class="r">mr6 &lt;- rhwatch(
-  map      = map6,
-  reduce   = reduce6,
+<pre><code class="r">mr5 &lt;- rhwatch(
+  map      = map5,
+  reduce   = reduce5,
   input    = rhfmt(&quot;/ln/tmp/housing/housing.txt&quot;, type = &quot;text&quot;),
   output   = rhfmt(&quot;/ln/tmp/housing/bytime&quot;, type = &quot;sequence&quot;),
   mapred   = list(
@@ -1002,51 +1002,12 @@ our <code>reduce</code> in reduce expression six times for each key.</p>
 </div>
 
 
-<div class='tab-pane' id='compute-total-sold'>
-<h3>Compute Total Sold</h3>
+<div class='tab-pane' id='compute-total-sold-units'>
+<h3>Compute Total Sold Units</h3>
 
-<p>We then would like to calculate the total sold units for every month over all states.</p>
-
-<h4>Without Combiner</h4>
-
-<pre><code class="r">map7 &lt;- expression({
-  lapply(seq_along(map.keys), function(r) {
-    key &lt;- map.keys[[r]]
-    value &lt;- sum(as.numeric(map.values[[r]]$units), na.rm = TRUE)
-    rhcollect(key, value)
-  })
-})
-reduce7 &lt;- expression(
-  pre = {
-    count &lt;- 0
-  },
-  reduce = {
-    count &lt;- count + sum(unlist(reduce.values), na.rm = TRUE)
-  },
-  post = {
-    rhcollect(reduce.key, count)
-  }
-)
-</code></pre>
-
-<p>In the map expression, we calculated the sum of the sold units for each key</p>
-
-<pre><code class="r">mr7 &lt;- rhwatch(
-  map       = map7,
-  reduce    = reduce7,
-  input     = rhfmt(&quot;/ln/tmp/housing/bytime&quot;, type = &quot;sequence&quot;),
-  output    = rhfmt(&quot;/ln/tmp/housing/soldbytime&quot;, type = &quot;sequence&quot;),
-  mapred    = list(
-    mapred.reduce.tasks = 10
-  ),
-  jobname   = &quot;total sold unit for each month&quot;,
-  mon.sec   = 10,
-  combiner  = FALSE,
-  readback  = FALSE
-)
-</code></pre>
-
-<p>The default for combiner is <code>FALSE</code>, which is what we have used before.</p>
+<p>We then would like to calculate the total sold units for every month based on the month division.
+One thing we should keep in mind about the month division is that we have 6 subsets for each month.
+And this will be the main reason that we want to consider one of the optimization method in <code>Rhipe</code>.</p>
 
 <h4>Combiner as an Optimization</h4>
 
@@ -1075,15 +1036,72 @@ those in the function rhcollect() in your reduce expression. For example, if you
 and a numeric vector as the value in the map expression, you need to pass a string as key and a numeric 
 vector as the value in the reduce expression as well.</p>
 
-<p>We will demonstrate the usage of combiners through the following examples.</p>
+<p>We will demonstrate the usage of combiners through the following examples. First, let us look at how to 
+achieve this task without using a combiner.</p>
+
+<h4>Without Combiner</h4>
+
+<pre><code class="r">map6 &lt;- expression({
+  lapply(seq_along(map.keys), function(r) {
+    key &lt;- map.keys[[r]]
+    value &lt;- sum(as.numeric(map.values[[r]]$units), na.rm = TRUE)
+    rhcollect(key, value)
+  })
+})
+</code></pre>
+
+<p>In the map expression, we calculated the sum of the sold units for each subset. Since month index is the
+input key, and we have 6 subsets for each key, there will be 6 key-value pairs for each month. The value
+of each key-value pair is the summation of number of sold units in corresponding subset. So totally there
+will be 396 intermediate key-value pairs as output of map expression.</p>
+
+<pre><code class="r">reduce6 &lt;- expression(
+  pre = {
+    count &lt;- 0
+  },
+  reduce = {
+    count &lt;- count + sum(unlist(reduce.values), na.rm = TRUE)
+  },
+  post = {
+    rhcollect(reduce.key, count)
+  }
+)
+</code></pre>
+
+<p>Then in the reduce expression, we grouped all 6 summation for each unique key(month index), and calculated
+the overall summation for each month</p>
+
+<pre><code class="r">mr6 &lt;- rhwatch(
+  map       = map6,
+  reduce    = reduce6,
+  input     = rhfmt(&quot;/ln/tongx/housing/bytime&quot;, type = &quot;sequence&quot;),
+  output    = rhfmt(&quot;/ln/tongx/housing/soldbytime&quot;, type = &quot;sequence&quot;),
+  mapred    = list(
+    mapred.reduce.tasks = 10
+  ),
+  jobname   = &quot;total sold unit for each month&quot;,
+  mon.sec   = 10,
+  combiner  = FALSE,
+  readback  = FALSE
+)
+</code></pre>
+
+<p>The default for combiner is <code>FALSE</code>, which is what we have used before. We also specified two more
+arguments in <code>rhwatch</code> which are <code>mon.sec</code> and <code>jobname</code>. Both of them are easy to understand. <code>mon.sec</code>
+is a numeric integer which specifies how often in terms of second the job status will be reported in R after
+the job is submitted. As we seen in &quot;Division by State&quot; session, after job is submitted, we would see job
+status every 5 seconds which is the default value of <code>mon.sec</code>. <code>jobname</code> is a string that we can used to 
+name our job. The default job name is the date and time when job is submitted.</p>
 
 <h4>With Combiner</h4>
 
-<pre><code class="r">mr8 &lt;- rhwatch(
-  map       = map7,
-  reduce    = reduce7,
-  input     = rhfmt(&quot;/ln/tmp/housing/bytime&quot;, type = &quot;sequence&quot;),
-  output    = rhfmt(&quot;/ln/tmp/housing/soldbytime.combiner&quot;, type = &quot;sequence&quot;),
+<p>Now let us see how to do the same task with combiner.</p>
+
+<pre><code class="r">mr7 &lt;- rhwatch(
+  map       = map6,
+  reduce    = reduce6,
+  input     = rhfmt(&quot;/ln/tongx/housing/bytime&quot;, type = &quot;sequence&quot;),
+  output    = rhfmt(&quot;/ln/tongx/housing/soldbytime.combiner&quot;, type = &quot;sequence&quot;),
   mapred    = list(
     mapred.reduce.tasks = 10
   ),
@@ -1094,13 +1112,31 @@ vector as the value in the reduce expression as well.</p>
 )
 </code></pre>
 
-<pre><code class="r">rst.comb &lt;- rhread(&quot;/ln/tmp/housing/soldbytime.combiner&quot;)
-rst &lt;- rhread(&quot;/ln/tmp/housing/soldbytime&quot;)
+<p>The map and reduce expression for combiner situation will be exactly same as the situation without combiner.
+The only difference is that we changed the <code>combiner</code> argument in <code>rhwatch</code> to be <code>TRUE</code> to active the 
+combiner. So what happened when combiner was active was nothing but each mapper(server or node that ran map
+expression) run the reduce expression before it generated intermediate key-value pairs.</p>
+
+<p>For this example,
+one of the mapper may generated two out of six summation for one month. Without combiner, these two 
+summation will be transferred with other four summation which calculated on another mapper to one reducer
+(server or node that ran reduce expression). With combiner, however, these two summation will be first 
+summed up together then only one key-value pairs will be transferred to the reducer instead of two. This
+will be a huge difference with respect to transferring time when we have very many or very large size of 
+values related to one key.</p>
+
+<p>Finally, we can double check if combiner active or not will effect the final result.</p>
+
+<pre><code class="r">rst.comb &lt;- rhread(&quot;/ln/tongx/housing/soldbytime.combiner&quot;)
+rst &lt;- rhread(&quot;/ln/tongx/housing/soldbytime&quot;)
 identical(rst, rst.comb)
 </code></pre>
 
 <pre><code>[1] TRUE
 </code></pre>
+
+<p>We can see that the final results from these two jobs are identical. We also can convert the results
+to be a data frame with following code:</p>
 
 <pre><code class="r">df &lt;- data.frame(  
   time  = sapply(rst, &quot;[[&quot;, 1),
@@ -1191,7 +1227,7 @@ county, which is still on the HDFS.</p>
 
 <h4>Map</h4>
 
-<pre><code class="r">map5 &lt;- expression({
+<pre><code class="r">map9 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
     key &lt;- attr(map.values[[r]], &quot;state&quot;)
     value &lt;- map.values[[r]]
@@ -1210,7 +1246,7 @@ we also want to make the FIPS code and county name columns of our data frame aga
 
 <h4>Reduce</h4>
 
-<pre><code class="r">reduce5 &lt;- expression(
+<pre><code class="r">reduce9 &lt;- expression(
   pre = {
     combine &lt;- data.frame()
   },
@@ -1229,9 +1265,9 @@ for each line of the text file, but now there is one for each county.</p>
 
 <h4>Execution Function</h4>
 
-<pre><code class="r">mr5 &lt;- rhwatch(
-  map      = map5,
-  reduce   = reduce5,
+<pre><code class="r">mr9 &lt;- rhwatch(
+  map      = map9,
+  reduce   = reduce9,
   input    = rhfmt(&quot;/ln/tongx/housing/byCounty&quot;, type = &quot;sequence&quot;),
   output   = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
   mapred   = list( 
@@ -1281,7 +1317,7 @@ Map file is another type of file can be saved on HDFS besides text and sequence 
 still trying to get subsets for each state based on the subsets for each county. This time we would like to 
 be able to access the subset of data for Indiana state only. The code is showed as following:</p>
 
-<pre><code class="r">map5 &lt;- expression({
+<pre><code class="r">map10 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
     key &lt;- attr(map.values[[r]], &quot;state&quot;)
     county &lt;- attr(map.values[[r]], &quot;county&quot;)
@@ -1291,7 +1327,7 @@ be able to access the subset of data for Indiana state only. The code is showed 
     rhcollect(key, value)
   })
 })
-reduce5 &lt;- expression(
+reduce10 &lt;- expression(
   pre = {
     combine &lt;- data.frame()
   },
@@ -1302,9 +1338,9 @@ reduce5 &lt;- expression(
     rhcollect(reduce.key, combine)
   }
 )
-mr5 &lt;- rhwatch(
-  map      = map5,
-  reduce   = reduce5,
+mr10 &lt;- rhwatch(
+  map      = map10,
+  reduce   = reduce10,
   input    = rhfmt(&quot;/ln/tongx/housing/bycounty&quot;, type = &quot;sequence&quot;),
   output   = rhfmt(&quot;/ln/tongx/housing/countytostate.map&quot;, type = &quot;map&quot;),
   mapred   = list( 
@@ -1413,19 +1449,19 @@ the subsets as well as the whole dataset.</p>
 <p>For each subset by state, we would like to know what the number of sold units looks like over time
 conditional on county. So we will plot the sold units against time for each state. When we are 
 facing a relative small data set in base R, this plotting for each state has to be done either using
-a for loop or some other package like <code>plyr</code> in base R. But when we are facing a large data set that
+a for loop or some other package like <code>plyr</code> package. But when we are facing a large data set that
 cannot be fit into the memory, previous visualization method will fail easily. </p>
 
 <p>In <code>Rhipe</code>, on the other hand, we can specify multiple tasks, and in each tasks we can plot one or
 multiple plots. Later on we will see, in our housing example, we will specify 12 tasks to conduct 
-total 49 plots, one for each subset by state. So each task will handle about 4 plots which will 
+total 49 plots, one plot for state. So each task will handle about 4 plots which will 
 dramatically decreasing the total time to finish these 49 plots comparing with doing this using for
 loop.</p>
 
 <h4>Time Series Plot of Sold Units</h4>
 
 <p>The first type of plot we are going to plot is the time series plot of number of sold units condition
-on county for each state. First of all, let us have a look at what the plot is.</p>
+on county for each state. First of all, let us have a look at what the plot looks like.</p>
 
 <p><a href="./plots/time.vs.unit.NC.pdf">Time series plot of number of units sold for North Carolina State</a>.</p>
 
@@ -1434,7 +1470,7 @@ on county for each state. First of all, let us have a look at what the plot is.<
 <p>The first plot is the time series plot of the number of sold units conditional on county in each state.
 The plotting function we are going to use is in a R package named <code>lattice</code>. Xiaosu will add more words ...</p>
 
-<pre><code class="r">map6 &lt;- expression({
+<pre><code class="r">map11 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
     value &lt;- subset(map.values[[r]], !is.na(as.numeric(units)))
     if(nrow(value) != 0) {
@@ -1446,7 +1482,7 @@ The plotting function we are going to use is in a R package named <code>lattice<
 
 <p>Xiaosu will add more words here to describe the details about the code.</p>
 
-<pre><code class="r">reduce6 &lt;- expression(
+<pre><code class="r">reduce11 &lt;- expression(
   pre = {
     onestate &lt;- data.frame()
   },
@@ -1480,9 +1516,9 @@ The plotting function we are going to use is in a R package named <code>lattice<
 )
 </code></pre>
 
-<pre><code class="r">mr6 &lt;- rhwatch(
-  map       = map6,
-  reduce    = reduce6,
+<pre><code class="r">mr11 &lt;- rhwatch(
+  map       = map11,
+  reduce    = reduce11,
   input     = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
   output    = rhfmt(&quot;/ln/tongx/housing/timeplotbystate&quot;, type = &quot;sequence&quot;),
   setup     = expression(
@@ -1536,7 +1572,7 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
 
 <p><a href="./plots/list.vs.time.VA.pdf">Time series plot of list price for Virginia State</a>.</p>
 
-<pre><code class="r">map7 &lt;- expression({
+<pre><code class="r">map12 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
     value &lt;- subset(
       map.values[[r]], !is.na(as.numeric(list))
@@ -1548,7 +1584,7 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
 })
 </code></pre>
 
-<pre><code class="r">reduce7 &lt;- expression(
+<pre><code class="r">reduce12 &lt;- expression(
   pre = {
     onestate &lt;- data.frame()
   },
@@ -1585,9 +1621,9 @@ rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;
 )
 </code></pre>
 
-<pre><code class="r">mr7 &lt;- rhwatch(
-  map       = map7,
-  reduce    = reduce7,
+<pre><code class="r">mr12 &lt;- rhwatch(
+  map       = map12,
+  reduce    = reduce12,
   input     = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
   output    = rhfmt(&quot;/ln/tongx/housing/listplotbystate&quot;, type = &quot;sequence&quot;),
   setup     = expression(
@@ -1629,11 +1665,11 @@ section, we&#39;ll introduce two new functions to do just that. </p>
 
 <p>First, let&#39;s submit a simple job:</p>
 
-<pre><code class="r">map6 &lt;- expression(
+<pre><code class="r">map13 &lt;- expression(
   while(TRUE) {}
 )
-mr6 &lt;- rhwatch(
-  map      = map6,
+mr13 &lt;- rhwatch(
+  map      = map13,
   input    = rhfmt(&quot;/ln/tongx/housing/housing.txt&quot;, type = &quot;text&quot;),
   output   = rhfmt(&quot;/ln/tongx/housing/tmp&quot;, type = &quot;sequence&quot;),
   mapred   = list(

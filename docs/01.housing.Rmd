@@ -228,8 +228,8 @@ case, we've specified 10 reduce tasks using `mapred.reduce.tasks`.  This means t
 of key-value pairs corresponding to the 49 states in our data set, 10 at a time will be processed
 in parallel.  Specifying 10 reduce tasks also means that the output written to HDFS will be broken
 into 10 files (we'll come back to this point in the next section).  Finally, `readback = FALSE` 
-tells Rhipe not to read the final output from HDFS into our interactive R session.  We'll do that
-with a separate command. 
+tells Rhipe not to read the final output from HDFS into global environment of our interactive R 
+session.  We'll do that with a separate command. 
 
 ```
 Saving 1 parameter to /tmp/rhipe-temp-params-bbb96e029776c9953476a54c74d9eaf7 (use rhclean to delete all temp files)
@@ -715,7 +715,7 @@ head(meansByCounty[[1]][[2]])
 6 01113 70.92100       NaN    AL      Russell
 ```
 
-### Read and Divide by Time ###
+### Read and Divide by Month ###
 
 Same as before, we can create the subsets of dataset divided by time variable. But here one of
 potential problem that we may face is that what if some of the subsets are very large? This is
@@ -730,7 +730,7 @@ issue is that we are going to create multiple subsets for each month.
 #### Map ####
 
 ```{r eval=FALSE, tidy=FALSE}
-map6 <- expression({
+map5 <- expression({
   lapply(seq_along(map.keys), function(r) {
     line = strsplit(map.values[[r]], ",")[[1]]
     key <- line[[4]]
@@ -747,7 +747,7 @@ of month, and rest of columns saved as a data frame was collected as correspondi
 #### Reduce ####
 
 ```{r eval=FALSE, tidy=FALSE}
-reduce6 <- expression(
+reduce5 <- expression(
   pre = {
   },
   reduce = {
@@ -786,9 +786,9 @@ expression.
 #### Execution Function ####
 
 ```{r eval=FALSE, tidy=FALSE}
-mr6 <- rhwatch(
-  map      = map6,
-  reduce   = reduce6,
+mr5 <- rhwatch(
+  map      = map5,
+  reduce   = reduce5,
   input    = rhfmt("/ln/tmp/housing/housing.txt", type = "text"),
   output   = rhfmt("/ln/tmp/housing/bytime", type = "sequence"),
   mapred   = list(
@@ -830,52 +830,11 @@ What we got above is the number of rows in each subset. We can see that we alway
 `383` as one replicate, which together will be the total number of rows for one month. This means we ran 
 our `reduce` in reduce expression six times for each key.
 
-### Compute Total Sold ###
+### Compute Total Sold Units ###
 
-We then would like to calculate the total sold units for every month over all states.
-
-#### Without Combiner ####
-
-```{r eval=FALSE, tidy=FALSE}
-map7 <- expression({
-  lapply(seq_along(map.keys), function(r) {
-    key <- map.keys[[r]]
-    value <- sum(as.numeric(map.values[[r]]$units), na.rm = TRUE)
-    rhcollect(key, value)
-  })
-})
-reduce7 <- expression(
-  pre = {
-    count <- 0
-  },
-  reduce = {
-    count <- count + sum(unlist(reduce.values), na.rm = TRUE)
-  },
-  post = {
-    rhcollect(reduce.key, count)
-  }
-)
-```
-
-In the map expression, we calculated the sum of the sold units for each key
-
-```{r eval=FALSE, tidy=FALSE}
-mr7 <- rhwatch(
-  map       = map7,
-  reduce    = reduce7,
-  input     = rhfmt("/ln/tmp/housing/bytime", type = "sequence"),
-  output    = rhfmt("/ln/tmp/housing/soldbytime", type = "sequence"),
-  mapred    = list(
-    mapred.reduce.tasks = 10
-  ),
-  jobname   = "total sold unit for each month",
-  mon.sec   = 10,
-  combiner  = FALSE,
-  readback  = FALSE
-)
-```
-
-The default for combiner is `FALSE`, which is what we have used before.
+We then would like to calculate the total sold units for every month based on the month division.
+One thing we should keep in mind about the month division is that we have 6 subsets for each month.
+And this will be the main reason that we want to consider one of the optimization method in `Rhipe`.
 
 #### Combiner as an Optimization ####
 
@@ -904,16 +863,76 @@ those in the function rhcollect() in your reduce expression. For example, if you
 and a numeric vector as the value in the map expression, you need to pass a string as key and a numeric 
 vector as the value in the reduce expression as well.
 
-We will demonstrate the usage of combiners through the following examples.
+We will demonstrate the usage of combiners through the following examples. First, let us look at how to 
+achieve this task without using a combiner.
+
+#### Without Combiner ####
+
+```{r eval=FALSE, tidy=FALSE}
+map6 <- expression({
+  lapply(seq_along(map.keys), function(r) {
+    key <- map.keys[[r]]
+    value <- sum(as.numeric(map.values[[r]]$units), na.rm = TRUE)
+    rhcollect(key, value)
+  })
+})
+```
+
+In the map expression, we calculated the sum of the sold units for each subset. Since month index is the
+input key, and we have 6 subsets for each key, there will be 6 key-value pairs for each month. The value
+of each key-value pair is the summation of number of sold units in corresponding subset. So totally there
+will be 396 intermediate key-value pairs as output of map expression.
+
+```{r eval=FALSE, tidy=FALSE}
+reduce6 <- expression(
+  pre = {
+    count <- 0
+  },
+  reduce = {
+    count <- count + sum(unlist(reduce.values), na.rm = TRUE)
+  },
+  post = {
+    rhcollect(reduce.key, count)
+  }
+)
+```
+
+Then in the reduce expression, we grouped all 6 summation for each unique key(month index), and calculated
+the overall summation for each month
+
+```{r eval=FALSE, tidy=FALSE}
+mr6 <- rhwatch(
+  map       = map6,
+  reduce    = reduce6,
+  input     = rhfmt("/ln/tongx/housing/bytime", type = "sequence"),
+  output    = rhfmt("/ln/tongx/housing/soldbytime", type = "sequence"),
+  mapred    = list(
+    mapred.reduce.tasks = 10
+  ),
+  jobname   = "total sold unit for each month",
+  mon.sec   = 10,
+  combiner  = FALSE,
+  readback  = FALSE
+)
+```
+
+The default for combiner is `FALSE`, which is what we have used before. We also specified two more
+arguments in `rhwatch` which are `mon.sec` and `jobname`. Both of them are easy to understand. `mon.sec`
+is a numeric integer which specifies how often in terms of second the job status will be reported in R after
+the job is submitted. As we seen in "Division by State" session, after job is submitted, we would see job
+status every 5 seconds which is the default value of `mon.sec`. `jobname` is a string that we can used to 
+name our job. The default job name is the date and time when job is submitted.
 
 #### With Combiner ####
 
+Now let us see how to do the same task with combiner.
+
 ```{r eval=FALSE, tidy=FALSE}
-mr8 <- rhwatch(
-  map       = map7,
-  reduce    = reduce7,
-  input     = rhfmt("/ln/tmp/housing/bytime", type = "sequence"),
-  output    = rhfmt("/ln/tmp/housing/soldbytime.combiner", type = "sequence"),
+mr7 <- rhwatch(
+  map       = map6,
+  reduce    = reduce6,
+  input     = rhfmt("/ln/tongx/housing/bytime", type = "sequence"),
+  output    = rhfmt("/ln/tongx/housing/soldbytime.combiner", type = "sequence"),
   mapred    = list(
     mapred.reduce.tasks = 10
   ),
@@ -924,14 +943,33 @@ mr8 <- rhwatch(
 )
 ```
 
+The map and reduce expression for combiner situation will be exactly same as the situation without combiner.
+The only difference is that we changed the `combiner` argument in `rhwatch` to be `TRUE` to active the 
+combiner. So what happened when combiner was active was nothing but each mapper(server or node that ran map
+expression) run the reduce expression before it generated intermediate key-value pairs.
+
+For this example,
+one of the mapper may generated two out of six summation for one month. Without combiner, these two 
+summation will be transferred with other four summation which calculated on another mapper to one reducer
+(server or node that ran reduce expression). With combiner, however, these two summation will be first 
+summed up together then only one key-value pairs will be transferred to the reducer instead of two. This
+will be a huge difference with respect to transferring time when we have very many or very large size of 
+values related to one key.
+
+Finally, we can double check if combiner active or not will effect the final result.
+
 ```{r eval=FALSE, tidy=FALSE}
-rst.comb <- rhread("/ln/tmp/housing/soldbytime.combiner")
-rst <- rhread("/ln/tmp/housing/soldbytime")
+rst.comb <- rhread("/ln/tongx/housing/soldbytime.combiner")
+rst <- rhread("/ln/tongx/housing/soldbytime")
 identical(rst, rst.comb)
 ```
 ```
 [1] TRUE
 ```
+
+We can see that the final results from these two jobs are identical. We also can convert the results
+to be a data frame with following code:
+
 ```{r eval=FALSE, tidy=FALSE}
 df <- data.frame(  
   time  = sapply(rst, "[[", 1),
@@ -1024,7 +1062,7 @@ county, which is still on the HDFS.
 #### Map ####
 
 ```{r eval=FALSE, tidy=FALSE}
-map5 <- expression({
+map9 <- expression({
   lapply(seq_along(map.keys), function(r) {
     key <- attr(map.values[[r]], "state")
     value <- map.values[[r]]
@@ -1044,7 +1082,7 @@ we also want to make the FIPS code and county name columns of our data frame aga
 #### Reduce ####
 
 ```{r eval=FALSE, tidy=FALSE}
-reduce5 <- expression(
+reduce9 <- expression(
   pre = {
     combine <- data.frame()
   },
@@ -1064,9 +1102,9 @@ for each line of the text file, but now there is one for each county.
 #### Execution Function ####
  
 ```{r eval=FALSE, tidy=FALSE}
-mr5 <- rhwatch(
-  map      = map5,
-  reduce   = reduce5,
+mr9 <- rhwatch(
+  map      = map9,
+  reduce   = reduce9,
   input    = rhfmt("/ln/tongx/housing/byCounty", type = "sequence"),
   output   = rhfmt("/ln/tongx/housing/byState", type = "sequence"),
   mapred   = list( 

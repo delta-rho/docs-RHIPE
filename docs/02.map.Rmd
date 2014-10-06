@@ -15,7 +15,7 @@ still trying to get subsets for each state based on the subsets for each county.
 be able to access the subset of data for Indiana state only. The code is showed as following:
 
 ```{r eval=FALSE, tidy=FALSE}
-map5 <- expression({
+map10 <- expression({
   lapply(seq_along(map.keys), function(r) {
     key <- attr(map.values[[r]], "state")
     county <- attr(map.values[[r]], "county")
@@ -25,7 +25,7 @@ map5 <- expression({
     rhcollect(key, value)
   })
 })
-reduce5 <- expression(
+reduce10 <- expression(
   pre = {
     combine <- data.frame()
   },
@@ -36,9 +36,9 @@ reduce5 <- expression(
     rhcollect(reduce.key, combine)
   }
 )
-mr5 <- rhwatch(
-  map      = map5,
-  reduce   = reduce5,
+mr10 <- rhwatch(
+  map      = map10,
+  reduce   = reduce10,
   input    = rhfmt("/ln/tongx/housing/bycounty", type = "sequence"),
   output   = rhfmt("/ln/tongx/housing/countytostate.map", type = "map"),
   mapred   = list( 
