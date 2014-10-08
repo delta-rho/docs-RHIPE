@@ -33,16 +33,20 @@ $ log2(R) = 12$. So we will generate 2^12 matrices with 2^13 rows and 2^5 column
 Before we run the map function, we will set up some basic parameters in the front end of R enviroment:
 
 ```{r,eval=FALSE,tidy=FALSE}
-n <- 25
-m <- 13
-v <- 5
-p <- 2^v - 1
+n   <- 25
+m   <- 13
+v   <- 5
+p   <- 2^v - 1
+rep <- 1
 
 ```
 
 Here we define an R object called `p`, the value of which equals to $2^v - 1$. As introduced in the
 last part, $2^v$ is the number of variables, so `p` is the number of the explanatory variables. We 
-introduce `p` here to make the following codes much easier to write and understand.
+introduce `p` here to make the following codes much easier to write and understand. We also specify
+the replicate value `rep` is 1 because we only have a single run of the cluster performance test. But
+in your future performance test, you might want to have more replicates for the test, and you can
+easily change the value of `rep`.
 
 #### Map ####
 
@@ -164,12 +168,11 @@ subset estimates and computing the means. However, we cannot measure **L** direc
 #### The First Kind Of Elapsed Time -- **O** ####
 
 ```{r eval=FALSE, tidy=FALSE}
-timing   <- list()
-compute  <- "O"
+timing   <- data.frame()
+type  <- "O"
 ```
 
-First, we will initialize a list called `timing` to store these two different kinds of elapsed time
-and create a numeric object `compute` to lable **O** and **T** seperately. 
+First, we will initialize a data frame called `timing` to store these two different kinds of elapsed time later and create a character `type` to lable **O** and **T** seperately. 
 ##### Map #####
 
 ```{r eval=FALSE, tidy=FALSE}
@@ -196,8 +199,9 @@ mr2 <- rhwatch(
  noeval   = TRUE,
  readback = FALSE
   )
-t <- as.numeric(system.time({rhex(mr2, async=FALSE)})[3])
-timing[[1]] <- list(compute=compute,t=t)
+t      <- as.numeric(system.time({rhex(mr2, async=FALSE)})[3])
+t      <- data.frame(type=type,n=n,m=m,v=v,rep=rep,t=t)
+timing <- rbind(timing,t)
 ```
 ```
 Saving 1 parameter to /tmp/rhipe-temp-params-c677abd27e3b1654c25dccadaa7e3483 (use rhclean to delete all temp files)
@@ -209,17 +213,26 @@ and `rhwatch` just return an R object that contains all the information required
 MapReduce job. Instead, the `rhex` function will submit the MapReduce job to the Hadoop MapReduce 
 framework. 
 
-The `dir.dm` and `dir.nf` specify the `input` and `output` argument of `rhwatch` function. We need 
-to talk more about the argument `rhipe_map_buff_size` later. So `t` records the first type elapsed 
-time **O** and we save the value of `t` to the `timing` list. 
+The `dir.dm` and `dir.nf` specify the `input` and `output` argument of `rhwatch` function. 
+So the first `t` in the R codes records the first type elapsed time **O** and the second `t` is a 
+data frame which saves the value of computation `type`, the value of `n`, `m`, `v`, the number of 
+replicate `rep`, and the value of first type of elapsed time **O**. Then we use R function `rbind` 
+to combine data frame `timing` and data frame `t` by rows. We can take a look at the data frame 
+`timing`.
 
+```{r eval=FALSE, tidy=FALSE}
+timing
+```
+
+```
+```
 #### The Second Kind of Elapsed Time -- **T** ####
 
 ```{r eval=FALSE, tidy=FALSE}
-compute  <- "T"
+type  <- "T"
 ```
 
-We first specify the value of `compute` to identify the second kind of elapsed time **T**.
+We first specify the value of `type` as `T` to identify the second kind of elapsed time **T**.
 
 ##### Map #####
 
@@ -287,38 +300,29 @@ mr3 <- rhwatch(
 )
 
 t <- as.numeric(system.time({rhex(mr3, async=FALSE)})[3])
-timing[[2]] = list(compute=compute, t=t)
+t = data.frame(type=type,n=n,m=m,v=v,rep=rep,t=t)
+timing = rbind(timing,t)
 ```
 ```
 Saving 2 parameters to /tmp/rhipe-temp-params-4c3905d5e34c9689c92490e17cb6162b (use rhclean to delete all temp files)
 ```
 After the job completes successfully, we record the whole elapsed time **T** and save it to the R 
-object `t`. Then we will save `t` and its label **T** as the second component of list `timing`. Till
-now, we have finished the single run of the cluster performance test.
+object `t`. And we save the results to our data frame `timing`. Till now, we have finished the single
+run of the cluster performance test and save the result to a data frame called `timing`.
 
 ### Performance Test Results ###
 ```{r eval=FALSE, tidy=FALSE}
-library(plyr)
-df.timing <- ldply(timing, as.data.frame)
-df.timing
+timing
 ```
 
 ```
- compute       t
-1       O  55.120
-2       T 147.923
+     type  n    m    v    rep       t
+1       O  23   13   5    1      55.120
+2       T  23   13   5    1     147.923
 
 ```
-We can change the structure of `timing` from list to a dataframe and rename it `df.timing`. The data
-frame structure can make the analysis much easier than the list structure. The R function `ldply` can
-easily finish the converting. Also in your future cluster performance test, you are also recommended
-to change your data structure from list to dataframe to do the analysis. The reason we define `timing`
-as a list is because for the cluster performance test, you will have a lot of factors to consider, 
-like the number of the sample observations, the subset size, the number of vairables and so on, and
-`list` structure will make the saving process much easier. And after the performance test, you can 
-easily change a list to a dataframe by `ldply`.
 
-As we can see from the `df.timing` dataframe, the elapsed time **O** we need to read the datasets 
+As we can see from the `timing` dataframe, the elapsed time **O** we need to read the datasets 
 from HDFS to the front end is 55.12 seconds and the whole elapsed time **T** which consists of the 
 reading time and the analyzing time is 147.923 seconds, which is less than 2.5 mins. That result is 
 impressive! The cluster we use here to run the test is a very small one with two nodes and 64 GB 
