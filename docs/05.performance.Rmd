@@ -21,8 +21,8 @@ In this example, we will show how to do a sing run of the performance test, whic
 one possible value of *M* and one possible value of *V* to see how fast it is to go. 
 
 We choose $n = log2(N) = 25$, $v = log2(V) = 5$, $m = log2(M) = 13$, and $log2(R) = 12$ to illustrate
-one single run. So the size for the whole dataset is $2^25 * 2^5 * 2^3 = 8GB$. We will generate each
-subset with the size of $2^13 * 2^5 * 2^3 = 2MB$
+one single run. So the size for the whole dataset is $2^25*2^5*2^3 = 8GB$. We will generate each
+subset with the size of $2^13*2^5*2^3 = 2MB$
 
 ### Generate Datasets ###
 
@@ -104,13 +104,11 @@ each mapper would run $2^(n-m)/12$ tasks, where `12` is the value of the second 
 So the value of the second element would definitely affect the performance test and it is worthy to 
 carry out an experiment to test its effect. 
 
-Once you try the housing data example, you have run into most arguments of `rhwatch`. There are some
-arguments of `rhwatch` are not been used at all which means they don't have a default value such as 
-the argument `parameters`.  But in some cases, they are very important. The argument `parameters` is
-a list with parameters to be passed to a mapreduce job. It is an very important argument because it 
-passes all the possible values we will need in the Hadoop MapReduce jobs to HDFS. in our case, we 
-specify the values of `m` and `p` in the front end R, but Hadoop doesn't have these values in the 
-back end. So the argument `parameter` will packages `m` and `p` as a list and distribute it to HDFS.
+The argument `parameters` passes all the possible values we will need in the Hadoop MapReduce jobs 
+to HDFS. In our case, we specify the values of `m` and `p` in the front end R, but Hadoop doesn't 
+have these values in the back end. So the argument `parameter` will packages `m` and `p` as a list 
+and distribute it to HDFS.
+
 The argument `jobname` is not neccesary to be set. It is the name of the job, which is visible on 
 the Jobtracker website. If not provided, Hadoop MapReduce uses the default name job_date_time_number
 e.g. job_201007281701_0274.
@@ -172,7 +170,8 @@ timing   <- data.frame()
 type  <- "O"
 ```
 
-First, we will initialize a data frame called `timing` to store these two different kinds of elapsed time later and create a character `type` to lable **O** and **T** seperately. 
+First, we will initialize a data frame called `timing` to store these two different kinds of elapsed
+time later and create a character `type` to lable **O** and **T** seperately. 
 ##### Map #####
 
 ```{r eval=FALSE, tidy=FALSE}
@@ -359,7 +358,11 @@ m.vec   <- seq(8, 16, by=1)
 v.vec   <- 4:6
 p.vec   <- 2^v.vec - 1
 run.vec <- 3
+dir.exp <- "/ln/song273/tmp/multi.factor_n25"
 ```
+
+First, we specify some parameters in the frond end of R. The `run.vec` denotes for each combination 
+of `m`,`v`, we have 3 replicates. The `dir.exp` specifies the directory for this experiment on HDFS.
 
 #### Map & Execution Function ####
 ```{r, eval=FALSE,tidy=FALSE}
@@ -372,8 +375,56 @@ for (m in m.vec) {
  }
 ```
 
-The `map1` is the map function and `mr1` is the execution function `rhwatch` we write in the datasets
-generation part of the single run example. So the idea is to put the single run code to a loop.
+The `map1` and `mr1` are the map function and the execution function seperately we write in the datasets 
+generation part of the single run example. There is a single run for each fixed value of `m` and `p`,
+So the idea is to put the single run code to a for-loop. And the for-loop contains multinumber of 
+MapReduce jobs. The `dir.dm` specifies the output location for each MapReduce job. 
+
+It is noteworthy that we only generate subsets once and in the following timing part, we would read
+the subsets from HDFS to the front end of R 3 times. 
+
+### Elapsed Time Measurement ###
+
+```{r, eval=FALSE,tidy=FALSE}
+for (rep in rep.vec) {
+  
+  ## timing for O
+  type = "O"
+  for (m in m.vec) {
+    for (v in v.vec) {
+      dir.dm = paste(dir.exp,"/dm/",'n',n,'v',v,"m",m, sep="")
+      dir.nf = paste(dir.exp,"/nf/","rep",rep,'n',n,'v',v,"m",m, sep="")
+      map2
+      mr2
+      t      = as.numeric(system.time({rhex(mr2, async=FALSE)})[3])
+      t      = data.frame(type=type,n=n,v=v,m=m,rep=rep,t=t)
+      timing = rbind(timing,t) 
+    }
+  }
+  ## timing for T
+  type = "T"
+   for (m in m.vec) {
+    for (v in v.vec) {
+      dir.dm = paste(dir.exp,"/dm/",'n',n,'v',v,"m",m, sep="")
+      dir.gf = paste(dir.exp,"/gf/","rep",rep,'n',n,'v',v,"m",m, sep="")
+      mp3
+      reduce3
+      mr3
+      t      = as.numeric(system.time({rhex(mr3, async=FALSE)})[3])
+      t      = data.frame(type=type,n=n,v=v,m=m,rep=rep,t=t)
+      timing = rbind(timing,t)   
+    }
+  }
+  
+}
+```
+
+The first for-loop stands for the different replicates. The second and third for-loop is for different
+combination of `m` and `v`. There is a single run of performance test for any fixed `rep`, `m` and 
+`v`. `dir.dm` and `dir.nf` seperately specify the input type and output type for execution function
+`mr2`. The `dir.dm` and `dir.gf` seperately specify the input type and output type for execution 
+function `mr3`. The `map2`, `map3`, `reduce3` are the map and reduce function we specified before.
+Finally, we save our final results to a data frame called `timing`.
 
 ### Results of the Experiment of the Performance Test ###
 
@@ -407,11 +458,19 @@ timing
 ```
 The `timing` dataframe has 162 rows and 6 collumns because `type` has two levels, `m` has 9 different
 values and `v` has 3 different values. For each combination of the factors, we have 3 replicates. So
-we have $2*9*3*3=162$ rows.
+we have $2*9*3*3=162$ rows. 
 
 #### Visualize the Results ####
+
+The first plot describes the relationship between two kinds of elapsed time and subsets size `m`.
 [Elapsed time plots against Subsets](./plots/elapse_m.pdf).
+
+The second plot describes the relationship between two kinds of elapsed time and 3 replicates.
 [Elapsed time plots against Replicates](./plots/elapsed_rep.pdf).
+
+The third plot describes the relationship between two kinds of elapsed time and number of varibales `v`.
+[Elapsed time plots against `v`](./plots/elapse_v.pdf).
+
 
 
 
