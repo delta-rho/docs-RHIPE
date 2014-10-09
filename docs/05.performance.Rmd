@@ -462,16 +462,42 @@ we have $2*9*3*3=162$ rows.
 
 #### Visualize the Results ####
 
-The first plot describes the relationship between two kinds of elapsed time and subsets size `m`.
+1. The first plot describes the relationship between two kinds of elapsed time and subsets size `m`.
+
 [Elapsed time plots against Subsets](./plots/elapse_m.pdf).
 
-The second plot describes the relationship between two kinds of elapsed time and 3 replicates.
+As we can see from the first plot, for every value of `v`, the total elapsed time **T** decreases 
+first and then increases later as the value of `m` changes. And the three different curves show the
+same drop-increase pattern. The following table gives us a summary about the minimum value of **T**
+and its corresponding `m` value.
+
+```{r createtable, results='asis', echo=FALSE}
+cat("v | m |min(T)/seconds ","--- | --- |---", sep="\n")
+x = c("4","13","78.33","5","13","132.99","6","11","263.39")
+x = matrix(x,ncol=3,byrow=TRUE)
+cat(apply(x,1,function(X) paste(X,collapse=" | ")),sep = "\n")
+```
+
+
+2. The second plot describes the relationship between two kinds of elapsed time and 3 replicates.
+
 [Elapsed time plots against Replicates](./plots/elapsed_rep.pdf).
 
-The third plot describes the relationship between two kinds of elapsed time and number of varibales `v`.
+This plots helps to see whether replication has blocking effect on the elapsed time. Because R has 
+temporary memory and we read the subsets from HDFS to the front end of R for the first time and R 
+has temperory memory about these files and in the next replicate of reading part, R maybe just reads
+these subsets from memory instead of reading them from the HDFS, which will affect our elpased time
+experiment.
+
+From the plot2, we can see that when n=25, replication doesn't have the blocking effect.
+
+3. The third plot describes the relationship between two kinds of elapsed time and number of varibales `v`.
+
 [Elapsed time plots against `v`](./plots/elapse_v.pdf).
 
-
+As we can see from the plot3, for fixed value of `m` , as the value of log2(variables) `v` increases,
+the value of log2(elapsed time) increases linearly.
+  
 
 
 
