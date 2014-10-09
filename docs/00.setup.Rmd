@@ -5,18 +5,20 @@
 ### Intro ###
 
 This tutorial covers an implementation of Divide and Recombine (D&R) in the R statistical programming 
-environment, an R package called `Rhipe`. This is one component of the Tessera environment for the 
+environment, an R package called `RHIPE`. This is one component of the Tessera environment for the 
 analysis of large complex data.
 
-We are going to demonstrate how to process `Rhipe` jobs on a cluster which is running Linux operating 
-system in the following sessions. The cluster is consist of two types of servers. One is an initiating R server which is the front-end. Another one is the Hadoop servers where the HDFS is sitting and also where
-`Rhipe` job will be distributed to. We call those servers as back-end. The front-end may or may not be 
-one of the Hadoop servers, either situation will be fine for `Rhipe` job. It will be decided by the 
+We are going to demonstrate how to process `RHIPE` jobs on a cluster which is running Linux operating 
+system in the following sessions. The cluster is consist of two types of servers. One is an initiating 
+R server which is the front-end. Another one is the Hadoop servers where the HDFS is sitting and also where
+`RHIPE` job will be distributed to. We call those servers as back-end. The front-end may or may not be 
+one of the Hadoop servers, either situation will be fine for `RHIPE` job. It will be decided by the 
 cluster administrator.
 
 Begin by connecting via ssh to the initiating R server from your laptop or desktop. Now you are sitting 
 on the initiating R server, then start an interactive R session. In later on sessions, we will mention 
 about a local R current working directory. Local here means on the front-end, not your laptop or desktop.
-So this working directory is on the initiating R server. All files like dataset, results, or plots you created will be transferred between this working directory on the initiating R server and the HDFS on the
+So this working directory is on the initiating R server. All files like dataset, results, or plots you 
+created will be transferred between this working directory on the initiating R server and the HDFS on the
 back-end. In summary, you will sit in front of your laptop starting an R session on initiating R server 
-and submitting `Rhipe` job which will be distributed to the back-end Hadoop servers.
+and submitting `RHIPE` job which will be distributed to the back-end Hadoop servers.

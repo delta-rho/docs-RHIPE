@@ -1,7 +1,7 @@
 ### Plots by State ###
 
-After previous several sessions, we have seen how to do divide and recombine in `Rhipe`, how to 
-access the subset by key. Another useful and powerful aspect of `Rhipe` is that we can achieve
+After previous several sessions, we have seen how to do divide and recombine in `RHIPE`, how to 
+access the subset by key. Another useful and powerful aspect of `RHIPE` is that we can achieve
 parallel plotting on cluster. Visualizing each subset can help us to have a better understanding of
 the subsets as well as the whole dataset.
 
@@ -11,7 +11,7 @@ facing a relative small data set in base R, this plotting for each state has to 
 a for loop or some other package like `plyr` package. But when we are facing a large data set that
 cannot be fit into the memory, previous visualization method will fail easily. 
 
-In `Rhipe`, on the other hand, we can specify multiple tasks, and in each tasks we can plot one or
+In `RHIPE`, on the other hand, we can specify multiple tasks, and in each tasks we can plot one or
 multiple plots. Later on we will see, in our housing example, we will specify 12 tasks to conduct 
 total 49 plots, one plot for state. So each task will handle about 4 plots which will 
 dramatically decreasing the total time to finish these 49 plots comparing with doing this using for
@@ -90,7 +90,7 @@ plot the `units` against `date`, and created a pdf plot file under the location 
 What is this `./tmp/` directory? It is a temporary working directory on each reducer. Recall that on the 
 initiating R server(front-end), we have a concept of R local working directory. This temporary working 
 directory is the same concept but on each sever of the Hadoop severs(back-end). Why we want to save the plots 
-to this specific directory on each hadoop sever? Because `Rhipe` can copy all files in this particular 
+to this specific directory on each hadoop sever? Because `RHIPE` can copy all files in this particular 
 directory to HDFS, then we can copy those files from HDFS to our R local working directory on initiating R 
 sever. Finally, you can choose to view those files either through the Internet or copy them to your laptop to 
 view them.

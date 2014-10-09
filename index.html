@@ -150,7 +150,17 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#performance-test-results'>Performance Test Results</a>
+         <a target='_self' class='nav-not-header' href='#results-of-the-single-run-of-the-performance-test'>Results of the Single run of the Performance Test</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#generation-datasets-example'>Generation Datasets Example</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#results-of-the-experiment-of-the-performance-test'>Results of the Experiment of the Performance Test</a>
       </li>
 
    </ul>
@@ -162,21 +172,23 @@
 <h3>Intro</h3>
 
 <p>This tutorial covers an implementation of Divide and Recombine (D&amp;R) in the R statistical programming 
-environment, an R package called <code>Rhipe</code>. This is one component of the Tessera environment for the 
+environment, an R package called <code>RHIPE</code>. This is one component of the Tessera environment for the 
 analysis of large complex data.</p>
 
-<p>We are going to demonstrate how to process <code>Rhipe</code> jobs on a cluster which is running Linux operating 
-system in the following sessions. The cluster is consist of two types of servers. One is an initiating R server which is the front-end. Another one is the Hadoop servers where the HDFS is sitting and also where
-<code>Rhipe</code> job will be distributed to. We call those servers as back-end. The front-end may or may not be 
-one of the Hadoop servers, either situation will be fine for <code>Rhipe</code> job. It will be decided by the 
+<p>We are going to demonstrate how to process <code>RHIPE</code> jobs on a cluster which is running Linux operating 
+system in the following sessions. The cluster is consist of two types of servers. One is an initiating 
+R server which is the front-end. Another one is the Hadoop servers where the HDFS is sitting and also where
+<code>RHIPE</code> job will be distributed to. We call those servers as back-end. The front-end may or may not be 
+one of the Hadoop servers, either situation will be fine for <code>RHIPE</code> job. It will be decided by the 
 cluster administrator.</p>
 
 <p>Begin by connecting via ssh to the initiating R server from your laptop or desktop. Now you are sitting 
 on the initiating R server, then start an interactive R session. In later on sessions, we will mention 
 about a local R current working directory. Local here means on the front-end, not your laptop or desktop.
-So this working directory is on the initiating R server. All files like dataset, results, or plots you created will be transferred between this working directory on the initiating R server and the HDFS on the
+So this working directory is on the initiating R server. All files like dataset, results, or plots you 
+created will be transferred between this working directory on the initiating R server and the HDFS on the
 back-end. In summary, you will sit in front of your laptop starting an R session on initiating R server 
-and submitting <code>Rhipe</code> job which will be distributed to the back-end Hadoop servers.</p>
+and submitting <code>RHIPE</code> job which will be distributed to the back-end Hadoop servers.</p>
 
 </div>
 
@@ -184,7 +196,7 @@ and submitting <code>Rhipe</code> job which will be distributed to the back-end 
 <div class='tab-pane' id='information-about-data'>
 <h3>Information about Data</h3>
 
-<p>We introduce RHIPE using
+<p>We introduce <code>RHIPE</code> using
 housing data that consist of 7 monthly variables on housing sales from Oct
 2008 to Mar 2014 for 2883 counties in the 49 U.S. states, excluding Hawaii and
 Alaska, but including the District of Columbia which for simplicity here we
@@ -256,8 +268,8 @@ in your local working directory:</p>
 <pre><code class="r">list.files(&quot;.&quot;)
 </code></pre>
 
-<p>This tutorial assumes that you&#39;ve already installed Rhipe using the instructions provided.
-Every time we use Rhipe, we have to call the Rhipe library in R and initialize it.  Your values
+<p>This tutorial assumes that you&#39;ve already installed <code>RHIPE</code> using the instructions provided.
+Every time we use <code>RHIPE</code>, we have to call the <code>RHIPE</code> library in R and initialize it.  Your values
 for <code>zips</code> and <code>runner</code> might be different than these, depending on the details of your installation.</p>
 
 <pre><code class="r">library(Rhipe)
@@ -276,7 +288,7 @@ Replace <code>tongx</code> with an appropriate HDFS directory, such as your user
 The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
 the file will be written. <code>rhput</code> creates the file at destination, overwriting the destination if
 it already exists.  We can also copy files onto HDFS via Hadoop&#39;s command line interface, but
-Rhipe allows us to achieve this task from within R.</p>
+<code>RHIPE</code> allows us to achieve this task from within R.</p>
 
 <p>We can confirm that the housing data text file has been written to HDFS with the <code>rhexists</code> function.
 Make sure you specify the same directory as you used in the last step.</p>
@@ -309,7 +321,7 @@ on HDFS.</p>
 <h3>Read and Divide by State</h3>
 
 <p>The first step in a D&amp;R analysis is to choose a division method and create subsets.  We&#39;ll
-divide the housing data by state.  Rhipe allows us to read the raw text file on HDFS and 
+divide the housing data by state. <code>RHIPE</code> allows us to read the raw text file on HDFS and 
 create a copy of the data broken into subsets using a MapReduce job.  The original data file
 will remain on HDFS. The data within each subset will be stored as R objects, rather than raw
 text.  This will allow us to apply subsequent data analytic and visual methods using familiar
@@ -325,7 +337,7 @@ pairs, where the key may or may not have changed from the input key.  The output
 pairs of the map are sometimes called intermediate key-value pairs, because they will be the
 input to the reduce function.  The intermediate key-value pairs are grouped by key, and then
 the reduce function is applied to each group.  The output of the reduce function is again
-one or more key-value pairs.  Rhipe allows us to write the map and reduce functions in
+one or more key-value pairs.  <code>RHIPE</code> allows us to write the map and reduce functions in
 R code, using R objects for the keys and values.</p>
 
 <p>A valid MapReduce job in Rhipe consists of a map expression, an optional reduce expression, 
@@ -402,7 +414,7 @@ that state.  These final key-value pairs are written to HDFS, and will persist f
 )
 </code></pre>
 
-<p>The <code>rhwatch</code> function packages and executes our Rhipe MapReduce job.  In addition to the <code>map</code> and
+<p>The <code>rhwatch</code> function packages and executes our <code>RHIPE</code> MapReduce job.  In addition to the <code>map</code> and
 <code>reduce</code> expressions created above, we specify the HDFS locations of the input and output for this
 MapReduce job.  The input is the location where we stored our raw text file using <code>rhput</code> in the
 previous section.  The output is any location on HDFS we choose.  Be careful, as any existing data
@@ -413,7 +425,7 @@ case, we&#39;ve specified 10 reduce tasks using <code>mapred.reduce.tasks</code>
 of key-value pairs corresponding to the 49 states in our data set, 10 at a time will be processed
 in parallel.  Specifying 10 reduce tasks also means that the output written to HDFS will be broken
 into 10 files (we&#39;ll come back to this point in the next section).  Finally, <code>readback = FALSE</code> 
-tells Rhipe not to read the final output from HDFS into global environment of our interactive R 
+tells <code>RHIPE</code> not to read the final output from HDFS into global environment of our interactive R 
 session.  We&#39;ll do that with a separate command. </p>
 
 <pre><code>Saving 1 parameter to /tmp/rhipe-temp-params-bbb96e029776c9953476a54c74d9eaf7 (use rhclean to delete all temp files)
@@ -441,7 +453,7 @@ environment using <code>rhread</code>.  All we have to specify is the HDFS locat
 <pre><code>Read 49 objects(13.52 MB) in 1.41 seconds
 </code></pre>
 
-<p>Rhipe conveniently packages the key-value pairs in our HDFS output location as a nested list, which we&#39;ve
+<p><code>RHIPE</code> conveniently packages the key-value pairs in our HDFS output location as a nested list, which we&#39;ve
 assigned to the variable <code>stateSubsets</code>.  Since there were 49 key-value pairs in the output of our reduce
 stage, there are 49 elements in <code>stateSubsets</code>.  Each element is itself a list with two elements: a key
 and a value.  In this case, the keys are character strings containing the state names, and the 
@@ -503,7 +515,7 @@ are in no particular order.    </p>
 </code></pre>
 
 <p>We&#39;ve now successfully divided our data into subsets and stored each subset as an R object.<br>
-They will persist on HDFS and be used for many analytic methods, each applied using Rhipe. </p>
+They will persist on HDFS and be used for many analytic methods, each applied using <code>RHIPE</code>. </p>
 
 </div>
 
@@ -517,7 +529,7 @@ so our desired output is two numbers for each state: a mean of list prices and a
 of sale prices.  The recombination step will be to put all the state means in a single data
 frame, which can be further analyzed in an interactive R session.</p>
 
-<p>We apply our chosen analytic method with a second Rhipe MapReduce job:</p>
+<p>We apply our chosen analytic method with a second <code>RHIPE</code> MapReduce job:</p>
 
 <h4>Map</h4>
 
@@ -590,7 +602,7 @@ and in <code>post</code> we use <code>rhcollect</code> to emit the final output 
 
 <p>In <code>rhwatch()</code> this time, we&#39;ve changed several arguments. First, in the <code>rhfmt</code> of <code>input</code> argument,
 <code>type</code> is specified to be &quot;sequence&quot;, since the input file to this mapreduce job is the output
-from our division. This indicates to Rhipe that the input is not a raw text file, but rather a 
+from our division. This indicates to <code>RHIPE</code> that the input is not a raw text file, but rather a 
 file already organized as key-value pairs.  Also we request 5 reduce tasks for this job using
 the <code>mapred.reduce.tasks</code> option.  Finally, we assign
 <code>readback</code> to be <code>TRUE</code>. By doing this, the final results not only will be saved on HDFS, but also
@@ -671,7 +683,7 @@ This is because those four files are
 empty. Since we only had one intermediate key-value pair (the output of the map), four of the 
 reduce tasks we requested did nothing.</p>
 
-<p>We&#39;ve now successfully completed our first D&amp;R analysis with Rhipe.  We created a division by state, applied an
+<p>We&#39;ve now successfully completed our first D&amp;R analysis with <code>RHIPE</code>.  We created a division by state, applied an
 analytic method to each subset when we took the mean, and recombined the subset outputs into an R
 data frame for further interactive analysis.  We did the division in one Rhipe MapReduce job, and 
 the analytic method and recombination in a second job.</p>
@@ -897,7 +909,7 @@ can speed up this job and future jobs which read its output.</p>
 
 <p>Same as before, we can create the subsets of dataset divided by time variable. But here one of
 potential problem that we may face is that what if some of the subsets are very large? This is
-a very general problem if we are dealing with a large and complex dataset. In fact, <code>Rhipe</code> is 
+a very general problem if we are dealing with a large and complex dataset. In fact, <code>RHIPE</code> is 
 able to write any size of one subset to HDFS, but only can read one subset less than 256 Mb 
 from HDFS. In other words, we are able to create any size of subset in a mapreduce job, but we
 will get issue when we are trying to read and apply analysis method on oversize subset.</p>
@@ -964,8 +976,8 @@ this reduce expression.</p>
 <pre><code class="r">mr5 &lt;- rhwatch(
   map      = map5,
   reduce   = reduce5,
-  input    = rhfmt(&quot;/ln/tmp/housing/housing.txt&quot;, type = &quot;text&quot;),
-  output   = rhfmt(&quot;/ln/tmp/housing/bytime&quot;, type = &quot;sequence&quot;),
+  input    = rhfmt(&quot;/ln/tongx/housing/housing.txt&quot;, type = &quot;text&quot;),
+  output   = rhfmt(&quot;/ln/tongx/housing/bytime&quot;, type = &quot;sequence&quot;),
   mapred   = list(
     mapred.reduce.tasks = 10,
     rhipe_reduce_buff_size = 500
@@ -1012,7 +1024,7 @@ our <code>reduce</code> in reduce expression six times for each key.</p>
 
 <p>We then would like to calculate the total sold units for every month based on the month division.
 One thing we should keep in mind about the month division is that we have 6 subsets for each month.
-And this will be the main reason that we want to consider one of the optimization method in <code>Rhipe</code>.</p>
+And this will be the main reason that we want to consider one of the optimization method in <code>RHIPE</code>.</p>
 
 <h4>Combiner as an Optimization</h4>
 
@@ -1033,7 +1045,7 @@ from a map contains a lot of data.</p>
 
 <h4>Enabling Combiner in RHIPE</h4>
 
-<p>Combiner can be enabled in <code>Rhipe</code> by specifying <code>combiner = TRUE</code> when calling function <code>rhwatch()</code>.</p>
+<p>Combiner can be enabled in <code>RHIPE</code> by specifying <code>combiner = TRUE</code> when calling function <code>rhwatch()</code>.</p>
 
 <p>To be able to use a combiner, our reduce expression needs to pass the same data type as it receives,
 i.e the two arguments in the function rhcollect() in your map expression need to be of the same type as 
@@ -1314,7 +1326,7 @@ We also have seen that how to control the number of key-value pairs we want to r
 argument in <code>rhread</code>. However, this can only guarantee we read fixed number of key-value pairs. The order
 of the key-value pairs or those R objects saved on HDFS is random. What if we would like to only access 
 specific key-value pairs by the key without reading all key-value pairs back into the R global environment?
-In other words, can we treat our dataset as a queryable database through <code>Rhipe</code> functions? The answer is
+In other words, can we treat our dataset as a queryable database through <code>RHIPE</code> functions? The answer is
 absolutely YES!</p>
 
 <p>In order to achieve this purpose, we have to save our output as a map file instead of sequence file on HDFS.
@@ -1446,8 +1458,8 @@ part file.</p>
 <div class='tab-pane' id='plots-by-state'>
 <h3>Plots by State</h3>
 
-<p>After previous several sessions, we have seen how to do divide and recombine in <code>Rhipe</code>, how to 
-access the subset by key. Another useful and powerful aspect of <code>Rhipe</code> is that we can achieve
+<p>After previous several sessions, we have seen how to do divide and recombine in <code>RHIPE</code>, how to 
+access the subset by key. Another useful and powerful aspect of <code>RHIPE</code> is that we can achieve
 parallel plotting on cluster. Visualizing each subset can help us to have a better understanding of
 the subsets as well as the whole dataset.</p>
 
@@ -1457,7 +1469,7 @@ facing a relative small data set in base R, this plotting for each state has to 
 a for loop or some other package like <code>plyr</code> package. But when we are facing a large data set that
 cannot be fit into the memory, previous visualization method will fail easily. </p>
 
-<p>In <code>Rhipe</code>, on the other hand, we can specify multiple tasks, and in each tasks we can plot one or
+<p>In <code>RHIPE</code>, on the other hand, we can specify multiple tasks, and in each tasks we can plot one or
 multiple plots. Later on we will see, in our housing example, we will specify 12 tasks to conduct 
 total 49 plots, one plot for state. So each task will handle about 4 plots which will 
 dramatically decreasing the total time to finish these 49 plots comparing with doing this using for
@@ -1534,7 +1546,7 @@ plot the <code>units</code> against <code>date</code>, and created a pdf plot fi
 <p>What is this <code>./tmp/</code> directory? It is a temporary working directory on each reducer. Recall that on the 
 initiating R server(front-end), we have a concept of R local working directory. This temporary working 
 directory is the same concept but on each sever of the Hadoop severs(back-end). Why we want to save the plots 
-to this specific directory on each hadoop sever? Because <code>Rhipe</code> can copy all files in this particular 
+to this specific directory on each hadoop sever? Because <code>RHIPE</code> can copy all files in this particular 
 directory to HDFS, then we can copy those files from HDFS to our R local working directory on initiating R 
 sever. Finally, you can choose to view those files either through the Internet or copy them to your laptop to 
 view them.</p>
@@ -1722,7 +1734,7 @@ rhget(&quot;/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf&quot;
 <div class='tab-pane' id='manage-rhipe-jobs'>
 <h3>Manage RHIPE Jobs</h3>
 
-<p>As you submit more Rhipe jobs, you&#39;ll need to check their status and manage them.  In this short
+<p>As you submit more <code>RHIPE</code> jobs, you&#39;ll need to check their status and manage them.  In this short
 section, we&#39;ll introduce two new functions to do just that. </p>
 
 <p>First, let&#39;s submit a simple job:</p>
@@ -1824,7 +1836,7 @@ last part, \(2^v\) is the number of variables, so <code>p</code> is the number o
 introduce <code>p</code> here to make the following codes much easier to write and understand. We also specify
 the replicate value <code>rep</code> is 1 because we only have a single run of the cluster performance test. But
 in your future performance test, you might want to have more replicates for the test, and you can
-easily change the value of <code>rep</code>.</p>
+easily change the value of <code>rep</code>, we will talk about it later.</p>
 
 <h4>Map</h4>
 
@@ -1976,7 +1988,7 @@ mr2 &lt;- rhwatch(
  readback = FALSE
   )
 t      &lt;- as.numeric(system.time({rhex(mr2, async=FALSE)})[3])
-t      &lt;- data.frame(type=type,n=n,m=m,v=v,rep=rep,t=t)
+t      &lt;- data.frame(rep=rep,n=n,m=m,v=v,type=type,t=t)
 timing &lt;- rbind(timing,t)
 </code></pre>
 
@@ -2000,7 +2012,11 @@ to combine data frame <code>timing</code> and data frame <code>t</code> by rows.
 <pre><code class="r">timing
 </code></pre>
 
-<pre><code></code></pre>
+<pre><code>  rep  n  m v type      t
+1   1 25 13 5    O 48.597
+</code></pre>
+
+<p>So <code>timing</code> is a data frame with 1 row and 6 collumns. We will save another type of elapsed time <strong>T</strong> into this data frame.</p>
 
 <h4>The Second Kind of Elapsed Time -- <strong>T</strong></h4>
 
@@ -2071,7 +2087,7 @@ mr3 &lt;- rhwatch(
 )
 
 t &lt;- as.numeric(system.time({rhex(mr3, async=FALSE)})[3])
-t = data.frame(type=type,n=n,m=m,v=v,rep=rep,t=t)
+t = data.frame(rep=rep,n=n,m=m,v=v,type=type,t=t)
 timing = rbind(timing,t)
 </code></pre>
 
@@ -2085,25 +2101,112 @@ run of the cluster performance test and save the result to a data frame called <
 </div>
 
 
-<div class='tab-pane' id='performance-test-results'>
-<h3>Performance Test Results</h3>
+<div class='tab-pane' id='results-of-the-single-run-of-the-performance-test'>
+<h3>Results of the Single run of the Performance Test</h3>
 
 <pre><code class="r">timing
 </code></pre>
 
-<pre><code>     type  n    m    v    rep       t
-1       O  23   13   5    1      55.120
-2       T  23   13   5    1     147.923
+<pre><code> rep  n  m v type       t
+1   1 25 13 5    O  48.597
+2   1 25 13 5    T 133.846
 
 </code></pre>
 
-<p>As we can see from the <code>timing</code> dataframe, the elapsed time <strong>O</strong> we need to read the datasets 
-from HDFS to the front end is 55.12 seconds and the whole elapsed time <strong>T</strong> which consists of the 
-reading time and the analyzing time is 147.923 seconds, which is less than 2.5 mins. That result is 
-impressive! The cluster we use here to run the test is a very small one with two nodes and 64 GB 
-memory in total. You can definitely use RHIPE computation environment to generalize this one sing 
-run to a full cluster performance test. If you want to explore more about the performance test, you 
-can check the reference paper for more details. </p>
+<p>As we can see from the <code>timing</code> dataframe, there are 2 rows and 6 collumns. The last collumn is the 
+elapsed time <code>t</code>. As we can see, the elapsed time <strong>O</strong> we need to read the datasets 
+from HDFS to the front end is 48.597 seconds and the whole elapsed time <strong>T</strong> which consists of the 
+reading time and the analyzing time is 133.846 seconds, which is less than 2.3 mins. That result is 
+impressive! The cluster to run the test here is a very small one with two nodes and 64 GB 
+memory in total. You can definitely use RHIPE computation environment to generalize this one sing
+run to a full cluster performance test. </p>
+
+<h4>A Multi-Factor Experiment for Performance of a Cluster</h4>
+
+<p>As we can see, <code>RHIPE</code> and its computation environment reduce the time of computation dramatically.
+In the last example, we are generating \(2^25 *2^5 *2^3 = 8GB\) data and we finish the generation part
+and analysis part within 2.3 mins! Actually, the elapsed time depends on many factors. This presents
+an opportunity for optimizing the computation even further by making the best choice of the factor. 
+Our approach to the optimization is to run statistically designed experiments. This experiment consists
+of a lot of factors. There are two different types of elapsed time, which means there is one 
+computation-type categorical factor. Two statistical factors  are <code>m</code> and <code>v</code>, which are the kernel 
+factors for our experiment. There are also two Hadoop HDFS factors and two Hadoop MapReduce factors,
+two hardware factors. In total, we have 9 factors. We also have replicates for each combination of 
+these factors. For more details, you can check the paper(link) which describes the whole experiment
+process. In this tutorial, we mainly focus on the computation-type category factor <code>type</code>and the two 
+statistical factors <code>m</code> and <code>p</code>. We have shown how to run a single run of the performance test, so
+we can easily generalize the single run to the whole performance test experiment. We will take the 
+data generation for example.</p>
+
+</div>
+
+
+<div class='tab-pane' id='generation-datasets-example'>
+<h3>Generation Datasets Example</h3>
+
+<pre><code class="r">n       &lt;- 23
+m.vec   &lt;- seq(8, 16, by=1)
+v.vec   &lt;- 4:6
+p.vec   &lt;- 2^v.vec - 1
+run.vec &lt;- 3
+</code></pre>
+
+<h4>Map &amp; Execution Function</h4>
+
+<pre><code class="r">for (m in m.vec) {
+  for (p in p.vec) {
+    dir.dm = paste(dir.exp,&quot;/dm/&quot;,&#39;n&#39;,n,&#39;p&#39;,p,&#39;m&#39;,m, sep=&quot;&quot;)
+    map1
+    mr1
+  }
+ }
+</code></pre>
+
+<p>The <code>map1</code> is the map function and <code>mr1</code> is the execution function <code>rhwatch</code> we write in the datasets
+generation part of the single run example. So the idea is to put the single run code to a loop.</p>
+
+</div>
+
+
+<div class='tab-pane' id='results-of-the-experiment-of-the-performance-test'>
+<h3>Results of the Experiment of the Performance Test</h3>
+
+<pre><code class="r">timing
+</code></pre>
+
+<pre><code>       type  n  v  m rep       t
+1         O 25  4  8   1  45.669
+2         O 25  5  8   1  72.751
+3         O 25  6  8   1 139.356
+4         O 25  4  9   1  41.238
+5         O 25  5  9   1  67.580
+6         O 25  6  9   1 120.831
+7         O 25  4 10   1  36.630
+8         O 25  5 10   1  65.720
+9         O 25  6 10   1 138.821
+10        O 25  4 11   1  47.521
+11        O 25  5 11   1  83.752
+12        O 25  6 11   1 132.721
+13        O 25  4 12   1  46.535
+14        O 25  5 12   1  78.616
+15        O 25  6 12   1 145.310
+16        O 25  4 13   1  49.588
+17        O 25  5 13   1  84.652
+18        O 25  6 13   1 161.892
+19        O 25  4 14   1  47.661
+20        O 25  5 14   1 103.689
+...
+
+</code></pre>
+
+<p>The <code>timing</code> dataframe has 162 rows and 6 collumns because <code>type</code> has two levels, <code>m</code> has 9 different
+values and <code>v</code> has 3 different values. For each combination of the factors, we have 3 replicates. So
+we have \(2*9*3*3=162\) rows.</p>
+
+<h4>Visualize the Results</h4>
+
+<p><a href="./plots/elapse_m.pdf">Elapsed time plots against Subsets</a>.
+<a href="./plots/elapse_rep.pdf">Elapsed time plots against Replicates</a>.</p>
 
 </div>
 

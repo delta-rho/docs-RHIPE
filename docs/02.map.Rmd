@@ -6,7 +6,7 @@ We also have seen that how to control the number of key-value pairs we want to r
 argument in `rhread`. However, this can only guarantee we read fixed number of key-value pairs. The order
 of the key-value pairs or those R objects saved on HDFS is random. What if we would like to only access 
 specific key-value pairs by the key without reading all key-value pairs back into the R global environment?
-In other words, can we treat our dataset as a queryable database through `Rhipe` functions? The answer is
+In other words, can we treat our dataset as a queryable database through `RHIPE` functions? The answer is
 absolutely YES!
 
 In order to achieve this purpose, we have to save our output as a map file instead of sequence file on HDFS.

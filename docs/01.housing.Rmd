@@ -2,7 +2,7 @@
 
 ### Information about Data ###
 
-We introduce RHIPE using
+We introduce `RHIPE` using
 housing data that consist of 7 monthly variables on housing sales from Oct
 2008 to Mar 2014 for 2883 counties in the 49 U.S. states, excluding Hawaii and
 Alaska, but including the District of Columbia which for simplicity here we
@@ -70,8 +70,8 @@ in your local working directory:
 list.files(".")
 ```
 
-This tutorial assumes that you've already installed Rhipe using the instructions provided.
-Every time we use Rhipe, we have to call the Rhipe library in R and initialize it.  Your values
+This tutorial assumes that you've already installed `RHIPE` using the instructions provided.
+Every time we use `RHIPE`, we have to call the `RHIPE` library in R and initialize it.  Your values
 for `zips` and `runner` might be different than these, depending on the details of your installation.
 
 ```{r eval=FALSE, tidy=FALSE}
@@ -92,7 +92,7 @@ The `rhput` function takes two arguments.
 The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
 the file will be written. `rhput` creates the file at destination, overwriting the destination if
 it already exists.  We can also copy files onto HDFS via Hadoop's command line interface, but
-Rhipe allows us to achieve this task from within R.
+`RHIPE` allows us to achieve this task from within R.
 
 We can confirm that the housing data text file has been written to HDFS with the `rhexists` function.
 Make sure you specify the same directory as you used in the last step.
@@ -121,7 +121,7 @@ With our data on the HDFS, we are ready to start a D\&R analysis.
 ### Read and Divide by State ###
 
 The first step in a D\&R analysis is to choose a division method and create subsets.  We'll
-divide the housing data by state.  Rhipe allows us to read the raw text file on HDFS and 
+divide the housing data by state. `RHIPE` allows us to read the raw text file on HDFS and 
 create a copy of the data broken into subsets using a MapReduce job.  The original data file
 will remain on HDFS. The data within each subset will be stored as R objects, rather than raw
 text.  This will allow us to apply subsequent data analytic and visual methods using familiar
@@ -137,7 +137,7 @@ pairs, where the key may or may not have changed from the input key.  The output
 pairs of the map are sometimes called intermediate key-value pairs, because they will be the
 input to the reduce function.  The intermediate key-value pairs are grouped by key, and then
 the reduce function is applied to each group.  The output of the reduce function is again
-one or more key-value pairs.  Rhipe allows us to write the map and reduce functions in
+one or more key-value pairs.  `RHIPE` allows us to write the map and reduce functions in
 R code, using R objects for the keys and values.
 
 A valid MapReduce job in Rhipe consists of a map expression, an optional reduce expression, 
@@ -217,7 +217,7 @@ mr1 <- rhwatch(
 )
 ```
 
-The `rhwatch` function packages and executes our Rhipe MapReduce job.  In addition to the `map` and
+The `rhwatch` function packages and executes our `RHIPE` MapReduce job.  In addition to the `map` and
 `reduce` expressions created above, we specify the HDFS locations of the input and output for this
 MapReduce job.  The input is the location where we stored our raw text file using `rhput` in the
 previous section.  The output is any location on HDFS we choose.  Be careful, as any existing data
@@ -228,7 +228,7 @@ case, we've specified 10 reduce tasks using `mapred.reduce.tasks`.  This means t
 of key-value pairs corresponding to the 49 states in our data set, 10 at a time will be processed
 in parallel.  Specifying 10 reduce tasks also means that the output written to HDFS will be broken
 into 10 files (we'll come back to this point in the next section).  Finally, `readback = FALSE` 
-tells Rhipe not to read the final output from HDFS into global environment of our interactive R 
+tells `RHIPE` not to read the final output from HDFS into global environment of our interactive R 
 session.  We'll do that with a separate command. 
 
 ```
@@ -258,7 +258,7 @@ stateSubsets <- rhread("/ln/tongx/housing/byState")
 Read 49 objects(13.52 MB) in 1.41 seconds
 ```
 
-Rhipe conveniently packages the key-value pairs in our HDFS output location as a nested list, which we've
+`RHIPE` conveniently packages the key-value pairs in our HDFS output location as a nested list, which we've
 assigned to the variable `stateSubsets`.  Since there were 49 key-value pairs in the output of our reduce
 stage, there are 49 elements in `stateSubsets`.  Each element is itself a list with two elements: a key
 and a value.  In this case, the keys are character strings containing the state names, and the 
@@ -323,7 +323,7 @@ List of 49
 ```
 
 We've now successfully divided our data into subsets and stored each subset as an R object.  
-They will persist on HDFS and be used for many analytic methods, each applied using Rhipe. 
+They will persist on HDFS and be used for many analytic methods, each applied using `RHIPE`. 
 
 ### Compute State  Means ###
 
@@ -333,7 +333,7 @@ so our desired output is two numbers for each state: a mean of list prices and a
 of sale prices.  The recombination step will be to put all the state means in a single data
 frame, which can be further analyzed in an interactive R session.
 
-We apply our chosen analytic method with a second Rhipe MapReduce job:
+We apply our chosen analytic method with a second `RHIPE` MapReduce job:
 
 #### Map ####
 
@@ -409,7 +409,7 @@ stateMeans <- rhwatch(
 
 In `rhwatch()` this time, we've changed several arguments. First, in the `rhfmt` of `input` argument,
 `type` is specified to be "sequence", since the input file to this mapreduce job is the output
-from our division. This indicates to Rhipe that the input is not a raw text file, but rather a 
+from our division. This indicates to `RHIPE` that the input is not a raw text file, but rather a 
 file already organized as key-value pairs.  Also we request 5 reduce tasks for this job using
 the `mapred.reduce.tasks` option.  Finally, we assign
 `readback` to be `TRUE`. By doing this, the final results not only will be saved on HDFS, but also
@@ -494,7 +494,7 @@ This is because those four files are
 empty. Since we only had one intermediate key-value pair (the output of the map), four of the 
 reduce tasks we requested did nothing.
 
-We've now successfully completed our first D\&R analysis with Rhipe.  We created a division by state, applied an
+We've now successfully completed our first D\&R analysis with `RHIPE`.  We created a division by state, applied an
 analytic method to each subset when we took the mean, and recombined the subset outputs into an R
 data frame for further interactive analysis.  We did the division in one Rhipe MapReduce job, and 
 the analytic method and recombination in a second job.
@@ -719,7 +719,7 @@ head(meansByCounty[[1]][[2]])
 
 Same as before, we can create the subsets of dataset divided by time variable. But here one of
 potential problem that we may face is that what if some of the subsets are very large? This is
-a very general problem if we are dealing with a large and complex dataset. In fact, `Rhipe` is 
+a very general problem if we are dealing with a large and complex dataset. In fact, `RHIPE` is 
 able to write any size of one subset to HDFS, but only can read one subset less than 256 Mb 
 from HDFS. In other words, we are able to create any size of subset in a mapreduce job, but we
 will get issue when we are trying to read and apply analysis method on oversize subset.
@@ -789,8 +789,8 @@ this reduce expression.
 mr5 <- rhwatch(
   map      = map5,
   reduce   = reduce5,
-  input    = rhfmt("/ln/tmp/housing/housing.txt", type = "text"),
-  output   = rhfmt("/ln/tmp/housing/bytime", type = "sequence"),
+  input    = rhfmt("/ln/tongx/housing/housing.txt", type = "text"),
+  output   = rhfmt("/ln/tongx/housing/bytime", type = "sequence"),
   mapred   = list(
     mapred.reduce.tasks = 10,
     rhipe_reduce_buff_size = 500
@@ -834,7 +834,7 @@ our `reduce` in reduce expression six times for each key.
 
 We then would like to calculate the total sold units for every month based on the month division.
 One thing we should keep in mind about the month division is that we have 6 subsets for each month.
-And this will be the main reason that we want to consider one of the optimization method in `Rhipe`.
+And this will be the main reason that we want to consider one of the optimization method in `RHIPE`.
 
 #### Combiner as an Optimization ####
 
@@ -855,7 +855,7 @@ from a map contains a lot of data.
 
 #### Enabling Combiner in RHIPE ####
 
-Combiner can be enabled in `Rhipe` by specifying `combiner = TRUE` when calling function `rhwatch()`.
+Combiner can be enabled in `RHIPE` by specifying `combiner = TRUE` when calling function `rhwatch()`.
 
 To be able to use a combiner, our reduce expression needs to pass the same data type as it receives,
 i.e the two arguments in the function rhcollect() in your map expression need to be of the same type as 
