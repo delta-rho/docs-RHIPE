@@ -26,7 +26,7 @@ subset with the size of $2^13 * 2^5 * 2^3 = 2MB$
 
 ### Generate Datasets ###
 
-As we mentioned in the `Housing Data` example, the first step in a D/&R analysis is to choose a 
+As we mentioned in the housing data example, the first step in a D/&R analysis is to choose a 
 division method and create subsets. In this example, we devide the whole dataset to *R* sets, where
 $ log2(R) = 12$. So we will generate 2^12 matrices with 2^13 rows and 2^5 columns each. 
 
@@ -60,14 +60,14 @@ map1 <- expression({
 })
 ```
  
-In this case, we don't have an existing data which is different from the `Housing Data` example. 
+In this case, we don't have an existing data which is different from the housing data example. 
 Creating a dataset by randomly simulation is the part of the `map` job. The input keys and values are
 the same by default for the sumulating data step. The keys are numeric numbers 1, 2, ...., *R*,  where
 *R* is the number of the subsets. In our example, log2(R) = log2(N/M) = 12. They are the elements of
 the list object `map.keys`, which in this case, `map.keys` and `map.values` would be the same. The 
 output keys from the `map1` function are the same as the input keys. This is defined by the `map1` 
 function. The output value for each key is a matrix with 2^13 rows and 2^5 columns. As we have
-explained in the `Housing Data` example, the output key-value pairs from the `map` function 
+explained in the housing data example, the output key-value pairs from the `map` function 
 are also called intermediate key-value pairs. So `rhcollect` emits these intermediate key-value 
 pairs.
 
@@ -93,7 +93,7 @@ mr1 <- rhwatch(
 We have introduced the `rhwatch` function before. In this case, `rhwatch` function will submit our 
 MapReduce jobs to finish the data generation part and write the subsets to HDFS. There are three types
 of the `input` as Text file input, Sequence file input and lapply input. The first two types of input
-have been introduced in the `Housing Data` example. And in our performance example, the type of 
+have been introduced in the housing data example. And in our performance example, the type of 
 `input` is lapply input because we are generating numeric data. The argument `input` in our 
 performance test example is a vector consisting of two elements. The first element specifies the 
 input key would be from 1 to $2^(n-m)$ for `map1` function. Also, it specifies how many tasks you 
@@ -104,7 +104,7 @@ each mapper would run $2^(n-m)/12$ tasks, where `12` is the value of the second 
 So the value of the second element would definitely affect the performance test and it is worthy to 
 carry out an experiment to test its effect. 
 
-Once you try the `Housing Data` example, you have run into most arguments of `rhwatch`. There are some
+Once you try the housing data example, you have run into most arguments of `rhwatch`. There are some
 arguments of `rhwatch` are not been used at all which means they don't have a default value such as 
 the argument `parameters`.  But in some cases, they are very important. The argument `parameters` is
 a list with parameters to be passed to a mapreduce job. It is an very important argument because it 
