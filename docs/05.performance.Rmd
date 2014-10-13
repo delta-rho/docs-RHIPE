@@ -333,7 +333,7 @@ impressive! The cluster to run the test here is a very small one with two nodes 
 memory in total. You can definitely use RHIPE computation environment to generalize this one sing
 run to a full cluster performance test. 
 
-#### A Multi-Factor Experiment for Performance of a Cluster ####
+### A Multi-Factor Experiment for Performance of a Cluster ###
 
 As we can see, `RHIPE` and its computation environment reduce the time of computation dramatically.
 In the last example, we are generating $2^25 *2^5 *2^3 = 8GB$ data and we finish the generation part
