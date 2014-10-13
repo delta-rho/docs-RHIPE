@@ -160,6 +160,11 @@
 
 
       <li class='active'>
+         <a target='_self' class='nav-not-header' href='#elapsed-time-measurement'>Elapsed Time Measurement</a>
+      </li>
+
+
+      <li class='active'>
          <a target='_self' class='nav-not-header' href='#results-of-the-experiment-of-the-performance-test'>Results of the Experiment of the Performance Test</a>
       </li>
 
@@ -1809,8 +1814,8 @@ explained more in the later session.</p>
 one possible value of <em>M</em> and one possible value of <em>V</em> to see how fast it is to go. </p>
 
 <p>We choose \(n = log2(N) = 25\), \(v = log2(V) = 5\), \(m = log2(M) = 13\), and \(log2(R) = 12\) to illustrate
-one single run. So the size for the whole dataset is \(2^25 * 2^5 * 2^3 = 8GB\). We will generate each
-subset with the size of \(2^13 * 2^5 * 2^3 = 2MB\)</p>
+one single run. So the size for the whole dataset is \(2^25*2^5*2^3 = 8GB\). We will generate each
+subset with the size of \(2^13*2^5*2^3 = 2MB\)</p>
 
 </div>
 
@@ -1818,7 +1823,7 @@ subset with the size of \(2^13 * 2^5 * 2^3 = 2MB\)</p>
 <div class='tab-pane' id='generate-datasets'>
 <h3>Generate Datasets</h3>
 
-<p>As we mentioned in the <code>Housing Data</code> example, the first step in a D/&amp;R analysis is to choose a 
+<p>As we mentioned in the housing data example, the first step in a D/&amp;R analysis is to choose a 
 division method and create subsets. In this example, we devide the whole dataset to <em>R</em> sets, where
 $ log2(R) = 12$. So we will generate 2<sup>12</sup> matrices with 2<sup>13</sup> rows and 2<sup>5</sup> columns each. </p>
 
@@ -1849,14 +1854,14 @@ easily change the value of <code>rep</code>, we will talk about it later.</p>
 })
 </code></pre>
 
-<p>In this case, we don&#39;t have an existing data which is different from the <code>Housing Data</code> example. 
+<p>In this case, we don&#39;t have an existing data which is different from the housing data example. 
 Creating a dataset by randomly simulation is the part of the <code>map</code> job. The input keys and values are
 the same by default for the sumulating data step. The keys are numeric numbers 1, 2, ...., <em>R</em>,  where
 <em>R</em> is the number of the subsets. In our example, log2(R) = log2(N/M) = 12. They are the elements of
 the list object <code>map.keys</code>, which in this case, <code>map.keys</code> and <code>map.values</code> would be the same. The 
 output keys from the <code>map1</code> function are the same as the input keys. This is defined by the <code>map1</code> 
 function. The output value for each key is a matrix with 2<sup>13</sup> rows and 2<sup>5</sup> columns. As we have
-explained in the <code>Housing Data</code> example, the output key-value pairs from the <code>map</code> function 
+explained in the housing data example, the output key-value pairs from the <code>map</code> function 
 are also called intermediate key-value pairs. So <code>rhcollect</code> emits these intermediate key-value 
 pairs.</p>
 
@@ -1881,7 +1886,7 @@ mr1 &lt;- rhwatch(
 <p>We have introduced the <code>rhwatch</code> function before. In this case, <code>rhwatch</code> function will submit our 
 MapReduce jobs to finish the data generation part and write the subsets to HDFS. There are three types
 of the <code>input</code> as Text file input, Sequence file input and lapply input. The first two types of input
-have been introduced in the <code>Housing Data</code> example. And in our performance example, the type of 
+have been introduced in the housing data example. And in our performance example, the type of 
 <code>input</code> is lapply input because we are generating numeric data. The argument <code>input</code> in our 
 performance test example is a vector consisting of two elements. The first element specifies the 
 input key would be from 1 to \(2^(n-m)\) for <code>map1</code> function. Also, it specifies how many tasks you 
@@ -1892,14 +1897,12 @@ each mapper would run \(2^(n-m)/12\) tasks, where <code>12</code> is the value o
 So the value of the second element would definitely affect the performance test and it is worthy to 
 carry out an experiment to test its effect. </p>
 
-<p>Once you try the <code>Housing Data</code> example, you have run into most arguments of <code>rhwatch</code>. There are some
-arguments of <code>rhwatch</code> are not been used at all which means they don&#39;t have a default value such as 
-the argument <code>parameters</code>.  But in some cases, they are very important. The argument <code>parameters</code> is
-a list with parameters to be passed to a mapreduce job. It is an very important argument because it 
-passes all the possible values we will need in the Hadoop MapReduce jobs to HDFS. in our case, we 
-specify the values of <code>m</code> and <code>p</code> in the front end R, but Hadoop doesn&#39;t have these values in the 
-back end. So the argument <code>parameter</code> will packages <code>m</code> and <code>p</code> as a list and distribute it to HDFS.
-The argument <code>jobname</code> is not neccesary to be set. It is the name of the job, which is visible on 
+<p>The argument <code>parameters</code> passes all the possible values we will need in the Hadoop MapReduce jobs 
+to HDFS. In our case, we specify the values of <code>m</code> and <code>p</code> in the front end R, but Hadoop doesn&#39;t 
+have these values in the back end. So the argument <code>parameter</code> will packages <code>m</code> and <code>p</code> as a list 
+and distribute it to HDFS.</p>
+
+<p>The argument <code>jobname</code> is not neccesary to be set. It is the name of the job, which is visible on 
 the Jobtracker website. If not provided, Hadoop MapReduce uses the default name job_date_time_number
 e.g. job_201007281701_0274.</p>
 
@@ -1961,7 +1964,8 @@ subset estimates and computing the means. However, we cannot measure <strong>L</
 type  &lt;- &quot;O&quot;
 </code></pre>
 
-<p>First, we will initialize a data frame called <code>timing</code> to store these two different kinds of elapsed time later and create a character <code>type</code> to lable <strong>O</strong> and <strong>T</strong> seperately. </p>
+<p>First, we will initialize a data frame called <code>timing</code> to store these two different kinds of elapsed
+time later and create a character <code>type</code> to lable <strong>O</strong> and <strong>T</strong> seperately. </p>
 
 <h5>Map</h5>
 
@@ -2129,14 +2133,14 @@ and analysis part within 2.3 mins! Actually, the elapsed time depends on many fa
 an opportunity for optimizing the computation even further by making the best choice of the factor. 
 Our approach to the optimization is to run statistically designed experiments. This experiment consists
 of a lot of factors. There are two different types of elapsed time, which means there is one 
-computation-type categorical factor. Two statistical factors  are <code>m</code> and <code>v</code>, which are the kernel 
-factors for our experiment. There are also two Hadoop HDFS factors and two Hadoop MapReduce factors,
-two hardware factors. In total, we have 9 factors. We also have replicates for each combination of 
-these factors. For more details, you can check the paper(link) which describes the whole experiment
-process. In this tutorial, we mainly focus on the computation-type category factor <code>type</code>and the two 
-statistical factors <code>m</code> and <code>p</code>. We have shown how to run a single run of the performance test, so
-we can easily generalize the single run to the whole performance test experiment. We will take the 
-data generation for example.</p>
+computation-type categorical factor. Three statistical factors  are <code>n</code>, <code>m</code> and <code>v</code>, which are the 
+kernel factors for our experiment. There are also two Hadoop HDFS factors and two Hadoop MapReduce 
+factors, two hardware factors. In total, we have 10 factors. We also have replicates for each 
+combination of these factors. For more details, you can check the paper(link) which describes the 
+whole experiment process. In this tutorial, we mainly focus on the computation-type category factor 
+<code>type</code>and the three statistical factors <code>n</code>, <code>m</code> and <code>p</code>. We have shown how to run a single run of 
+the performance test, so we can easily generalize the single run to the whole performance test 
+experiment. We will take the data generation for example.</p>
 
 </div>
 
@@ -2144,26 +2148,87 @@ data generation for example.</p>
 <div class='tab-pane' id='generation-datasets-example'>
 <h3>Generation Datasets Example</h3>
 
-<pre><code class="r">n       &lt;- 23
+<pre><code class="r">n.vec   &lt;- c(21,23,25,27)
 m.vec   &lt;- seq(8, 16, by=1)
 v.vec   &lt;- 4:6
 p.vec   &lt;- 2^v.vec - 1
 run.vec &lt;- 3
+dir.exp &lt;- &quot;/ln/song273/tmp/multi.factor&quot;
 </code></pre>
+
+<p>First, we specify some parameters in the frond end of R. The <code>run.vec</code> denotes for each combination 
+of <code>m</code>,<code>v</code>, we have 3 replicates. The <code>dir.exp</code> specifies the directory for this experiment on HDFS.</p>
 
 <h4>Map &amp; Execution Function</h4>
 
-<pre><code class="r">for (m in m.vec) {
+<pre><code class="r">for (n in n.vec){
+ for (m in m.vec) {
   for (p in p.vec) {
     dir.dm = paste(dir.exp,&quot;/dm/&quot;,&#39;n&#39;,n,&#39;p&#39;,p,&#39;m&#39;,m, sep=&quot;&quot;)
     map1
     mr1
   }
  }
+}
 </code></pre>
 
-<p>The <code>map1</code> is the map function and <code>mr1</code> is the execution function <code>rhwatch</code> we write in the datasets
-generation part of the single run example. So the idea is to put the single run code to a loop.</p>
+<p>The <code>map1</code> and <code>mr1</code> are the map function and the execution function seperately we write in the datasets 
+generation part of the single run example. There is a single run for each fixed value of <code>m</code> and <code>p</code>,
+So the idea is to put the single run code to a for-loop. And the for-loop contains multinumber of 
+MapReduce jobs. The <code>dir.dm</code> specifies the output location for each MapReduce job. </p>
+
+<p>It is noteworthy that we only generate subsets once and in the following timing part, we would read
+the subsets from HDFS to the front end of R 3 times. </p>
+
+</div>
+
+
+<div class='tab-pane' id='elapsed-time-measurement'>
+<h3>Elapsed Time Measurement</h3>
+
+<pre><code class="r">for (n in n.vec){
+ for (rep in rep.vec) {
+
+  ## timing for O
+  type = &quot;O&quot;
+  for (m in m.vec) {
+    for (v in v.vec) {
+      dir.dm = paste(dir.exp,&quot;/dm/&quot;,&#39;n&#39;,n,&#39;v&#39;,v,&quot;m&quot;,m, sep=&quot;&quot;)
+      dir.nf = paste(dir.exp,&quot;/nf/&quot;,&quot;rep&quot;,rep,&#39;n&#39;,n,&#39;v&#39;,v,&quot;m&quot;,m, sep=&quot;&quot;)
+      map2
+      mr2
+      t      = as.numeric(system.time({rhex(mr2, async=FALSE)})[3])
+      t      = data.frame(rep=rep,n=n,m=m,v=v,type=type,t=t)
+      timing = rbind(timing,t) 
+    }
+  }
+  ## timing for T
+  type = &quot;T&quot;
+   for (m in m.vec) {
+    for (v in v.vec) {
+      dir.dm = paste(dir.exp,&quot;/dm/&quot;,&#39;n&#39;,n,&#39;v&#39;,v,&quot;m&quot;,m, sep=&quot;&quot;)
+      dir.gf = paste(dir.exp,&quot;/gf/&quot;,&quot;rep&quot;,rep,&#39;n&#39;,n,&#39;v&#39;,v,&quot;m&quot;,m, sep=&quot;&quot;)
+      mp3
+      reduce3
+      mr3
+      t      = as.numeric(system.time({rhex(mr3, async=FALSE)})[3])
+      t      = data.frame(rep=rep,n=n,m=m,v=v,type=type,t=t)
+      timing = rbind(timing,t)   
+    }
+  }
+ }
+}
+</code></pre>
+
+<p>The first for-loop stands for the different values of <code>n</code>. For each fixed value of <code>n</code>, the second 
+for-loop stands for the replicates. For each fixed value of <code>n</code> and <code>rep</code>, the third and forth 
+for-loop is for differente combination of <code>m</code> and <code>v</code>. There is a single run of performance test for
+any fixed <code>n</code>, <code>rep</code>, <code>m</code> and <code>v</code>. <code>dir.dm</code> and <code>dir.nf</code> seperately specify the input type and output
+type for execution function <code>mr2</code>. The <code>dir.dm</code> and <code>dir.gf</code> seperately specify the input type and 
+output type for execution function <code>mr3</code>. The <code>map2</code>, <code>map3</code>, <code>reduce3</code> are the map and reduce 
+function we specified before.</p>
+
+<p>Finally, we save our final results to a data frame called <code>timing</code>.</p>
 
 </div>
 
@@ -2174,39 +2239,106 @@ generation part of the single run example. So the idea is to put the single run 
 <pre><code class="r">timing
 </code></pre>
 
-<pre><code>       type  n  v  m rep       t
-1         O 25  4  8   1  45.669
-2         O 25  5  8   1  72.751
-3         O 25  6  8   1 139.356
-4         O 25  4  9   1  41.238
-5         O 25  5  9   1  67.580
-6         O 25  6  9   1 120.831
-7         O 25  4 10   1  36.630
-8         O 25  5 10   1  65.720
-9         O 25  6 10   1 138.821
-10        O 25  4 11   1  47.521
-11        O 25  5 11   1  83.752
-12        O 25  6 11   1 132.721
-13        O 25  4 12   1  46.535
-14        O 25  5 12   1  78.616
-15        O 25  6 12   1 145.310
-16        O 25  4 13   1  49.588
-17        O 25  5 13   1  84.652
-18        O 25  6 13   1 161.892
-19        O 25  4 14   1  47.661
-20        O 25  5 14   1 103.689
+<pre><code>    rep  n  m v type        t
+1     1 21  8 4    O   20.644
+2     1 21  8 5    O   19.601
+3     1 21  8 6    O   21.530
+4     1 21  9 4    O   19.581
+5     1 21  9 5    O   19.521
+6     1 21  9 6    O   21.493
+7     1 21 10 4    O   19.571
+8     1 21 10 5    O   19.514
+9     1 21 10 6    O   22.500
+10    1 21 11 4    O   19.499
+11    1 21 11 5    O   22.517
+12    1 21 11 6    O   21.513
+13    1 21 12 4    O   20.011
+14    1 21 12 5    O   18.531
+15    1 21 12 6    O   22.004
+16    1 21 13 4    O   19.623
+17    1 21 13 5    O   19.497
+18    1 21 13 6    O   22.654
+19    1 21 14 4    O   19.473
+20    1 21 14 5    O   19.472
 ...
 
 </code></pre>
 
-<p>The <code>timing</code> dataframe has 162 rows and 6 collumns because <code>type</code> has two levels, <code>m</code> has 9 different
-values and <code>v</code> has 3 different values. For each combination of the factors, we have 3 replicates. So
-we have \(2*9*3*3=162\) rows.</p>
+<p>The <code>timing</code> dataframe has 648 rows and 6 collumns because <code>n</code> has 4 different values, <code>type</code> has two levels, <code>m</code> has 9 different values and <code>v</code> has 3 different values. For each combination of the factors, we have 3 replicates. So we have \(4*2*9*3*3=648\) rows. </p>
+
+<h4>Save the Results to the local</h4>
+
+<p>Because the size of data frame <code>timing</code> is not very large, we can easily download the dataset to our local computer. But first, we need to save <code>timing</code> to the server front end.
+Then we will copy this file from server to our local computer.</p>
+
+<pre><code class="r"># top level directory for experiment on HDFS
+dir = &quot;/ln/song273/tmp&quot;
+# directory for local cluster file system
+dir.local = &quot;/home/median/u41/song273/timetest/&quot;
+</code></pre>
+
+<p>The <code>dir</code> specifies the top level directory for experiment on HDFS. The <code>dir.local</code> specifies the 
+directory for local cluster file system.</p>
+
+<pre><code class="r">rhsave(timing, file=paste(dir, &quot;/save/&quot;, &quot;timing&quot;, &quot;.RData&quot;, sep=&quot;&quot;))
+save(timing, file=paste(dir.local, &quot;timing&quot;, &quot;.RData&quot;, sep=&quot;&quot;))
+</code></pre>
+
+<p>The RHIPE function <code>rhsave</code> helps save the .RData file to the directory of <code>dir</code> on HDFS with file 
+name <code>timing.RData</code>. The R function <code>save</code> write the <code>timing.RData</code> file to the local cluster file
+Then we can use linux command <code>scp</code> to copy the file from the local cluster file to our local 
+computer file.</p>
+
+<pre><code class="r">scp song273@deneb.stat.purdue.edu:timing.RData /home/song273/elapsedtime
+</code></pre>
+
+<p>The linux command <code>scp</code> will copy the <code>timing.RData</code> file from the remote host <em>Deneb</em> to the local
+host under the directory <code>elapsedtime</code>. Then we can analyse the data in our local computer which 
+gives us more freedom to analysis, like we don&#39;t need to worry about the abrupt network fault.</p>
 
 <h4>Visualize the Results</h4>
 
-<p><a href="./plots/elapse_m.pdf">Elapsed time plots against Subsets</a>.
-<a href="./plots/elapse_rep.pdf">Elapsed time plots against Replicates</a>.</p>
+<p>Here we use R function <code>xyplot</code> to visualize the results.</p>
+
+<ol>
+<li>The first plot describes the relationship between two kinds of elapsed time and log subsets size <code>m</code>.</li>
+</ol>
+
+<p><a href="./plots/Elapsed_Time_m_v.pdf">Elapsed time plots against <code>m</code></a>.</p>
+
+<p>As we can see from the first plot, for every fixed value of <code>n</code> and <code>v</code>, the total elapsed time <strong>T</strong> 
+decreases first and then increases later as the value of <code>m</code> changes. And the three different curves
+in one pannel show the same drop-increase pattern.</p>
+
+<ol>
+<li>The second plot describes the relationship between two kinds of elapsed time and log number of 
+varibales <code>v</code>.</li>
+</ol>
+
+<p><a href="./plots/Elapsed_Time_v_n.pdf">Elapsed time plots against <code>v</code></a>.</p>
+
+<p>As we can see from the plot2, for fixed value of <code>m</code> , as the value of <code>v</code> increases, the value of 
+log2(elapsed time) increases linearly in each panel of the plot.</p>
+
+<ol>
+<li>The third plot describes the relationship between two kinds of elapsed time and log observations <code>n</code>.</li>
+</ol>
+
+<p><a href="./plots/Elapsed_Time_n_v.pdf">Elapsed time plots against <code>n</code></a>.</p>
+
+<ol>
+<li>The forth plot describes the relationship between two kinds of elapsed time and 3 replicates.</li>
+</ol>
+
+<p><a href="./plots/Elapsed_Time_rep_v.pdf">Elapsed time plots against Replicates</a>.</p>
+
+<p>This plots helps to see whether replication has blocking effect on the elapsed time. Because R has 
+temporary memory and we read the subsets from HDFS to the front end of R for the first time and R 
+has temperory memory about these files and in the next replicate of reading part, R maybe just reads
+these subsets from memory instead of reading them from the HDFS, which will affect our elpased time
+experiment.</p>
+
+<p>From the plot4, we can see that replication doesn&#39;t have the blocking effects.</p>
 
 </div>
 
