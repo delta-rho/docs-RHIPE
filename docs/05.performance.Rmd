@@ -464,7 +464,7 @@ timing
 ```
 The `timing` dataframe has 648 rows and 6 collumns because `n` has 4 different values, `type` has two levels, `m` has 9 different values and `v` has 3 different values. For each combination of the factors, we have 3 replicates. So we have $4*2*9*3*3=648$ rows. 
 
-#### Visualize the Results ####
+#### Save the Results to the local ####
 
 Because the size of data frame `timing` is not very large, we can easily download the dataset to our local computer. But first, we need to save `timing` to the server front end.
 Then we will copy this file from server to our local computer.
@@ -472,33 +472,59 @@ Then we will copy this file from server to our local computer.
 ```{r, eval=FALSE, tidy=FALSE }
 # top level directory for experiment on HDFS
 dir = "/ln/song273/tmp"
-# directory for local file system
+# directory for local cluster file system
 dir.local = "/home/median/u41/song273/timetest/"
 
-rhsave(timing, file=paste(dir, "/save/", name, ".RData", sep=""))
-save(timing, file=paste(dir.local, name, ".RData", sep=""))
 ```
 
-1. The first plot describes the relationship between two kinds of elapsed time and subsets size `m`.
+The `dir` specifies the top level directory for experiment on HDFS. The `dir.local` specifies the 
+directory for local cluster file system.
 
-[Elapsed time plots against Subsets](./plots/elapse_m.pdf).
-
-As we can see from the first plot, for every value of `v`, the total elapsed time **T** decreases 
-first and then increases later as the value of `m` changes. And the three different curves show the
-same drop-increase pattern. The following table gives us a summary about the minimum value of **T**
-and its corresponding `m` value.
-
-```{r createtable, results='asis', echo=FALSE}
-cat("v | m |min(T)/seconds ","--- | --- |---", sep="\n")
-x = c("4","13","78.33","5","13","132.99","6","11","263.39")
-x = matrix(x,ncol=3,byrow=TRUE)
-cat(apply(x,1,function(X) paste(X,collapse=" | ")),sep = "\n")
+```{r, eval=FALSE, tidy=FALSE }
+rhsave(timing, file=paste(dir, "/save/", "timing", ".RData", sep=""))
+save(timing, file=paste(dir.local, "timing", ".RData", sep=""))
 ```
 
+The RHIPE function `rhsave` helps save the .RData file to the directory of `dir` on HDFS with file 
+name `timing.RData`. The R function `save` write the `timing.RData` file to the local cluster file
+Then we can use linux command `scp` to copy the file from the local cluster file to our local 
+computer file.
 
-2. The second plot describes the relationship between two kinds of elapsed time and 3 replicates.
+```{r, eval=FALSE, tidy=FALSE }
+scp song273@deneb.stat.purdue.edu:timing.RData /home/song273/elapsedtime
+```
 
-[Elapsed time plots against Replicates](./plots/elapsed_rep.pdf).
+The linux command `scp` will copy the `timing.RData` file from the remote host *Deneb* to the local
+host under the directory `elapsedtime`. Then we can analyse the data in our local computer which 
+gives us more freedom to analysis, like we don't need to worry about the abrupt network fault.
+
+#### Visualize the Results ####
+
+Here we use R function `xyplot` to visualize the results.
+
+1. The first plot describes the relationship between two kinds of elapsed time and log subsets size `m`.
+
+[Elapsed time plots against `m`](./plots/Elapsed_Time_m_v.pdf).
+
+As we can see from the first plot, for every fixed value of `n` and `v`, the total elapsed time **T** 
+decreases first and then increases later as the value of `m` changes. And the three different curves
+in one pannel show the same drop-increase pattern.
+
+2. The second plot describes the relationship between two kinds of elapsed time and log number of 
+varibales `v`.
+
+[Elapsed time plots against `v`](./plots/Elapsed_Time_v_n.pdf).
+
+As we can see from the plot2, for fixed value of `m` , as the value of `v` increases, the value of 
+log2(elapsed time) increases linearly in each panel of the plot.
+
+3. The third plot describes the relationship between two kinds of elapsed time and log observations `n`.
+
+[Elapsed time plots against `n`](./plots/Elapsed_Time_n_v.pdf).
+
+4. The forth plot describes the relationship between two kinds of elapsed time and 3 replicates.
+
+[Elapsed time plots against Replicates](./plots/Elapsed_Time_rep_v.pdf).
 
 This plots helps to see whether replication has blocking effect on the elapsed time. Because R has 
 temporary memory and we read the subsets from HDFS to the front end of R for the first time and R 
@@ -506,14 +532,7 @@ has temperory memory about these files and in the next replicate of reading part
 these subsets from memory instead of reading them from the HDFS, which will affect our elpased time
 experiment.
 
-From the plot2, we can see that when n=25, replication doesn't have the blocking effect.
-
-3. The third plot describes the relationship between two kinds of elapsed time and number of varibales `v`.
-
-[Elapsed time plots against `v`](./plots/elapse_v.pdf).
-
-As we can see from the plot3, for fixed value of `m` , as the value of log2(variables) `v` increases,
-the value of log2(elapsed time) increases linearly.
+From the plot4, we can see that replication doesn't have the blocking effects.
   
 
 
