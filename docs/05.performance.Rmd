@@ -6,35 +6,42 @@ We'll demonstrate the computation ability of `RHIPE` package with a performance 
 regression. 
 
 The basic idea is firstly, we wish to generate an observation sample with a size of *N*, *V* number 
-of variables, which means there are *V-1* explanatory variables.  In summary, we wish to generate a 
-dataframe with *N* rows and *V* collumns. Secondly, we want to use the logistic regression method to
+of variables, which means there are $V-1$ explanatory variables. In summary, we wish to generate a 
+dataframe with N rows and V collumns. Secondly, we want to use the logistic regression method to
 analyze the dataframe. However, when the data size is quite large, it will be impractical to generate
 and analyse the whole data set in terms of the time cosuming and the memory limitation.
 
 Instead, we will use `RHIPE` package to generate subsets first and then use logistic regression 
-method to analyze each subset by R function `glm.fit`. The subset observation sample size is *M* and
-the number of subsets is *R*. As a result, $N = M * R$. Each subset contains a sub-dataframe with *M*
-rows and *V* collumns. We will use R function `system.time` to measure elapsed time which will be 
-explained more in the later session.
+method to analyze each subset by R function `glm.fit`. The subset observation sample size is M and
+the number of subsets is R. As a result, $N = MR$. Each subset contains a sub-dataframe with M rows 
+and V collumns. We will use R function `system.time` to measure elapsed time.
+
+There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. 
+The first computation type is "O", the elapsed time to read the subsets from the HDFS and make 
+them available to `glm.fit` in memory as an R objects. The other type, "L", starts when "O" ends
+and it consists of `glm.fit` computations on the subsets by `map`, plus `reduce gathering the 
+subset estimates and computing the means. However, we cannot measure "L" directly. So we measure 
+"O" in one run and $T = O + L$ in another.
+
 
 In this example, we will show how to do a sing run of the performance test, which means we only pick
-one possible value of *M* and one possible value of *V* to see how fast it is to go. 
+one possible value of M and one possible value of V to see how fast it is to go. 
 
-We choose $n = log2(N) = 25$, $v = log2(V) = 5$, $m = log2(M) = 13$, and $log2(R) = 12$ to illustrate
-one single run. So the size for the whole dataset is $2^25*2^5*2^3 = 8GB$. We will generate each
-subset with the size of $2^13*2^5*2^3 = 2MB$
+We choose $n = log2(N) = 27$, $v = log2(V) = 5$, $m = log2(M) = 12$, and $log2(R) = 15$ to illustrate
+one single run. So the size for the whole dataset is $2^{27} \cdot 2^5 \cdot 2^3 = 32GB$. We will 
+generate each subset with the size of $2^{12} \cdot 2^5 \cdot 2^3 = 1MB$
 
-### Generate Datasets ###
+### Generate Dataset ###
 
-As we mentioned in the housing data example, the first step in a D/&R analysis is to choose a 
-division method and create subsets. In this example, we devide the whole dataset to *R* sets, where
-$ log2(R) = 12$. So we will generate 2^12 matrices with 2^13 rows and 2^5 columns each. 
+As we mentioned in the housing data example, the first step in a D&R analysis is to choose a 
+division method and create subsets. In this example, we devide the whole dataset to R sets, where
+$log2(R) = 15$. So we will generate 2^15 dataframes with 2^12 rows and 2^5 columns each. 
 
 Before we run the map function, we will set up some basic parameters in the front end of R enviroment:
 
 ```{r,eval=FALSE,tidy=FALSE}
-n   <- 25
-m   <- 13
+n   <- 27
+m   <- 12
 v   <- 5
 p   <- 2^v - 1
 rep <- 1
@@ -62,11 +69,11 @@ map1 <- expression({
  
 In this case, we don't have an existing data which is different from the housing data example. 
 Creating a dataset by randomly simulation is the part of the `map` job. The input keys and values are
-the same by default for the sumulating data step. The keys are numeric numbers 1, 2, ...., *R*,  where
-*R* is the number of the subsets. In our example, log2(R) = log2(N/M) = 12. They are the elements of
+the same by default for the sumulating data step. The keys are numeric numbers 1, 2, ...., R,  where
+R is the number of the subsets. In our example, $log2(R) = log2(N/M) = 15$. They are the elements of
 the list object `map.keys`, which in this case, `map.keys` and `map.values` would be the same. The 
 output keys from the `map1` function are the same as the input keys. This is defined by the `map1` 
-function. The output value for each key is a matrix with 2^13 rows and 2^5 columns. As we have
+function. The output value for each key is a matrix with $2^{13}$ rows and $2^5$ columns. As we have
 explained in the housing data example, the output key-value pairs from the `map` function 
 are also called intermediate key-value pairs. So `rhcollect` emits these intermediate key-value 
 pairs.
@@ -76,7 +83,7 @@ There is no reducer step for the generation part. Next we will write the generat
 #### Execution Function ####
 
 ```{r eval=FALSE, tidy=FALSE}
-dir.dm  = "/ln/song273/tmp/multi.factor_n25/dm/n25v5m13"
+dir.dm  = "/ln/song273/tmp/multi.factor/dm/n27v5m12"
 mr1 <- rhwatch(
  map      = map1,
  input    = c(2^(n-m),12),
@@ -100,7 +107,7 @@ input key would be from 1 to $2^(n-m)$ for `map1` function. Also, it specifies h
 would like Hadoop MapReduce Framework to run because each task conresponds to one key-value pair. 
 In our performance test example, each task is to generate a subset with 2^13 rows and 2^5 columns. 
 The second element of the vector `input` specifies the numbers of mappers you would like to use. So 
-each mapper would run $2^(n-m)/12$ tasks, where `12` is the value of the second element of `input`. 
+each mapper would run $2^{(n-m)}/12$ tasks, where `12` is the value of the second element of `input`. 
 So the value of the second element would definitely affect the performance test and it is worthy to 
 carry out an experiment to test its effect. 
 
@@ -114,8 +121,8 @@ the Jobtracker website. If not provided, Hadoop MapReduce uses the default name 
 e.g. job_201007281701_0274.
 
 ```
-[Sun Oct  5 22:30:58 2014] Name:/ln/song273/tmp/multi.factor_n25/dm/n25v5m13 Job: job_201405301308_5050  State: RUNNING Duration: 30.455
-URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_5050
+[Mon Oct 13 23:00:45 2014] Name:/ln/song273/tmp/multi.factor/dm/n27v5m12 Job: job_201405301308_5317  State: RUNNING Duration: 83.276
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_5317
              pct numtasks pending running complete killed failed_attempts
 map    0.9999999       12       0      12        0      0               0
 reduce 0.0000000        0       0       0        0      0               0
@@ -130,38 +137,34 @@ Our subsets have been created and are saved on HDFS now. We will use `rhls()` to
 about files on HDFS.
 
 ```{r eval=FALSE, tidy=FALSE}
-rhls("/ln/song273/tmp/multi.factor_n25/dm/n25v5m13")
+rhls("/ln/song273/tmp/multi.factor/dm/n27v5m12")
 ```
 
 ```
-   permission   owner      group     size          modtime
-1  -rw-r--r-- song273 supergroup        0 2014-10-05 22:32     /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/_SUCCESS
-2  drwxrwxrwt song273 supergroup        0 2014-10-05 22:30        /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/_logs
-3  -rw-r--r-- song273 supergroup   690 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00000
-4  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00001
-5  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00002
-6  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00003
-7  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00004
-8  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00005
-9  -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00006
-10 -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00007
-11 -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00008
-12 -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00009
-13 -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00010
-14 -rw-r--r-- song273 supergroup   682 mb 2014-10-05 22:30 /ln/song273/tmp/multi.factor_n25/dm/n25v5m13/part-m-00011
+   permission   owner      group     size          modtime                                                  file
+1  -rw-r--r-- song273 supergroup        0 2014-10-13 23:04     /ln/song273/tmp/multi.factor/dm/n27v5m12/_SUCCESS
+2  drwxrwxrwt song273 supergroup        0 2014-10-13 22:59        /ln/song273/tmp/multi.factor/dm/n27v5m12/_logs
+3  -rw-r--r-- song273 supergroup 2.674 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00000
+4  -rw-r--r-- song273 supergroup 2.666 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00001
+5  -rw-r--r-- song273 supergroup 2.666 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00002
+6  -rw-r--r-- song273 supergroup 2.666 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00003
+7  -rw-r--r-- song273 supergroup 2.666 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00004
+8  -rw-r--r-- song273 supergroup 2.666 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00005
+9  -rw-r--r-- song273 supergroup 2.666 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00006
+10 -rw-r--r-- song273 supergroup 2.666 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00007
+11 -rw-r--r-- song273 supergroup 2.666 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00008
+12 -rw-r--r-- song273 supergroup 2.666 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00009
+13 -rw-r--r-- song273 supergroup 2.666 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00010
+14 -rw-r--r-- song273 supergroup 2.666 gb 2014-10-13 22:59 /ln/song273/tmp/multi.factor/dm/n27v5m12/part-m-00011
+
 
 ```
 It generates 12 files with ending name "00000" to "00011". Most of their size is 682 Mb. Each file
-consists of $2^12 / 12$ subsets. 
+consists of $2^15 / 12$ subsets. 
 
 ### Elapsed Time Measurement ###
 
-There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. 
-The first computation type is **O**, the elapsed time to read the subsets from the HDFS and make 
-them available to `glm.fit` in memory as an R objects. The other type, **L**, starts when **O** ends
-and it consists of `glm.fit` computations on the subsets by **map**, plus **reduce** gathering the 
-subset estimates and computing the means. However, we cannot measure **L** directly. So we measure 
-**O** in one run and **T = O + L** in another.
+
 
 #### The First Kind Of Elapsed Time -- **O** ####
 
@@ -184,8 +187,8 @@ to read the data from HDFS to the front end without other operations and then re
 ##### Execution Function #####
 
 ```{r eval=FALSE, tidy=FALSE}
-dir.dm  <- "/ln/song273/tmp/multi.factor_n25/dm/n25v5m13"
-dir.nf  <- "/ln/song273/tmp/multi.factor_n25/nf/n25v5m13"
+dir.dm  <- "/ln/song273/tmp/multi.factor/dm/n27v5m12"
+dir.nf  <- "/ln/song273/tmp/multi.factor/nf/n27v5m12"
 mr2 <- rhwatch(
  map      = map2,
  input    = dir.dm,
@@ -213,9 +216,9 @@ MapReduce job. Instead, the `rhex` function will submit the MapReduce job to the
 framework. 
 
 The `dir.dm` and `dir.nf` specify the `input` and `output` argument of `rhwatch` function. 
-So the first `t` in the R codes records the first type elapsed time **O** and the second `t` is a 
+So the first `t` in the R codes records the first type elapsed time O and the second `t` is a 
 data frame which saves the value of computation `type`, the value of `n`, `m`, `v`, the number of 
-replicate `rep`, and the value of first type of elapsed time **O**. Then we use R function `rbind` 
+replicate `rep`, and the value of first type of elapsed time O. Then we use R function `rbind` 
 to combine data frame `timing` and data frame `t` by rows. We can take a look at the data frame 
 `timing`.
 
@@ -224,10 +227,11 @@ timing
 ```
 
 ```
-  rep  n  m v type      t
-1   1 25 13 5    O 48.597
+  rep  n  m v type       t
+1   1 27 12 5    O 253.237
 ```
-So `timing` is a data frame with 1 row and 6 collumns. We will save another type of elapsed time **T** into this data frame.
+So `timing` is a data frame with 1 row and 6 collumns. We will save another type of elapsed time "T""
+into this data frame.
 
 #### The Second Kind of Elapsed Time -- **T** ####
 
@@ -249,7 +253,7 @@ map3 <- expression({
 ```
 
 The input to our `map3` is the final output we created in the previous section which the key is from
-1 to $2^13$ and the input value is a dataframe with $2^13$ rows and $2^5$ collumns. For each subset,
+1 to $2^{15}$ and the input value is a dataframe with $2^12$ rows and $2^5$ collumns. For each subset,
 we apply the same action : take the coefficient of the logistic regression for the subset. They are 
 stored in a single row dataframe to be recombined in the reduce step below. This single row dataframe
 has `p` collumns. We use the same key for all the subsets so that they wil appear together in the 
@@ -285,8 +289,8 @@ output so that it will be written to HDFS.
 ##### Exectution Function #####
 
 ```{r eval=FALSE, tidy=FALSE}
-dir.dm  = "/ln/song273/tmp/multi.factor_n25/dm/n25v5m13"
-dir.gf  = "/ln/song273/tmp/multi.factor_n25/gf/n25v5m13"
+dir.dm  = "/ln/song273/tmp/multi.factor/dm/n27v5m12"
+dir.gf  = "/ln/song273/tmp/multi.factor/gf/n27v5m12"
 
 mr3 <- rhwatch(
   map      = map3,
@@ -307,9 +311,10 @@ t = data.frame(rep=rep,n=n,m=m,v=v,type=type,t=t)
 timing = rbind(timing,t)
 ```
 ```
-Saving 2 parameters to /tmp/rhipe-temp-params-4c3905d5e34c9689c92490e17cb6162b (use rhclean to delete all temp files)
+Saving 2 parameters to /tmp/rhipe-temp-params-48fd3131fbae41b13c97ce71393f8aaa (use rhclean to delete all temp files)
+
 ```
-After the job completes successfully, we record the whole elapsed time **T** and save it to the R 
+After the job completes successfully, we record the whole elapsed time "T" and save it to the R 
 object `t`. And we save the results to our data frame `timing`. Till now, we have finished the single
 run of the cluster performance test and save the result to a data frame called `timing`.
 
@@ -319,25 +324,25 @@ timing
 ```
 
 ```
- rep  n  m v type       t
-1   1 25 13 5    O  48.597
-2   1 25 13 5    T 133.846
+  rep  n  m v type       t
+1   1 27 12 5    O 253.237
+2   1 27 12 5    T 561.081
 
 ```
 
 As we can see from the `timing` dataframe, there are 2 rows and 6 collumns. The last collumn is the 
-elapsed time `t`. As we can see, the elapsed time **O** we need to read the datasets 
-from HDFS to the front end is 48.597 seconds and the whole elapsed time **T** which consists of the 
-reading time and the analyzing time is 133.846 seconds, which is less than 2.3 mins. That result is 
+elapsed time `t`. As we can see, the elapsed time "O" we need to read the datasets 
+from HDFS to the front end is 253.237 seconds which is about 4.2 mins and the whole elapsed time "T" which consists of the 
+reading time and the analyzing time is 561.081 seconds, which is less than 9.4 mins. That result is 
 impressive! The cluster to run the test here is a very small one with two nodes and 64 GB 
 memory in total. You can definitely use RHIPE computation environment to generalize this one sing
-run to a full cluster performance test. 
+run to a full cluster performance test. We will show you the basic idea about how to run a multi-factor experiment in next part.
 
 ### A Multi-Factor Experiment for Performance of a Cluster ###
 
 As we can see, `RHIPE` and its computation environment reduce the time of computation dramatically.
-In the last example, we are generating $2^25 *2^5 *2^3 = 8GB$ data and we finish the generation part
-and analysis part within 2.3 mins! Actually, the elapsed time depends on many factors. This presents
+In the last example, we are generating $2^{27} \cdot 2^5 \cdot 2^3 = 32GB$ data and we finish the 
+reading and analysis within 9.4 mins! Actually, the elapsed time depends on many factors. This presents
 an opportunity for optimizing the computation even further by making the best choice of the factor. 
 Our approach to the optimization is to run statistically designed experiments. This experiment consists
 of a lot of factors. There are two different types of elapsed time, which means there is one 
@@ -350,7 +355,7 @@ whole experiment process. In this tutorial, we mainly focus on the computation-t
 the performance test, so we can easily generalize the single run to the whole performance test 
 experiment. We will take the data generation for example.
 
-### Generation Datasets Example ###
+#### Generation Datasets Example ####
 
 ```{r,eval=FALSE,tidy=FALSE}
 n.vec   <- c(21,23,25,27)
@@ -364,7 +369,7 @@ dir.exp <- "/ln/song273/tmp/multi.factor"
 First, we specify some parameters in the frond end of R. The `run.vec` denotes for each combination 
 of `m`,`v`, we have 3 replicates. The `dir.exp` specifies the directory for this experiment on HDFS.
 
-#### Map & Execution Function ####
+##### Map & Execution Function #####
 ```{r, eval=FALSE,tidy=FALSE}
 for (n in n.vec){
  for (m in m.vec) {
@@ -385,7 +390,7 @@ MapReduce jobs. The `dir.dm` specifies the output location for each MapReduce jo
 It is noteworthy that we only generate subsets once and in the following timing part, we would read
 the subsets from HDFS to the front end of R 3 times. 
 
-### Elapsed Time Measurement ###
+##### Elapsed Time Measurement #####
 
 ```{r, eval=FALSE,tidy=FALSE}
 for (n in n.vec){
@@ -432,7 +437,7 @@ function we specified before.
 
 Finally, we save our final results to a data frame called `timing`.
 
-### Results of the Experiment of the Performance Test ###
+#### Results of the Experiment of the Performance Test ####
 
 ```{r, eval=FALSE,tidy=FALSE}
 timing
@@ -464,15 +469,13 @@ timing
 ```
 The `timing` dataframe has 648 rows and 6 collumns because `n` has 4 different values, `type` has two levels, `m` has 9 different values and `v` has 3 different values. For each combination of the factors, we have 3 replicates. So we have $4*2*9*3*3=648$ rows. 
 
-#### Save the Results to the local ####
+##### Save the Results to the local #####
 
 Because the size of data frame `timing` is not very large, we can easily download the dataset to our local computer. But first, we need to save `timing` to the server front end.
 Then we will copy this file from server to our local computer.
 
 ```{r, eval=FALSE, tidy=FALSE }
-# top level directory for experiment on HDFS
 dir = "/ln/song273/tmp"
-# directory for local cluster file system
 dir.local = "/home/median/u41/song273/timetest/"
 
 ```
