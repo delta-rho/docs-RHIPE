@@ -2286,36 +2286,45 @@ gives us more freedom to analysis, for examle we don&#39;t need to worry about t
 
 <p>Here we use R function <code>xyplot</code> to visualize the results.</p>
 
-<ul>
-<li><p>The first plot describes the relationship between two kinds of elapsed time and log subsets size <code>m</code>.</p>
+<ol>
+<li>The first plot describes the relationship between two kinds of elapsed time and log subsets size <code>m</code>.</li>
+</ol>
 
-<p><a href="./plots/Elapsed_Time_m_v.pdf">Plot1. Elapsed time plots against m</a>.</p>
+<p><a href="./plots/Elapsed_Time_m_v.pdf">Elapsed time plots against <code>m</code></a>.</p>
 
-<p>As we can see from the first plot, for every fixed value of <code>n</code> and <code>v</code>, the total elapsed time 
-&quot;T&quot; decreases first and then increases later as the value of <code>m</code> changes. And the three different
-curves in one pannel show the same drop-increase pattern.</p></li>
-<li><p>The second plot describes the relationship between two kinds of elapsed time and log number of 
-varibales <code>v</code>.</p>
+<p>As we can see from the first plot, for every fixed value of <code>n</code> and <code>v</code>, the total elapsed time <strong>T</strong> 
+decreases first and then increases later as the value of <code>m</code> changes. And the three different curves
+in one pannel show the same drop-increase pattern.</p>
 
-<p><a href="./plots/Elapsed_Time_v_n.pdf">Plot2. Elapsed time plots against v</a>.</p>
+<ol>
+<li>The second plot describes the relationship between two kinds of elapsed time and log number of 
+varibales <code>v</code>.</li>
+</ol>
 
-<p>As we can see from the plot2, for fixed value of <code>m</code> , as the value of <code>v</code> increases, the value 
-of log2(elapsed time) increases linearly in each panel of the plot.</p></li>
-<li><p>The third plot describes the relationship between two kinds of elapsed time and log observations <code>n</code>.</p>
+<p><a href="./plots/Elapsed_Time_v_n.pdf">Elapsed time plots against <code>v</code></a>.</p>
 
-<p><a href="./plots/Elapsed_Time_n_v.pdf">Plot3. Elapsed time plots against n</a>.</p></li>
-<li><p>The forth plot describes the relationship between two kinds of elapsed time and 3 replicates.</p>
+<p>As we can see from the plot2, for fixed value of <code>m</code> , as the value of <code>v</code> increases, the value of 
+log2(elapsed time) increases linearly in each panel of the plot.</p>
 
-<p><a href="./plots/Elapsed_Time_rep_v.pdf">Plot4. Elapsed time plots against Replicates</a>.</p>
+<ol>
+<li>The third plot describes the relationship between two kinds of elapsed time and log observations <code>n</code>.</li>
+</ol>
+
+<p><a href="./plots/Elapsed_Time_n_v.pdf">Elapsed time plots against <code>n</code></a>.</p>
+
+<ol>
+<li>The forth plot describes the relationship between two kinds of elapsed time and 3 replicates.</li>
+</ol>
+
+<p><a href="./plots/Elapsed_Time_rep_v.pdf">Elapsed time plots against Replicates</a>.</p>
 
 <p>This plots helps to see whether replication has blocking effect on the elapsed time. Because R has 
 temporary memory and we read the subsets from HDFS to the front end of R for the first time and R 
-has temperory memory about these files and in the next replicate of reading part, R maybe just 
-reads these subsets from memory instead of reading them from the HDFS, which will affect our 
-elpased time experiment.</p>
+has temperory memory about these files and in the next replicate of reading part, R maybe just reads
+these subsets from memory instead of reading them from the HDFS, which will affect our elpased time
+experiment.</p>
 
-<p>From the plot4, we can see that replication doesn&#39;t have the blocking effects.</p></li>
-</ul>
+<p>From the plot4, we can see that replication doesn&#39;t have the blocking effects.</p>
 
 </div>
 
