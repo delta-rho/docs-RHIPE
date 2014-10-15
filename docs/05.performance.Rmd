@@ -1,11 +1,11 @@
-## The Cluster Performance Test ##
+## Measuring the Cluster Performance ##
 
 ### Introduction ###
 
 We'll demonstrate the computation ability of `RHIPE` package with a performance test by using logistic
 regression. 
 
-The basic idea is firstly, we wish to generate an observation sample with a size of *N*, *V* number 
+The basic idea is firstly, we wish to generate an observation sample with a size of N, V number 
 of variables, which means there are $V-1$ explanatory variables. In summary, we wish to generate a 
 dataframe with N rows and V collumns. Secondly, we want to use the logistic regression method to
 analyze the dataframe. However, when the data size is quite large, it will be impractical to generate
@@ -31,7 +31,7 @@ We choose $n = log2(N) = 27$, $v = log2(V) = 5$, $m = log2(M) = 12$, and $log2(R
 one single run. So the size for the whole dataset is $2^{27} \cdot 2^5 \cdot 2^3 = 32GB$. We will 
 generate each subset with the size of $2^{12} \cdot 2^5 \cdot 2^3 = 1MB$
 
-### Generate Dataset ###
+### Single Run -- Generate Dataset ###
 
 As we mentioned in the housing data example, the first step in a D&R analysis is to choose a 
 division method and create subsets. In this example, we devide the whole dataset to R sets, where
@@ -162,9 +162,10 @@ rhls("/ln/song273/tmp/multi.factor/dm/n27v5m12")
 It generates 12 files with ending name "00000" to "00011". Most of their size is 682 Mb. Each file
 consists of $2^15 / 12$ subsets. 
 
-### Elapsed Time Measurement ###
+### Single run -- Elapsed Time Measurement ###
 
-
+As we has talked in the introduction, we will measure the first elapsed time "O" in one run and 
+measure the whole elapsed time "T" in another run.
 
 #### The First Kind Of Elapsed Time -- **O** ####
 
@@ -174,7 +175,7 @@ type  <- "O"
 ```
 
 First, we will initialize a data frame called `timing` to store these two different kinds of elapsed
-time later and create a character `type` to lable **O** and **T** seperately. 
+time later and create a character `type` to lable "O" and "T" seperately. 
 ##### Map #####
 
 ```{r eval=FALSE, tidy=FALSE}
@@ -230,7 +231,7 @@ timing
   rep  n  m v type       t
 1   1 27 12 5    O 253.237
 ```
-So `timing` is a data frame with 1 row and 6 collumns. We will save another type of elapsed time "T""
+So `timing` is a data frame with 1 row and 6 collumns. We will save another type of elapsed time "T"
 into this data frame.
 
 #### The Second Kind of Elapsed Time -- **T** ####
@@ -239,7 +240,7 @@ into this data frame.
 type  <- "T"
 ```
 
-We first specify the value of `type` as `T` to identify the second kind of elapsed time **T**.
+We first specify the value of `type` as `T` to identify the second kind of elapsed time "T".
 
 ##### Map #####
 
@@ -253,7 +254,7 @@ map3 <- expression({
 ```
 
 The input to our `map3` is the final output we created in the previous section which the key is from
-1 to $2^{15}$ and the input value is a dataframe with $2^12$ rows and $2^5$ collumns. For each subset,
+1 to $2^{15}$ and the input value is a dataframe with $2^{12}$ rows and $2^5$ collumns. For each subset,
 we apply the same action : take the coefficient of the logistic regression for the subset. They are 
 stored in a single row dataframe to be recombined in the reduce step below. This single row dataframe
 has `p` collumns. We use the same key for all the subsets so that they wil appear together in the 
@@ -332,13 +333,14 @@ timing
 
 As we can see from the `timing` dataframe, there are 2 rows and 6 collumns. The last collumn is the 
 elapsed time `t`. As we can see, the elapsed time "O" we need to read the datasets 
-from HDFS to the front end is 253.237 seconds which is about 4.2 mins and the whole elapsed time "T" which consists of the 
-reading time and the analyzing time is 561.081 seconds, which is less than 9.4 mins. That result is 
-impressive! The cluster to run the test here is a very small one with two nodes and 64 GB 
-memory in total. You can definitely use RHIPE computation environment to generalize this one sing
-run to a full cluster performance test. We will show you the basic idea about how to run a multi-factor experiment in next part.
+from HDFS to the front end is 253.237 seconds which is about 4.2 mins and the whole elapsed time "T" 
+which consists of the reading time and the analyzing time is 561.081 seconds, which is less than 9.4
+mins. That result is impressive! The cluster to run the test here is a very small one with two nodes
+and 64 GB memory in total. You can definitely use RHIPE computation environment to generalize this 
+one sing run to a full cluster performance test. We will show you the basic idea about how to run a 
+multi-factor experiment for the cluster performance in the next part.
 
-### A Multi-Factor Experiment for Performance of a Cluster ###
+### A Multi-Factor Experiment for the Cluster Performance ###
 
 As we can see, `RHIPE` and its computation environment reduce the time of computation dramatically.
 In the last example, we are generating $2^{27} \cdot 2^5 \cdot 2^3 = 32GB$ data and we finish the 
@@ -497,9 +499,9 @@ computer file.
 scp song273@deneb.stat.purdue.edu:timing.RData /home/song273/elapsedtime
 ```
 
-The linux command `scp` will copy the `timing.RData` file from the remote host *Deneb* to the local
+The linux command `scp` will copy the `timing.RData` file from the remote host cluster to the local
 host under the directory `elapsedtime`. Then we can analyse the data in our local computer which 
-gives us more freedom to analysis, like we don't need to worry about the abrupt network fault.
+gives us more freedom to analysis, for examle we don't need to worry about the abrupt network fault.
 
 #### Visualize the Results ####
 
