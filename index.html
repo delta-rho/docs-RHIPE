@@ -2138,9 +2138,18 @@ kernel factors for our experiment. There are also two Hadoop HDFS factors and tw
 factors, two hardware factors. In total, we have 10 factors. We also have replicates for each 
 combination of these factors. For more details, you can check the paper(link) which describes the 
 whole experiment process. In this tutorial, we mainly focus on the computation-type category factor 
-<code>type</code>and the three statistical factors <code>n</code>, <code>m</code> and <code>p</code>. We have shown how to run a single run of 
+<code>type</code>and the three statistical factors <code>n</code>, <code>m</code> and <code>v</code>. We have shown how to run a single run of 
 the performance test, so we can easily generalize the single run to the whole performance test 
 experiment. We will take the data generation for example.</p>
+
+<p>We will vary the values of <code>n</code>, <code>m</code>, <code>v</code> and set 3 replicates for the experiment. </p>
+
+<ul>
+<li>n   : 21, 23, 25, 27</li>
+<li>m   : 8, 9, 10, ..., 16</li>
+<li>v   : 4, 5, 6</li>
+<li>rep : 3</li>
+</ul>
 
 <h4>Generation Datasets Example</h4>
 
