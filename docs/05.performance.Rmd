@@ -31,7 +31,7 @@ We choose $n = log2(N) = 27$, $v = log2(V) = 5$, $m = log2(M) = 12$, and $log2(R
 one single run. So the size for the whole dataset is $2^{27} \cdot 2^5 \cdot 2^3 = 32GB$. We will 
 generate each subset with the size of $2^{12} \cdot 2^5 \cdot 2^3 = 1MB$
 
-### Single Run -- Generate Dataset ###
+### A Single Run -- Generate Dataset ###
 
 As we mentioned in the housing data example, the first step in a D&R analysis is to choose a 
 division method and create subsets. In this example, we devide the whole dataset to R sets, where
@@ -162,7 +162,7 @@ rhls("/ln/song273/tmp/multi.factor/dm/n27v5m12")
 It generates 12 files with ending name "00000" to "00011". Most of their size is 682 Mb. Each file
 consists of $2^15 / 12$ subsets. 
 
-### Single run -- Elapsed Time Measurement ###
+### A Single Run -- Elapsed Time Measurement ###
 
 As we has talked in the introduction, we will measure the first elapsed time "O" in one run and 
 measure the whole elapsed time "T" in another run.
@@ -319,7 +319,7 @@ After the job completes successfully, we record the whole elapsed time "T" and s
 object `t`. And we save the results to our data frame `timing`. Till now, we have finished the single
 run of the cluster performance test and save the result to a data frame called `timing`.
 
-### Results of the Single run of the Performance Test ###
+### A Single Run -- Results ###
 ```{r eval=FALSE, tidy=FALSE}
 timing
 ```
@@ -507,37 +507,37 @@ gives us more freedom to analysis, for examle we don't need to worry about the a
 
 Here we use R function `xyplot` to visualize the results.
 
-1. The first plot describes the relationship between two kinds of elapsed time and log subsets size `m`.
+- The first plot describes the relationship between two kinds of elapsed time and log subsets size `m`.
 
-[Elapsed time plots against `m`](./plots/Elapsed_Time_m_v.pdf).
+   [Plot1. Elapsed time plots against m](./plots/Elapsed_Time_m_v.pdf).
 
-As we can see from the first plot, for every fixed value of `n` and `v`, the total elapsed time **T** 
-decreases first and then increases later as the value of `m` changes. And the three different curves
-in one pannel show the same drop-increase pattern.
+   As we can see from the first plot, for every fixed value of `n` and `v`, the total elapsed time 
+   "T" decreases first and then increases later as the value of `m` changes. And the three different
+   curves in one pannel show the same drop-increase pattern.
 
-2. The second plot describes the relationship between two kinds of elapsed time and log number of 
+- The second plot describes the relationship between two kinds of elapsed time and log number of 
 varibales `v`.
 
-[Elapsed time plots against `v`](./plots/Elapsed_Time_v_n.pdf).
+   [Plot2. Elapsed time plots against v](./plots/Elapsed_Time_v_n.pdf).
 
-As we can see from the plot2, for fixed value of `m` , as the value of `v` increases, the value of 
-log2(elapsed time) increases linearly in each panel of the plot.
+   As we can see from the plot2, for fixed value of `m` , as the value of `v` increases, the value 
+   of log2(elapsed time) increases linearly in each panel of the plot.
 
-3. The third plot describes the relationship between two kinds of elapsed time and log observations `n`.
+- The third plot describes the relationship between two kinds of elapsed time and log observations `n`.
 
-[Elapsed time plots against `n`](./plots/Elapsed_Time_n_v.pdf).
+   [Plot3. Elapsed time plots against n](./plots/Elapsed_Time_n_v.pdf).
 
-4. The forth plot describes the relationship between two kinds of elapsed time and 3 replicates.
+- The forth plot describes the relationship between two kinds of elapsed time and 3 replicates.
 
-[Elapsed time plots against Replicates](./plots/Elapsed_Time_rep_v.pdf).
+   [Plot4. Elapsed time plots against Replicates](./plots/Elapsed_Time_rep_v.pdf).
 
-This plots helps to see whether replication has blocking effect on the elapsed time. Because R has 
-temporary memory and we read the subsets from HDFS to the front end of R for the first time and R 
-has temperory memory about these files and in the next replicate of reading part, R maybe just reads
-these subsets from memory instead of reading them from the HDFS, which will affect our elpased time
-experiment.
+   This plots helps to see whether replication has blocking effect on the elapsed time. Because R has 
+   temporary memory and we read the subsets from HDFS to the front end of R for the first time and R 
+   has temperory memory about these files and in the next replicate of reading part, R maybe just 
+   reads these subsets from memory instead of reading them from the HDFS, which will affect our 
+   elpased time experiment.
 
-From the plot4, we can see that replication doesn't have the blocking effects.
+   From the plot4, we can see that replication doesn't have the blocking effects.
   
 
 
