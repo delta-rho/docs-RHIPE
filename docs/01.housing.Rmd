@@ -603,7 +603,7 @@ attributes(countySubsets[[1]][[2]])
 ```
 ```
 $names
-[1] "time"             "units"            "list"             "selling"
+[1] "date"             "units"            "list"             "selling"
 
 $row.names
  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32
@@ -717,14 +717,14 @@ head(meansByCounty[[1]][[2]])
 
 ### Read and Divide by Month ###
 
-Same as before, we can create the subsets of dataset divided by time variable. But here one of
+Same as before, we can create the subsets of dataset divided by date variable. But here one of
 potential problem that we may face is that what if some of the subsets are very large? This is
 a very general problem if we are dealing with a large and complex dataset. In fact, `RHIPE` is 
 able to write any size of one subset to HDFS, but only can read one subset less than 256 Mb 
 from HDFS. In other words, we are able to create any size of subset in a mapreduce job, but we
 will get issue when we are trying to read and apply analysis method on oversize subset.
 
-In this example, we are assuming that each subset by time is oversize. One way to overcome this
+In this example, we are assuming that each subset by date is oversize. One way to overcome this
 issue is that we are going to create multiple subsets for each month. 
 
 #### Map ####
@@ -751,14 +751,14 @@ reduce5 <- expression(
   pre = {
   },
   reduce = {
-    time500 <- do.call(rbind, reduce.values)
-    names(time500) <- c(
+    date500 <- do.call(rbind, reduce.values)
+    names(date500) <- c(
       "fips", "county", "state", 
       "units", "list", "selling"
     )
-    time500$list <- as.numeric(time500$list)
-    time500$selling <- as.numeric(time500$selling)
-    rhcollect(reduce.key, time500)
+    date500$list <- as.numeric(date500$list)
+    date500$selling <- as.numeric(date500$selling)
+    rhcollect(reduce.key, date500)
   },
   post = {
   }
@@ -777,8 +777,8 @@ county.
 
 What we have done above in `reduce` is for a given key, for every 500 (later one we will illustrate where 
 we specified this 500) intermediate value corresponding to this key, we created a data.frame named
-`time500` which is the row-bind of all these 500 rows(recall that each value is a data frame with single 
-row from map output) for this key. Then we collected `time500` as value with the key. Then is the next
+`date500` which is the row-bind of all these 500 rows(recall that each value is a data frame with single 
+row from map output) for this key. Then we collected `date500` as value with the key. Then is the next
 500 rows for the same key, repeatedly until all rows for this key has been processed. If, for example, for 
 one key we have 1324 values(rows), then finally we will get three key-value pairs with same key by using 
 this reduce expression.
@@ -790,7 +790,7 @@ mr5 <- rhwatch(
   map      = map5,
   reduce   = reduce5,
   input    = rhfmt("/ln/tongx/housing/housing.txt", type = "text"),
-  output   = rhfmt("/ln/tongx/housing/bytime", type = "sequence"),
+  output   = rhfmt("/ln/tongx/housing/bydate", type = "sequence"),
   mapred   = list(
     mapred.reduce.tasks = 10,
     rhipe_reduce_buff_size = 500
@@ -808,7 +808,7 @@ Let us examine if we got what we want. Recall that we have 2,883 counties in tot
 which is a data frame with 2,883 rows.
 
 ```{r eval=FALSE, tidy=FALSE}
-rst <- rhread("/ln/tongx/housing/bytime")
+rst <- rhread("/ln/tongx/housing/bydate")
 ```
 ```
 Read 396 objects(8.85 MB) in 2.76 seconds
@@ -904,8 +904,8 @@ the overall summation for each month
 mr6 <- rhwatch(
   map       = map6,
   reduce    = reduce6,
-  input     = rhfmt("/ln/tongx/housing/bytime", type = "sequence"),
-  output    = rhfmt("/ln/tongx/housing/soldbytime", type = "sequence"),
+  input     = rhfmt("/ln/tongx/housing/bydate", type = "sequence"),
+  output    = rhfmt("/ln/tongx/housing/soldbydate", type = "sequence"),
   mapred    = list(
     mapred.reduce.tasks = 10
   ),
@@ -931,8 +931,8 @@ Now let us see how to do the same task with combiner.
 mr7 <- rhwatch(
   map       = map6,
   reduce    = reduce6,
-  input     = rhfmt("/ln/tongx/housing/bytime", type = "sequence"),
-  output    = rhfmt("/ln/tongx/housing/soldbytime.combiner", type = "sequence"),
+  input     = rhfmt("/ln/tongx/housing/bydate", type = "sequence"),
+  output    = rhfmt("/ln/tongx/housing/soldbydate.combiner", type = "sequence"),
   mapred    = list(
     mapred.reduce.tasks = 10
   ),
@@ -959,8 +959,8 @@ values related to one key.
 Finally, we can double check if combiner active or not will effect the final result.
 
 ```{r eval=FALSE, tidy=FALSE}
-rst.comb <- rhread("/ln/tongx/housing/soldbytime.combiner")
-rst <- rhread("/ln/tongx/housing/soldbytime")
+rst.comb <- rhread("/ln/tongx/housing/soldbydate.combiner")
+rst <- rhread("/ln/tongx/housing/soldbydate")
 identical(rst, rst.comb)
 ```
 ```
@@ -972,20 +972,20 @@ to be a data frame with following code:
 
 ```{r eval=FALSE, tidy=FALSE}
 df <- data.frame(  
-  time  = sapply(rst, "[[", 1),
+  date  = sapply(rst, "[[", 1),
   total = sapply(rst, "[[", 2)
 )
-df <- df[order(df$time, decreasing = FALSE), ]  
+df <- df[order(df$date, decreasing = FALSE), ]  
 df.comb <- data.frame(  
-  time  = sapply(rst.comb, "[[", 1),
+  date  = sapply(rst.comb, "[[", 1),
   total = sapply(rst.comb, "[[", 2)
 )
-df.comb <- df.comb[order(df.comb$time, decreasing = FALSE), ]
+df.comb <- df.comb[order(df.comb$date, decreasing = FALSE), ]
 head(df.comb)
 head(df)
 ```
 ```
-   time  total
+   date  total
 45    1 272879
 50    2 201648
 59    3 229829
