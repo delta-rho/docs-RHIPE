@@ -132,7 +132,7 @@
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='05.performance.Rmd'>The Cluster Performance Test</li>
+<li class='nav-header unselectable' data-edit-href='05.performance.Rmd'>Measuring the Cluster Performance</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#introduction'>Introduction</a>
@@ -140,12 +140,12 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#generate-dataset'>Generate Dataset</a>
+         <a target='_self' class='nav-not-header' href='#single-run----generate-dataset'>Single Run -- Generate Dataset</a>
       </li>
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#elapsed-time-measurement'>Elapsed Time Measurement</a>
+         <a target='_self' class='nav-not-header' href='#single-run----elapsed-time-measurement'>Single run -- Elapsed Time Measurement</a>
       </li>
 
 
@@ -155,7 +155,7 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#a-multi-factor-experiment-for-performance-of-a-cluster'>A Multi-Factor Experiment for Performance of a Cluster</a>
+         <a target='_self' class='nav-not-header' href='#a-multi-factor-experiment-for-the-cluster-performance'>A Multi-Factor Experiment for the Cluster Performance</a>
       </li>
 
    </ul>
@@ -1788,7 +1788,7 @@ we&#39;ll have to kill it.  Again, use the object returned by <code>rhex</code><
 <p>We&#39;ll demonstrate the computation ability of <code>RHIPE</code> package with a performance test by using logistic
 regression. </p>
 
-<p>The basic idea is firstly, we wish to generate an observation sample with a size of <em>N</em>, <em>V</em> number 
+<p>The basic idea is firstly, we wish to generate an observation sample with a size of N, V number 
 of variables, which means there are \(V-1\) explanatory variables. In summary, we wish to generate a 
 dataframe with N rows and V collumns. Secondly, we want to use the logistic regression method to
 analyze the dataframe. However, when the data size is quite large, it will be impractical to generate
@@ -1816,8 +1816,8 @@ generate each subset with the size of \(2^{12} \cdot 2^5 \cdot 2^3 = 1MB\)</p>
 </div>
 
 
-<div class='tab-pane' id='generate-dataset'>
-<h3>Generate Dataset</h3>
+<div class='tab-pane' id='single-run----generate-dataset'>
+<h3>Single Run -- Generate Dataset</h3>
 
 <p>As we mentioned in the housing data example, the first step in a D&amp;R analysis is to choose a 
 division method and create subsets. In this example, we devide the whole dataset to R sets, where
@@ -1945,8 +1945,11 @@ consists of \(2^15 / 12\) subsets. </p>
 </div>
 
 
-<div class='tab-pane' id='elapsed-time-measurement'>
-<h3>Elapsed Time Measurement</h3>
+<div class='tab-pane' id='single-run----elapsed-time-measurement'>
+<h3>Single run -- Elapsed Time Measurement</h3>
+
+<p>As we has talked in the introduction, we will measure the first elapsed time &quot;O&quot; in one run and 
+measure the whole elapsed time &quot;T&quot; in another run.</p>
 
 <h4>The First Kind Of Elapsed Time -- <strong>O</strong></h4>
 
@@ -1955,7 +1958,7 @@ type  &lt;- &quot;O&quot;
 </code></pre>
 
 <p>First, we will initialize a data frame called <code>timing</code> to store these two different kinds of elapsed
-time later and create a character <code>type</code> to lable <strong>O</strong> and <strong>T</strong> seperately. </p>
+time later and create a character <code>type</code> to lable &quot;O&quot; and &quot;T&quot; seperately. </p>
 
 <h5>Map</h5>
 
@@ -2010,7 +2013,7 @@ to combine data frame <code>timing</code> and data frame <code>t</code> by rows.
 1   1 27 12 5    O 253.237
 </code></pre>
 
-<p>So <code>timing</code> is a data frame with 1 row and 6 collumns. We will save another type of elapsed time &quot;T&quot;&quot;
+<p>So <code>timing</code> is a data frame with 1 row and 6 collumns. We will save another type of elapsed time &quot;T&quot;
 into this data frame.</p>
 
 <h4>The Second Kind of Elapsed Time -- <strong>T</strong></h4>
@@ -2018,7 +2021,7 @@ into this data frame.</p>
 <pre><code class="r">type  &lt;- &quot;T&quot;
 </code></pre>
 
-<p>We first specify the value of <code>type</code> as <code>T</code> to identify the second kind of elapsed time <strong>T</strong>.</p>
+<p>We first specify the value of <code>type</code> as <code>T</code> to identify the second kind of elapsed time &quot;T&quot;.</p>
 
 <h5>Map</h5>
 
@@ -2031,7 +2034,7 @@ into this data frame.</p>
 </code></pre>
 
 <p>The input to our <code>map3</code> is the final output we created in the previous section which the key is from
-1 to \(2^{15}\) and the input value is a dataframe with \(2^12\) rows and \(2^5\) collumns. For each subset,
+1 to \(2^{15}\) and the input value is a dataframe with \(2^{12}\) rows and \(2^5\) collumns. For each subset,
 we apply the same action : take the coefficient of the logistic regression for the subset. They are 
 stored in a single row dataframe to be recombined in the reduce step below. This single row dataframe
 has <code>p</code> collumns. We use the same key for all the subsets so that they wil appear together in the 
@@ -2111,17 +2114,18 @@ run of the cluster performance test and save the result to a data frame called <
 
 <p>As we can see from the <code>timing</code> dataframe, there are 2 rows and 6 collumns. The last collumn is the 
 elapsed time <code>t</code>. As we can see, the elapsed time &quot;O&quot; we need to read the datasets 
-from HDFS to the front end is 253.237 seconds which is about 4.2 mins and the whole elapsed time &quot;T&quot; which consists of the 
-reading time and the analyzing time is 561.081 seconds, which is less than 9.4 mins. That result is 
-impressive! The cluster to run the test here is a very small one with two nodes and 64 GB 
-memory in total. You can definitely use RHIPE computation environment to generalize this one sing
-run to a full cluster performance test. We will show you the basic idea about how to run a multi-factor experiment in next part.</p>
+from HDFS to the front end is 253.237 seconds which is about 4.2 mins and the whole elapsed time &quot;T&quot; 
+which consists of the reading time and the analyzing time is 561.081 seconds, which is less than 9.4
+mins. That result is impressive! The cluster to run the test here is a very small one with two nodes
+and 64 GB memory in total. You can definitely use RHIPE computation environment to generalize this 
+one sing run to a full cluster performance test. We will show you the basic idea about how to run a 
+multi-factor experiment for the cluster performance in the next part.</p>
 
 </div>
 
 
-<div class='tab-pane' id='a-multi-factor-experiment-for-performance-of-a-cluster'>
-<h3>A Multi-Factor Experiment for Performance of a Cluster</h3>
+<div class='tab-pane' id='a-multi-factor-experiment-for-the-cluster-performance'>
+<h3>A Multi-Factor Experiment for the Cluster Performance</h3>
 
 <p>As we can see, <code>RHIPE</code> and its computation environment reduce the time of computation dramatically.
 In the last example, we are generating \(2^{27} \cdot 2^5 \cdot 2^3 = 32GB\) data and we finish the 
@@ -2274,9 +2278,9 @@ computer file.</p>
 <pre><code class="r">scp song273@deneb.stat.purdue.edu:timing.RData /home/song273/elapsedtime
 </code></pre>
 
-<p>The linux command <code>scp</code> will copy the <code>timing.RData</code> file from the remote host <em>Deneb</em> to the local
+<p>The linux command <code>scp</code> will copy the <code>timing.RData</code> file from the remote host cluster to the local
 host under the directory <code>elapsedtime</code>. Then we can analyse the data in our local computer which 
-gives us more freedom to analysis, like we don&#39;t need to worry about the abrupt network fault.</p>
+gives us more freedom to analysis, for examle we don&#39;t need to worry about the abrupt network fault.</p>
 
 <h4>Visualize the Results</h4>
 
