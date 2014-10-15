@@ -715,7 +715,7 @@ head(meansByCounty[[1]][[2]])
 6 01113 70.92100       NaN    AL      Russell
 ```
 
-### Read and Divide by Month ###
+### Read and Divide by Date ###
 
 Same as before, we can create the subsets of dataset divided by date variable. But here one of
 potential problem that we may face is that what if some of the subsets are very large? This is
