@@ -1797,7 +1797,8 @@ and analyse the whole data set in terms of the time cosuming and the memory limi
 <p>Instead, we will use <code>RHIPE</code> package to generate subsets first and then use logistic regression 
 method to analyze each subset by R function <code>glm.fit</code>. The subset observation sample size is M and
 the number of subsets is R. As a result, \(N = MR\). Each subset contains a sub-dataframe with M rows 
-and V collumns. We will use R function <code>system.time</code> to measure elapsed time.</p>
+and V collumns. We will use R function <code>system.time</code> to measure elapsed time. We introduce &quot;n&quot;, &quot;m&quot;,
+and &quot;v&quot; here, where \(n = log2(N)\), \(m = log2(M)\), and \(v = log2(V)\).</p>
 
 <p>There are two types of elapsed-time computation. The subsets are stored on the HDFS as R objects. 
 The first computation type is &quot;O&quot;, the elapsed time to read the subsets from the HDFS and make 
@@ -1806,8 +1807,20 @@ and it consists of <code>glm.fit</code> computations on the subsets by <code>map
 subset estimates and computing the means. However, we cannot measure &quot;L&quot; directly. So we measure 
 &quot;O&quot; in one run and \(T = O + L\) in another.</p>
 
-<p>In this example, we will show how to do a sing run of the performance test, which means we only pick
-one possible value of M and one possible value of V to see how fast it is to go. </p>
+<p>Actually, the elapsed time depends on many factors. This presents an opportunity for optimizing the 
+computation even further by making the best choice of the factor. Our approach to the optimization 
+is to run statistically designed experiments. This experiment consists of a lot of factors. There are
+two different types of elapsed time, which means there is one computation-type categorical factor. 
+Three statistical factors  are &quot;n&quot;, &quot;m&quot; and &quot;v&quot;, which are the kernel factors for our experiment. 
+There are also two Hadoop HDFS factors and two Hadoop MapReduce factors, two hardware factors. In 
+total, we have 10 factors. We also have replicates for each combination of these factors. For more 
+details, you can check the paper(link) which describes the whole experiment process. In this tutorial,
+we mainly focus on the computation-type category factor &quot;type&quot; and the three statistical factors &quot;n&quot;, 
+&quot;m&quot; and &quot;v&quot;. </p>
+
+<p>Firstly, we will show how to do a sing run of the performance test, which means we only pick one 
+possible value of &quot;n&quot;, &quot;m&quot; and &quot;v&quot; to see how fast it is to go. Then we will generilize this single 
+run to a multi-factor experiment by changing the values of &quot;n&quot;, &quot;m&quot; and &quot;v&quot;.</p>
 
 <p>We choose \(n = log2(N) = 27\), \(v = log2(V) = 5\), \(m = log2(M) = 12\), and \(log2(R) = 15\) to illustrate
 one single run. So the size for the whole dataset is \(2^{27} \cdot 2^5 \cdot 2^3 = 32GB\). We will 
@@ -2129,18 +2142,9 @@ multi-factor experiment for the cluster performance in the next part.</p>
 
 <p>As we can see, <code>RHIPE</code> and its computation environment reduce the time of computation dramatically.
 In the last example, we are generating \(2^{27} \cdot 2^5 \cdot 2^3 = 32GB\) data and we finish the 
-reading and analysis within 9.4 mins! Actually, the elapsed time depends on many factors. This presents
-an opportunity for optimizing the computation even further by making the best choice of the factor. 
-Our approach to the optimization is to run statistically designed experiments. This experiment consists
-of a lot of factors. There are two different types of elapsed time, which means there is one 
-computation-type categorical factor. Three statistical factors  are <code>n</code>, <code>m</code> and <code>v</code>, which are the 
-kernel factors for our experiment. There are also two Hadoop HDFS factors and two Hadoop MapReduce 
-factors, two hardware factors. In total, we have 10 factors. We also have replicates for each 
-combination of these factors. For more details, you can check the paper(link) which describes the 
-whole experiment process. In this tutorial, we mainly focus on the computation-type category factor 
-<code>type</code>and the three statistical factors <code>n</code>, <code>m</code> and <code>v</code>. We have shown how to run a single run of 
-the performance test, so we can easily generalize the single run to the whole performance test 
-experiment. We will take the data generation for example.</p>
+reading and analysis within 9.4 mins! We have shown how to run a single run of the performance test,
+so we can easily generalize the single run to the whole performance test experiment. We will take the
+data generation for example.</p>
 
 <p>We will vary the values of <code>n</code>, <code>m</code>, <code>v</code> and set 3 replicates for the experiment. </p>
 
@@ -2164,7 +2168,7 @@ dir.exp &lt;- &quot;/ln/song273/tmp/multi.factor&quot;
 <p>First, we specify some parameters in the frond end of R. The <code>run.vec</code> denotes for each combination 
 of <code>m</code>,<code>v</code>, we have 3 replicates. The <code>dir.exp</code> specifies the directory for this experiment on HDFS.</p>
 
-<h5>Map &amp; Execution Function</h5>
+<h5>Map and Execution Function</h5>
 
 <pre><code class="r">for (n in n.vec){
  for (m in m.vec) {
