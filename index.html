@@ -2224,7 +2224,7 @@ L
 </code></pre>
 
 <p>We illustrate the serial computation in R by setting the number of observations \(m = 2^{23}\), the 
-log2 number of variables \(v = 5\). The size of the dataset is \(2^{23}\cdot 2^5 \codt 2^3=2GB\). Since 
+log2 number of variables \(v = 5\). The size of the dataset is \(2^{23}\cdot 2^5 \cdot 2^3=2GB\). Since 
 we run this serial computation in R, we don&#39;t need the reading time. That is, we can directly analyze
 the dataset after we generate it. In this case, the elapsed time would be the second elapsed time 
 &quot;L&quot; which is the analysing time. </p>
@@ -2234,7 +2234,7 @@ the dataset after we generate it. In this case, the elapsed time would be the se
 
 <p>The total elapsed time \(L =367.719\), the unit for <code>L</code> is second. So it will take about 6.13 mins to 
 finish the analyising part. That&#39;s not bad. What if we enlarge the value of <code>v</code> to 6? Then the size
-of the new dataset would be \(2^{23}\cdot 2^6 \codt 2^3=4GB\). We can re-run this test.</p>
+of the new dataset would be \(2^{23}\cdot 2^6 \cdot 2^3=4GB\). We can re-run this test.</p>
 
 <pre><code class="r">v     &lt;- 6
 p     &lt;- 2^v -1
@@ -2264,7 +2264,7 @@ L
 </code></pre>
 
 <p>The number of rows is \(2^{25}\) and the number of collumns is \(2^5\). So the size for the new dataset
-is \(2^{25}\cdot 2^5 \codt 2^3=8GB\). The elapsed time <code>L</code> is 1815.752 seconds, which is about 30.3 
+is \(2^{25}\cdot 2^5 \cdot 2^3=8GB\). The elapsed time <code>L</code> is 1815.752 seconds, which is about 30.3 
 minutes. What if we keep increasing the size of the dataframe by setting \(m = 2^{27}\) and \(v=4\)? In
 this case, the size of the dataset is 16GB. And actually, we will get an error message in the 
 analysing step:</p>
