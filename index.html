@@ -2339,34 +2339,28 @@ function we specified before.</p>
 
 </code></pre>
 
-<p>The <code>timing</code> dataframe has 648 rows and 6 collumns because <code>n</code> has 4 different values, <code>type</code> has two levels, <code>m</code> has 9 different values and <code>v</code> has 3 different values. For each combination of the factors, we have 3 replicates. So we have \(4*2*9*3*3=648\) rows. </p>
+<p>The <code>timing</code> dataframe has 648 rows and 6 collumns because <code>n</code> has 4 different values, <code>type</code> has 
+two levels, <code>m</code> has 9 different values and <code>v</code> has 3 different values. For each combination of the 
+factors, we have 3 replicates. So we have \(4*2*9*3*3=648\) rows. </p>
 
 <h5>Save the Results to the local</h5>
 
-<p>Because the size of data frame <code>timing</code> is not very large, we can easily download the dataset to our local computer. But first, we need to save <code>timing</code> to the server front end.
-Then we will copy this file from server to our local computer.</p>
+<p>Because the size of data frame <code>timing</code> is not very large, we can easily download the dataset to
+our local laptop.</p>
 
-<pre><code class="r">dir = &quot;/ln/song273/tmp&quot;
-dir.local = &quot;/home/median/u41/song273/timetest/&quot;
+<pre><code class="r">save(timing, file=paste(&quot;timing&quot;, &quot;.RData&quot;, sep=&quot;&quot;))
 </code></pre>
 
-<p>The <code>dir</code> specifies the top level directory for experiment on HDFS. The <code>dir.local</code> specifies the 
-directory for local cluster file system.</p>
+<p>First, we saved <code>timing</code> to the R current working directory on initiating 
+R server by using <code>save</code> function. Then we will copy this file from the server to our laptop or 
+desktop computer. We are assuming that your laptop is running Linux OS. So from now no we will
+working in the R that is running on your local laptop.</p>
 
-<pre><code class="r">rhsave(timing, file=paste(dir, &quot;/save/&quot;, &quot;timing&quot;, &quot;.RData&quot;, sep=&quot;&quot;))
-save(timing, file=paste(dir.local, &quot;timing&quot;, &quot;.RData&quot;, sep=&quot;&quot;))
+<pre><code class="r">system(scp song273@deneb.stat.purdue.edu:timing.RData /home/song273/elapsedtime/)
 </code></pre>
 
-<p>The RHIPE function <code>rhsave</code> helps save the .RData file to the directory of <code>dir</code> on HDFS with file 
-name <code>timing.RData</code>. The R function <code>save</code> write the <code>timing.RData</code> file to the local cluster file
-Then we can use linux command <code>scp</code> to copy the file from the local cluster file to our local 
-computer file.</p>
-
-<pre><code class="r">scp song273@deneb.stat.purdue.edu:timing.RData /home/song273/elapsedtime
-</code></pre>
-
-<p>The linux command <code>scp</code> will copy the <code>timing.RData</code> file from the remote host cluster to the local
-host under the directory <code>elapsedtime</code>. Then we can analyse the data in our local computer which 
+<p>The linux command <code>scp</code> will copy the <code>timing.RData</code> file from the remote host cluster to the laptop
+directory &quot;/home/song273/elapsedtime/&quot;. Then we can analyze the data in our local computer which 
 gives us more freedom to analysis, for examle we don&#39;t need to worry about the abrupt network fault.</p>
 
 <h4>Visualize the Results</h4>

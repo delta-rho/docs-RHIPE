@@ -163,38 +163,30 @@ timing
 ...
 
 ```
-The `timing` dataframe has 648 rows and 6 collumns because `n` has 4 different values, `type` has two levels, `m` has 9 different values and `v` has 3 different values. For each combination of the factors, we have 3 replicates. So we have $4*2*9*3*3=648$ rows. 
+The `timing` dataframe has 648 rows and 6 collumns because `n` has 4 different values, `type` has 
+two levels, `m` has 9 different values and `v` has 3 different values. For each combination of the 
+factors, we have 3 replicates. So we have $4*2*9*3*3=648$ rows. 
 
 ##### Save the Results to the local #####
 
-Because the size of data frame `timing` is not very large, we can easily download the dataset to our local computer. But first, we need to save `timing` to the server front end.
-Then we will copy this file from server to our local computer.
+Because the size of data frame `timing` is not very large, we can easily download the dataset to
+our local laptop.
 
 ```{r, eval=FALSE, tidy=FALSE }
-dir = "/ln/song273/tmp"
-dir.local = "/home/median/u41/song273/timetest/"
-
+save(timing, file=paste("timing", ".RData", sep=""))
 ```
 
-The `dir` specifies the top level directory for experiment on HDFS. The `dir.local` specifies the 
-directory for local cluster file system.
+First, we saved `timing` to the R current working directory on initiating 
+R server by using `save` function. Then we will copy this file from the server to our laptop or 
+desktop computer. We are assuming that your laptop is running Linux OS. So from now no we will
+working in the R that is running on your local laptop.
 
 ```{r, eval=FALSE, tidy=FALSE }
-rhsave(timing, file=paste(dir, "/save/", "timing", ".RData", sep=""))
-save(timing, file=paste(dir.local, "timing", ".RData", sep=""))
+system(scp song273@deneb.stat.purdue.edu:timing.RData /home/song273/elapsedtime/)
 ```
 
-The RHIPE function `rhsave` helps save the .RData file to the directory of `dir` on HDFS with file 
-name `timing.RData`. The R function `save` write the `timing.RData` file to the local cluster file
-Then we can use linux command `scp` to copy the file from the local cluster file to our local 
-computer file.
-
-```{r, eval=FALSE, tidy=FALSE }
-scp song273@deneb.stat.purdue.edu:timing.RData /home/song273/elapsedtime
-```
-
-The linux command `scp` will copy the `timing.RData` file from the remote host cluster to the local
-host under the directory `elapsedtime`. Then we can analyse the data in our local computer which 
+The linux command `scp` will copy the `timing.RData` file from the remote host cluster to the laptop
+directory "/home/song273/elapsedtime/". Then we can analyze the data in our local computer which 
 gives us more freedom to analysis, for examle we don't need to worry about the abrupt network fault.
 
 #### Visualize the Results ####
