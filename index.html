@@ -180,6 +180,11 @@
          <a target='_self' class='nav-not-header' href='#visualize-the-results'>Visualize the Results</a>
       </li>
 
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#summary'>Summary</a>
+      </li>
+
    </ul>
    </div>
 
@@ -2198,8 +2203,7 @@ we mainly focus on the computation-type category factor &quot;type&quot; and the
 
 <p>Firstly, we will run a serial computation in R, which means there is no parallel computing. By contrast,
 another designed experiment with tessera computation system will be carried out to check the 
-computation ablity of tessera. We have shown how to run a single run of the performance test, so we 
-can easily generalize the single run to the whole cluster performance experiment.</p>
+computation ablity of tessera. </p>
 
 </div>
 
@@ -2208,40 +2212,79 @@ can easily generalize the single run to the whole cluster performance experiment
 <h3>Serial Computation in R</h3>
 
 <p>Let&#39;s see what we can do without tessera computation environment, and we only run this experiment in
-R.</p>
+R. Let&#39;s just try one single run first to have a basic idea about the time costing.</p>
 
-<pre><code class="r">m.vec &lt;- c(2^21, 2^23, 2^25, 2^27)
-v.vec &lt;- c(4, 5, 6)
-p.vec &lt;- 2^v.vec -1
-rep.vec = 1:3
-timing = data.frame()
-for (rep in rep.vec){
-  for (m in m.vec){
-    for (p in p.vec){
-      value  = matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
-      t      = system.time(glm.fit(value[,1:p],value[,p+1],family=binomial())$coef)[3]
-      t      = data.frame(rep=rep,n=n,v=v,m=m,t=t)
-      timing = rbind(timing,t)
-
-    }
-  }
-}
+<pre><code class="r">m     &lt;- 2^23
+v     &lt;- 5
+p     &lt;- 2^v -1
+value &lt;- matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
+L     &lt;- system.time(glm.fit(value[,1:p],value[,p+1],family=binomial())$coef)[3]
+rm(value)
+L
 </code></pre>
 
-<p>Since we run this serial computation in R, we don&#39;t need the reading time. That is, we can directly 
-analyze the dataset as soon as we generate it. In this case, we only have the total elapsed time T. The R 
-object <code>m.vec</code> here refers to the number of observations of the datas</p>
+<p>We illustrate the serial computation in R by setting the number of observations \(m = 2^{23}\), the 
+log2 number of variables \(v = 5\). The size of the dataset is \(2^{23}\cdot 2^5 \codt 2^3=2GB\). Since 
+we run this serial computation in R, we don&#39;t need the reading time. That is, we can directly analyze
+the dataset after we generate it. In this case, the elapsed time would be the second elapsed time 
+&quot;L&quot; which is the analysing time. </p>
 
-<p>Here is the results:</p>
-
-<pre><code>
+<pre><code>367.719
 </code></pre>
+
+<p>The total elapsed time \(L =367.719\), the unit for <code>L</code> is second. So it will take about 6.13 mins to 
+finish the analyising part. That&#39;s not bad. What if we enlarge the value of <code>v</code> to 6? Then the size
+of the new dataset would be \(2^{23}\cdot 2^6 \codt 2^3=4GB\). We can re-run this test.</p>
+
+<pre><code class="r">v     &lt;- 6
+p     &lt;- 2^v -1
+value &lt;- matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
+L     &lt;- system.time(glm.fit(value[,1:p],value[,p+1],family=binomial())$coef)[3]
+rm(value)
+L
+</code></pre>
+
+<pre><code>962.317
+</code></pre>
+
+<p>The total elapsed time <code>L</code> is 962.317 seconds, which is approximately 16.04 minutes. So <code>L</code> increases
+by about 2 times while the size of dataset increases by 1 time. That is getting crazy. Let&#39;s keep 
+going on by change the value of <code>m</code>.</p>
+
+<pre><code class="r">m     &lt;- 2^25
+v     &lt;- 5
+p     &lt;- 2^v -1
+value &lt;- matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
+L     &lt;- system.time(glm.fit(value[,1:p],value[,p+1],family=binomial())$coef)[3]
+rm(value)
+L
+</code></pre>
+
+<pre><code>1815.752
+</code></pre>
+
+<p>The number of rows is \(2^{25}\) and the number of collumns is \(2^5\). So the size for the new dataset
+is \(2^{25}\cdot 2^5 \codt 2^3=8GB\). The elapsed time <code>L</code> is 1815.752 seconds, which is about 30.3 
+minutes. What if we keep increasing the size of the dataframe by setting \(m = 2^{27}\) and \(v=4\)? In
+this case, the size of the dataset is 16GB. And actually, we will get an error message in the 
+analysing step:</p>
+
+<pre><code>Error: cannot allocate vector of size 15.0 Gb
+Timing stopped at: 237.267 102.842 416.989
+
+</code></pre>
+
+<p>So Serial Computation in R has a lot of limitations in large data analysis such as timing costing and
+memory limitation. And it is time for us to experience the computation ablity of RHIPE.</p>
 
 </div>
 
 
 <div class='tab-pane' id='a-designed-experiment-using-rhipe'>
 <h3>A Designed Experiment Using RHIPE</h3>
+
+<p>We have shown how to run a single run of the performance test, so we 
+can easily generalize the single run to the whole cluster performance experiment.</p>
 
 <h4>Generation Datasets Example</h4>
 
@@ -2353,9 +2396,11 @@ function we specified before.</p>
 
 </code></pre>
 
-<p>The <code>timing</code> dataframe has 648 rows and 6 collumns because <code>n</code> has 4 different values, <code>type</code> has two levels, <code>m</code> has 9 different values and <code>v</code> has 3 different values. For each combination of the factors, we have 3 replicates. So we have \(4*2*9*3*3=648\) rows. </p>
+<p>The <code>timing</code> dataframe has 648 rows and 6 collumns because <code>n</code> has 4 different values, <code>type</code> has two
+levels, <code>m</code> has 9 different values and <code>v</code> has 3 different values. For each combination of the 
+factors, we have 3 replicates. So we have \(4\cdot 2\cdot 9\cdot 3\cdot 3=648\) rows. </p>
 
-<h5>Save the Results to the local</h5>
+<h4>Save the Results to the local</h4>
 
 <p>Because the size of data frame <code>timing</code> is not very large, we can easily download the dataset to
 our local laptop.</p>
@@ -2413,6 +2458,14 @@ elpased time experiment.</p>
 
 <p>From the plot4, we can see that replication doesn&#39;t have the blocking effects.</p></li>
 </ul>
+
+</div>
+
+
+<div class='tab-pane' id='summary'>
+<h3>Summary</h3>
+
+<p>We contrast the resulsts in the Serial Computation in R and the parallel computation with RHIPE.</p>
 
 </div>
 
