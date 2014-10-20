@@ -23,43 +23,85 @@ We will vary the values of `n`, `m`, `v` and set 3 replicates for the experiment
 
 Firstly, we will run a serial computation in R, which means there is no parallel computing. By contrast,
 another designed experiment with tessera computation system will be carried out to check the 
-computation ablity of tessera. We have shown how to run a single run of the performance test, so we 
-can easily generalize the single run to the whole cluster performance experiment.
+computation ablity of tessera. 
 
 ### Serial Computation in R ###
 
 Let's see what we can do without tessera computation environment, and we only run this experiment in
-R.
+R. Let's just try one single run first to have a basic idea about the time costing.
 
 ```{r, eval=FALSE,tidy=FALSE}
-m.vec <- c(2^21, 2^23, 2^25, 2^27)
-v.vec <- c(4, 5, 6)
-p.vec <- 2^v.vec -1
-rep.vec = 1:3
-timing = data.frame()
-for (rep in rep.vec){
-  for (m in m.vec){
-    for (p in p.vec){
-      value  = matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
-      t      = system.time(glm.fit(value[,1:p],value[,p+1],family=binomial())$coef)[3]
-      t      = data.frame(rep=rep,n=n,v=v,m=m,t=t)
-      timing = rbind(timing,t)
-      
-    }
-  }
-}
-```
-
-Since we run this serial computation in R, we don't need the reading time. That is, we can directly 
-analyze the dataset as soon as we generate it. In this case, we only have the total elapsed time T. The R 
-object `m.vec` here refers to the number of observations of the datas
-
-Here is the results:
+m     <- 2^23
+v     <- 5
+p     <- 2^v -1
+value <- matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
+L     <- system.time(glm.fit(value[,1:p],value[,p+1],family=binomial())$coef)[3]
+rm(value)
+L
 
 ```
 
+We illustrate the serial computation in R by setting the number of observations $m = 2^{23}$, the 
+log2 number of variables $v = 5$. The size of the dataset is $2^{23}\cdot 2^5 \codt 2^3=2GB$. Since 
+we run this serial computation in R, we don't need the reading time. That is, we can directly analyze
+the dataset after we generate it. In this case, the elapsed time would be the second elapsed time 
+"L" which is the analysing time. 
+
 ```
+367.719
+```
+The total elapsed time $L =367.719$, the unit for `L` is second. So it will take about 6.13 mins to 
+finish the analyising part. That's not bad. What if we enlarge the value of `v` to 6? Then the size
+of the new dataset would be $2^{23}\cdot 2^6 \codt 2^3=4GB$. We can re-run this test.
+
+```{r, eval=FALSE,tidy=FALSE}
+v     <- 6
+p     <- 2^v -1
+value <- matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
+L     <- system.time(glm.fit(value[,1:p],value[,p+1],family=binomial())$coef)[3]
+rm(value)
+L
+
+```
+
+```
+962.317
+```
+The total elapsed time `L` is 962.317 seconds, which is approximately 16.04 minutes. So `L` increases
+by about 2 times while the size of dataset increases by 1 time. That is getting crazy. Let's keep 
+going on by change the value of `m`.
+
+```{r, eval=FALSE,tidy=FALSE}
+m     <- 2^25
+v     <- 5
+p     <- 2^v -1
+value <- matrix(c(rnorm(m*p), sample(c(0,1), m, replace=TRUE)), ncol=p+1)
+L     <- system.time(glm.fit(value[,1:p],value[,p+1],family=binomial())$coef)[3]
+rm(value)
+L
+```
+
+```
+1815.752
+```
+The number of rows is $2^{25}$ and the number of collumns is $2^5$. So the size for the new dataset
+is $2^{25}\cdot 2^5 \codt 2^3=8GB$. The elapsed time `L` is 1815.752 seconds, which is about 30.3 
+minutes. What if we keep increasing the size of the dataframe by setting $m = 2^{27}$ and $v=4$? In
+this case, the size of the dataset is 16GB. And actually, we will get an error message in the 
+analysing step:
+
+```
+Error: cannot allocate vector of size 15.0 Gb
+Timing stopped at: 237.267 102.842 416.989
+
+```
+So Serial Computation in R has a lot of limitations in large data analysis such as timing costing and
+memory limitation. And it is time for us to experience the computation ablity of RHIPE.
+
 ### A Designed Experiment Using RHIPE ###
+
+We have shown how to run a single run of the performance test, so we 
+can easily generalize the single run to the whole cluster performance experiment.
 
 #### Generation Datasets Example ####
 
@@ -173,9 +215,11 @@ timing
 ...
 
 ```
-The `timing` dataframe has 648 rows and 6 collumns because `n` has 4 different values, `type` has two levels, `m` has 9 different values and `v` has 3 different values. For each combination of the factors, we have 3 replicates. So we have $4*2*9*3*3=648$ rows. 
+The `timing` dataframe has 648 rows and 6 collumns because `n` has 4 different values, `type` has two
+levels, `m` has 9 different values and `v` has 3 different values. For each combination of the 
+factors, we have 3 replicates. So we have $4\cdot 2\cdot 9\cdot 3\cdot 3=648$ rows. 
 
-##### Save the Results to the local #####
+#### Save the Results to the local ####
 
 Because the size of data frame `timing` is not very large, we can easily download the dataset to
 our local laptop.
@@ -233,3 +277,6 @@ varibales `v`.
 
    From the plot4, we can see that replication doesn't have the blocking effects.
   
+### Summary ###
+
+We contrast the resulsts in the Serial Computation in R and the parallel computation with RHIPE.
