@@ -50,7 +50,17 @@ for (rep in rep.vec){
 }
 ```
 
+Since we run this serial computation in R, we don't need the reading time. That is, we can directly 
+analyze the dataset as soon as we generate it. In this case, we only have the total elapsed time T. The R 
+object `m.vec` here refers to the number of observations of the datas
+
+Here is the results:
+
+```
+
+```
 ### A Designed Experiment Using RHIPE ###
+
 #### Generation Datasets Example ####
 
 ```{r,eval=FALSE,tidy=FALSE}
@@ -163,9 +173,7 @@ timing
 ...
 
 ```
-The `timing` dataframe has 648 rows and 6 collumns because `n` has 4 different values, `type` has 
-two levels, `m` has 9 different values and `v` has 3 different values. For each combination of the 
-factors, we have 3 replicates. So we have $4*2*9*3*3=648$ rows. 
+The `timing` dataframe has 648 rows and 6 collumns because `n` has 4 different values, `type` has two levels, `m` has 9 different values and `v` has 3 different values. For each combination of the factors, we have 3 replicates. So we have $4*2*9*3*3=648$ rows. 
 
 ##### Save the Results to the local #####
 
@@ -189,9 +197,9 @@ The linux command `scp` will copy the `timing.RData` file from the remote host c
 directory "/home/song273/elapsedtime/". Then we can analyze the data in our local computer which 
 gives us more freedom to analysis, for examle we don't need to worry about the abrupt network fault.
 
-#### Visualize the Results ####
+### Visualize the Results ###
 
-Here we use R function `xyplot` to visualize the results.
+Here we use R function `xyplot` in the `lattice` package to visualize the results. 
 
 - The first plot describes the relationship between two kinds of elapsed time and log subsets size `m`.
 
