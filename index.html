@@ -175,6 +175,11 @@
          <a target='_self' class='nav-not-header' href='#a-designed-experiment-using-rhipe'>A Designed Experiment Using RHIPE</a>
       </li>
 
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#visualize-the-results'>Visualize the Results</a>
+      </li>
+
    </ul>
    </div>
 
@@ -2223,6 +2228,15 @@ for (rep in rep.vec){
 }
 </code></pre>
 
+<p>Since we run this serial computation in R, we don&#39;t need the reading time. That is, we can directly 
+analyze the dataset as soon as we generate it. In this case, we only have the total elapsed time T. The R 
+object <code>m.vec</code> here refers to the number of observations of the datas</p>
+
+<p>Here is the results:</p>
+
+<pre><code>
+</code></pre>
+
 </div>
 
 
@@ -2339,9 +2353,7 @@ function we specified before.</p>
 
 </code></pre>
 
-<p>The <code>timing</code> dataframe has 648 rows and 6 collumns because <code>n</code> has 4 different values, <code>type</code> has 
-two levels, <code>m</code> has 9 different values and <code>v</code> has 3 different values. For each combination of the 
-factors, we have 3 replicates. So we have \(4*2*9*3*3=648\) rows. </p>
+<p>The <code>timing</code> dataframe has 648 rows and 6 collumns because <code>n</code> has 4 different values, <code>type</code> has two levels, <code>m</code> has 9 different values and <code>v</code> has 3 different values. For each combination of the factors, we have 3 replicates. So we have \(4*2*9*3*3=648\) rows. </p>
 
 <h5>Save the Results to the local</h5>
 
@@ -2363,9 +2375,13 @@ working in the R that is running on your local laptop.</p>
 directory &quot;/home/song273/elapsedtime/&quot;. Then we can analyze the data in our local computer which 
 gives us more freedom to analysis, for examle we don&#39;t need to worry about the abrupt network fault.</p>
 
-<h4>Visualize the Results</h4>
+</div>
 
-<p>Here we use R function <code>xyplot</code> to visualize the results.</p>
+
+<div class='tab-pane' id='visualize-the-results'>
+<h3>Visualize the Results</h3>
+
+<p>Here we use R function <code>xyplot</code> in the <code>lattice</code> package to visualize the results. </p>
 
 <ul>
 <li><p>The first plot describes the relationship between two kinds of elapsed time and log subsets size <code>m</code>.</p>
