@@ -1,6 +1,6 @@
 ## Measuring Cluster Performance ##
 
-### Single Run of the Performance ###
+### Introduction of the Single Run of the Performance ###
 
 We'll demonstrate the computation ability of `RHIPE` package with a performance test by using logistic
 regression. 
@@ -177,7 +177,7 @@ rhls("/ln/song273/tmp/multi.factor/dm/n27v5m12")
 
 ```
 It generates 12 files with ending name "00000" to "00011". Most of their size is 682 Mb. Each file
-consists of $2^15 / 12$ subsets. 
+consists of $2^{15} / 12$ subsets. 
 
 ### Elapsed Time Measurement ###
 
@@ -337,7 +337,7 @@ After the job completes successfully, we record the whole elapsed time "T" and s
 object `t`. And we save the results to our data frame `timing`. Till now, we have finished the single
 run of the cluster performance test and save the result to a data frame called `timing`.
 
-### Results ###
+### Result ###
 ```{r eval=FALSE, tidy=FALSE}
 timing
 ```
