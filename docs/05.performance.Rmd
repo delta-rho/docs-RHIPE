@@ -43,7 +43,7 @@ the other runs JobTracker. Both run Hadoop DataNode and TaskTracker, and each ha
 - 1 Gbps Ethernet interconnect
 
 Collectively, the cluster has 16 cores, 64GB total memory, 4TB disk. The processors are back to 2009,
-which are very old. We will see the computation ablity of RHIPE in this small, slow and old cluster.
+which are very old. We will see the computation ablity of `RHIPE` in this small, slow and old cluster.
 
 ### Generate Dataset ###
 
@@ -354,8 +354,8 @@ elapsed time `t`. As we can see, the elapsed time "O" we need to read the datase
 from HDFS to the front end is 253.237 seconds which is about 4.2 mins and the whole elapsed time "T" 
 which consists of the reading time and the analyzing time is 561.081 seconds, which is less than 9.4
 mins. That result is impressive! The cluster to run the test here is a very small one with two nodes
-and 64 GB memory in total. You can definitely use RHIPE computation environment to generalize this 
-one sing run to a full cluster performance test. We will show you the basic idea about how to run a 
+and 64 GB memory in total. You can definitely use `RHIPE` computation environment to generalize this 
+one single run to a full cluster performance test. We will show you the basic idea about how to run a 
 multi-factor experiment for the cluster performance in the next section.
 
 

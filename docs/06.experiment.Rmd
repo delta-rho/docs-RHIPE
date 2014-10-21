@@ -97,7 +97,7 @@ Timing stopped at: 237.267 102.842 416.989
 ```
 Same situation happens when we set $m = 2^{25}$ and $v=6$ in which case, the data set size is 16GB, 
 too. So Serial Computation in R has a lot of limitations in large data analysis such as timing 
-costing and memory limitation. And it is time for us to experience the computation ablity of RHIPE.
+costing and memory limitation. And it is time for us to experience the computation ablity of `RHIPE`.
 
 ### A Designed Experiment Using RHIPE ###
 
@@ -311,5 +311,5 @@ varibales `v`.
   
 ### Summary ###
 
-We contrast the resulsts in the Serial Computation in R and the parallel computation with RHIPE. 
+We contrast the resulsts in the Serial Computation in R and the parallel computation with `RHIPE`. 
 
