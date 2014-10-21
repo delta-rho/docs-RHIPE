@@ -95,8 +95,9 @@ Error: cannot allocate vector of size 15.0 Gb
 Timing stopped at: 237.267 102.842 416.989
 
 ```
-So Serial Computation in R has a lot of limitations in large data analysis such as timing costing and
-memory limitation. And it is time for us to experience the computation ablity of RHIPE.
+Same situation happens when we set $m = 2^{25}$ and $v=6$ in which case, the data set size is 16GB, 
+too. So Serial Computation in R has a lot of limitations in large data analysis such as timing 
+costing and memory limitation. And it is time for us to experience the computation ablity of RHIPE.
 
 ### A Designed Experiment Using RHIPE ###
 
@@ -245,6 +246,37 @@ gives us more freedom to analysis, for examle we don't need to worry about the a
 
 Here we use R function `xyplot` in the `lattice` package to visualize the results. 
 
+```{r, eval=FALSE, tidy=FALSE }
+library(lattice)
+load("timing.RData")
+```
+
+First, we load the library `lattice` and load the .RData file to our working console. Now, the data
+frame `timing` is available in our working directory.
+
+```{r, eval=FALSE, tidy=FALSE }
+v = c("v=4","v=5","v=6")
+label = levels(as.factor(v))
+xyplot(log2(t)~timing$m|n*type, 
+       data   = timing,
+       type   ="p",
+       groups = as.factor(timing$v),
+       aspect = 2,
+       col    = 1:3,
+       pch    = 1,
+       key    = list(type = c("p"),
+                     text = list(label = label, cex = 1.2),
+                     lines = list(col = 1:3, lwd = 1.5, pch=1),
+                     column = 3,
+                     space = "top"),
+       xlab = "Log Number of Observations per Subset (log base 2 number)",
+       ylab = "Log Time (log base 2 sec)"
+)
+```
+
+Therefore, we get the first plot: Elapsed time against m. The R code to generate the other plots are
+the same.
+
 - The first plot describes the relationship between two kinds of elapsed time and log subsets size `m`.
 
    [Plot1. Elapsed time plots against m](./plots/Elapsed_Time_m_v.pdf).
@@ -279,4 +311,5 @@ varibales `v`.
   
 ### Summary ###
 
-We contrast the resulsts in the Serial Computation in R and the parallel computation with RHIPE.
+We contrast the resulsts in the Serial Computation in R and the parallel computation with RHIPE. 
+
