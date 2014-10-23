@@ -120,7 +120,7 @@ of the `input` as Text file input, Sequence file input and lapply input. The fir
 have been introduced in the housing data example. And in our performance example, the type of 
 `input` is lapply input because we are generating numeric data. The argument `input` in our 
 performance test example is a vector consisting of two elements. The first element specifies the 
-input key would be from 1 to $2^(n-m)$ for `map1` function. Also, it specifies how many tasks you 
+input key would be from 1 to $2^{(n-m)}$ for `map1` function. Also, it specifies how many tasks you 
 would like Hadoop MapReduce Framework to run because each task conresponds to one key-value pair. 
 In our performance test example, each task is to generate a subset with 2^13 rows and 2^5 columns. 
 The second element of the vector `input` specifies the numbers of mappers you would like to use. So 
