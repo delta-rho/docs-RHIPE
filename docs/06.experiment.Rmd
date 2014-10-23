@@ -327,12 +327,14 @@ with `RHIPE`.
 
 [Plot. Elapsed time plots against v](./plots/contrast_D_S.pdf).
 
-For each combination of `n` and `v` , we pick up the optimal `m` in the Divid and Recombine
-computation to get the minimum elapsed time "T". In this plot, we contrast the minimum elapsed time
+For each combination of `n` and `v`, we pick up the optimal `m` in the Divid and Recombine
+Computation to get the minimum elapsed time "T". In this plot, we contrast the minimum elapsed time
 "T" in Divide and Recombine and the elapsed time "T" in the Serial Computation in R. In this plot,
 the categorical factor `compute` has two levels, 'D' and 'S'. The 'D' stands for the Divide and 
 Recombine computation type. And the 'S' stands for the Serial Computation type.
 
-
+As we can see from the plot, the Divid and Recombine Computation by RHIPE has much more prevailing 
+advantages than the Serial Computation in R in the aspect of computation speed as well as the 
+computation ablity. 
 
 
