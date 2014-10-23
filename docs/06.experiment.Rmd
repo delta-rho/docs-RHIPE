@@ -97,7 +97,17 @@ Timing stopped at: 237.267 102.842 416.989
 ```
 Same situation happens when we set $m = 2^{25}$ and $v=6$ in which case, the data set size is 16GB, 
 too. So Serial Computation in R has a lot of limitations in large data analysis such as timing 
-costing and memory limitation. And it is time for us to experience the computation ablity of `RHIPE`.
+costing and memory limitation. 
+
+#### Conclusion and Plot ####
+
+- For $v=4$, the largest value of n that it works for Serial Computation in R is 25
+- For $v=5$, the largest value of n that it works for Serial Computation in R is 25
+- For $v=6$, the largest value of n that it works for Serial Computation in R is 23.
+
+[Plot. Elapsed time plots against n](./plots/serial_v_n.pdf).
+
+And it is time for us to experience the computation ablity of `RHIPE`.
 
 ### A Designed Experiment Using RHIPE ###
 
@@ -132,9 +142,10 @@ for (n in n.vec){
 ```
 
 The `map1` and `mr1` are the map function and the execution function seperately we write in the datasets 
-generation part of the single run example. There is a single run for each fixed value of `m` and `p`,
-So the idea is to put the single run code to a for-loop. And the for-loop contains multinumber of 
-MapReduce jobs. The `dir.dm` specifies the output location for each MapReduce job. 
+generation part of the single run example. You can just copy the codes from the last section there.
+For each fixed value of `m` and `p` there is a single run. So the idea is to put the single run code
+to a for-loop. And the for-loop contains multi-number of MapReduce jobs. The `dir.dm` specifies the 
+output location for each MapReduce job. 
 
 It is noteworthy that we only generate subsets once and in the following timing part, we would read
 the subsets from HDFS to the front end of R 3 times. 
@@ -311,5 +322,17 @@ varibales `v`.
   
 ### Summary ###
 
-We contrast the resulsts in the Serial Computation in R and the parallel computation with `RHIPE`. 
+We contrast the resulsts in the Serial Computation in R and the Divide and Recombine Computation 
+with `RHIPE`. 
+
+[Plot. Elapsed time plots against v](./plots/contrast_D_S.pdf).
+
+For each combination of `n` and `v` , we pick up the optimal `m` in the Divid and Recombine
+computation to get the minimum elapsed time "T". In this plot, we contrast the minimum elapsed time
+"T" in Divide and Recombine and the elapsed time "T" in the Serial Computation in R. In this plot,
+the categorical factor `compute` has two levels, 'D' and 'S'. The 'D' stands for the Divide and 
+Recombine computation type. And the 'S' stands for the Serial Computation type.
+
+
+
 
