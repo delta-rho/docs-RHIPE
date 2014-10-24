@@ -1676,7 +1676,17 @@ Again, let us have a look at what the plot looks like.</p>
 
 <pre><code class="r">ylab &lt;- &quot;Log of List Price (log base 2 dollars per square foot)&quot;
 xlab &lt;- &quot;Month&quot;
-reduce12 &lt;- expression(
+rhsave(
+    list = (&quot;ylab&quot;, &quot;xlab&quot;), 
+    file = &quot;/ln/tongx/housing/shared/label.RData&quot;
+)
+</code></pre>
+
+<p>Before we start the reduce expression, we still defined <code>xlab</code> and <code>ylab</code> correspondingly. But this time we save these
+two objects as an <code>.RData</code> unto HDFS. The <code>rhsave</code> function writes an external representation of R objects to the 
+specified file as <code>.RData</code> unto HDFS. Later on we will explain with more details about the reason for this.</p>
+
+<pre><code class="r">reduce12 &lt;- expression(
   pre = {
     onestate &lt;- data.frame()
   },
@@ -1709,7 +1719,7 @@ reduce12 &lt;- expression(
 )
 </code></pre>
 
-<p>Very similar reduce expression, we did the actual plotting task. This time we changed the <code>ylab</code>. </p>
+<p>Very similar reduce expression, we did the actual plotting task. </p>
 
 <pre><code class="r">mr12 &lt;- rhwatch(
   map       = map12,
@@ -1719,12 +1729,10 @@ reduce12 &lt;- expression(
   setup     = expression(
     reduce = {
       library(lattice)
+      load(&quot;label.RData&quot;)
     }
   ),
-  parameters = list(
-    xlab = xlab,
-    ylab = ylab
-  ),
+  shared    = c(&quot;/ln/tongx/housing/shared/label.RData&quot;),
   mapred    = list( 
     mapred.reduce.tasks = 12
   ),
@@ -1732,6 +1740,19 @@ reduce12 &lt;- expression(
   readback  = FALSE
 )
 </code></pre>
+
+<p>In this execution function, we added two more things to <code>rhwatch</code> function. First we add <code>load</code> function to
+load <code>label.RData</code> to the R global environment of each reducer. And we put this loading step in the <code>setup</code>
+is because we would like to make <code>xlab</code> and <code>ylab</code> objects available in the reduce step. Second we add a new
+argument <code>shared</code>, which is a character vector of files located on the HDFS. At the beginning of the MapReduce 
+job, these files will be copied to the local hard disks of the mapper and reducer. This is a necessary step
+for loading the <code>label.RData</code> right before the reduce step on reducer.</p>
+
+<p>The difference between using <code>parameters</code> and <code>shared</code> argument to make specific objects available for every 
+mapper and reducer is that how large shared objects are. If they are relative small size of objects like two
+strings or a small vector, then <code>parameters</code> argument is prefered. On the other hand, if shared objects are
+some large size of objects like a data.frame or matrix, then <code>shared</code> argument should be considered becasue
+we put these shared objects on HDFS first and then grab them from HDFS to our map or reduce function.</p>
 
 <pre><code class="r">rhls(&quot;/ln/tongx/housing/listplotbystate/_outputs&quot;)
 </code></pre>
