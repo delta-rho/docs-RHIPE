@@ -204,7 +204,7 @@ Same as before, we read in each subset by state in map expression, and then we o
 ylab <- "Log of List Price (log base 2 dollars per square foot)"
 xlab <- "Month"
 rhsave(
-    list = ("ylab", "xlab"), 
+    list = c("ylab", "xlab"), 
     file = "/ln/tongx/housing/shared/label.RData"
 )
 ```
