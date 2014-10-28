@@ -1,24 +1,63 @@
 # RHIPE Tutorial #
 
-## R and RHIPE ##
+## The R, RHIPE, Hadoop Setting ##
 
-### Set up ###
+### Overview ###
 
-This tutorial covers an implementation of Divide and Recombine (D&R) in the R statistical programming 
-environment, an R package called `RHIPE`. This is one component of the Tessera environment for the 
-analysis of large complex data.
+The setting has three components: remote computer, one or more Unix
+R-session servers, and a Unix Hadoop cluster. You work on a remote
+computer, say your laptop, and login to an R-session server with RHIPE
+installed where you do all of your programming of R and RHIPE R commands.
+In other words, this is where your R global environment runs executes.
+The remote computer is typically for you to maintain, but the R-session
+servers and the Hadoop will almost always require IT staff to help design,
+configure, and maintain.
 
-We are going to demonstrate how to process `RHIPE` jobs on a cluster which is running Linux operating 
-system in the following sessions. The cluster is consist of two types of servers. One is an initiating 
-R server which is the front-end. Another one is the Hadoop servers where the HDFS is sitting and also where
-`RHIPE` job will be distributed to. We call those servers as back-end. The front-end may or may not be 
-one of the Hadoop servers, either situation will be fine for `RHIPE` job. It will be decided by the 
-cluster administrator.
+### The R-Session Server ###
 
-Begin by connecting via ssh to the initiating R server from your laptop or desktop. Now you are sitting 
-on the initiating R server, then start an interactive R session. In later on sessions, we will mention 
-about a local R current working directory. Local here means on the front-end, not your laptop or desktop.
-So this working directory is on the initiating R server. All files like dataset, results, or plots you 
-created will be transferred between this working directory on the initiating R server and the HDFS on the
-back-end. In summary, you will sit in front of your laptop starting an R session on initiating R server 
-and submitting `RHIPE` job which will be distributed to the back-end Hadoop servers.
+Now the R-session server can be separate from the Hadoop cluster, handling
+only R sessions, or it can be one of the servers on the Hadoop cluster. If on
+the Hadoop cluster, there must be some precautions taken in the Hadoop
+configuration to protect the programming of the R session.
+This is needed because the RHIPE Hadoop jobs compete with the R sessions.
+There are never full
+guarantees though, so `safe mode` is separate R session servers. The last thing
+you want is for R sessions to get bogged down.
+
+If the cluster option is chosen, then you want to mount a file server on the
+cluster that contains the files associated with the R session such as .RData
+and files read into to R or written by R.
+
+### The Remote Computer ###
+
+The remote computer is just a communication device, and does not carry out data
+analysis, so it can run any operating system, such as Windows. This is
+especially important for teaching, since Windows labs are very plentiful at
+academic institutions, but not Unix labs.
+Whatever the operating system, a common communication protocol that  is used
+is the SSH protocol. SSH is typically used to log into a remote machine and
+execute commands or to transfer files. But a critical capability of it for our
+purposes here is that it supports your R session command-line window, showing
+both input and output, and also opening a separate window to show graphics.
+
+### RStudio ###
+
+There is a vast segment of the R community that uses RStudio, for good reason.
+That can be used too. RStudio server is installed on the R-session servers,
+which then, using a Web browser, provide the RStudio interface that is then
+accessed by the remote device via the remote login. 
+
+### Where Are the Data Analyses Carried Out ###
+
+Obviously, much data analysis is carried out by Hadoop on the Hadoop cluster.
+Your R commands are given to RHIPE, passed along to Hadoop, and the outputs
+written by Hadoop to the HDFS.
+
+But in many analyses of larger and more complex data, it is common to have
+outputs of a recombination method be a relatively small amount of data, and
+that the anlysis continues studying these outputs. If they are small enough to
+readily analyze in your R session then for sure that is where you want to be.
+While programming R and RHIPE is easy, it is not as easy as plain old serial R.
+RHIPE commands allow you to write the outputs to the R global environment of
+your R session. They become a dataset in .RData. And that is where the analysis
+is finished off.
