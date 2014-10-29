@@ -38,12 +38,14 @@ server. Then every time when we submit a `RHIPE` job, this zip file will be dist
 Hadoop servers and to make sure all of them have the same R and all R packages.
 
 ```{r eval=FALSE, tidy=FALSE}
+rhmkdir("/shared")
 hdfs.setwd("/shared/") 
 bashRhipeArchive("RhipeLib")
 ```
 
 Function `hdfs.setwd()` is used to set a HDFS working directory for all `RHIPE` commands that use the HDFS. 
-We used "/shared/" here, but you can use whatever path you like on your HDFS.
+We used "/shared/" here, but you can use whatever path you like on your HDFS. But make sure this directory
+on HDFS has been created. You can use `rhmkdir` function to create a directory on HDFS.
 Then `bashRhipeArchive` function is creating an archive on the HDFS with a runner script appropriate for 
 running `RHIPE` jobs, and then uploads that archive to the HDFS working directory that we just created
 "/shared/".

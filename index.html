@@ -2673,12 +2673,14 @@ create a shared zip file which includes R and all R packages that user has insta
 server. Then every time when we submit a <code>RHIPE</code> job, this zip file will be distributed to every 
 Hadoop servers and to make sure all of them have the same R and all R packages.</p>
 
-<pre><code class="r">hdfs.setwd(&quot;/shared/&quot;) 
+<pre><code class="r">rhmkdir(&quot;/shared&quot;)
+hdfs.setwd(&quot;/shared/&quot;) 
 bashRhipeArchive(&quot;RhipeLib&quot;)
 </code></pre>
 
 <p>Function <code>hdfs.setwd()</code> is used to set a HDFS working directory for all <code>RHIPE</code> commands that use the HDFS. 
-We used &quot;/shared/&quot; here, but you can use whatever path you like on your HDFS.
+We used &quot;/shared/&quot; here, but you can use whatever path you like on your HDFS. But make sure this directory
+on HDFS has been created. You can use <code>rhmkdir</code> function to create a directory on HDFS.
 Then <code>bashRhipeArchive</code> function is creating an archive on the HDFS with a runner script appropriate for 
 running <code>RHIPE</code> jobs, and then uploads that archive to the HDFS working directory that we just created
 &quot;/shared/&quot;.</p>
