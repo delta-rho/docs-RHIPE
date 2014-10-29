@@ -1,0 +1,72 @@
+## Installation ##
+
+### Installing RHIPE and Dependencies ###
+
+In order to install the `RHIPE` package, we first will download the installation zip file.
+All installation step described here is in the R on R session server.
+
+```{r eval=FALSE, tidy=FALSE}
+system("wget http://ml.stat.purdue.edu/rhipebin/Rhipe_0.74.0.tar.gz")
+```
+
+After successfully downloaded the source zip file to your R working directory on R session server,
+we will start to install the `RHIPE`.
+
+```{r eval=FALSE, tidy=FALSE}
+install.packages("testthat")
+install.packages("rJava")
+install.packages("Rhipe_0.74.0.tar.gz", repos=NULL, type="source")
+```
+
+The first two installation commands are trying to install two dependencies of `RHIPE`. Sometimes you
+may face difficulty of installing `rJava` package, please consult your server administrator for Java
+configuration information to successfully install `rJava`.
+
+### Initializing RHIPE ###
+
+Now, you have successfully installed `RHIPE` on R session server. The next two thing you have to do
+is to call the `RHIPE` library and initiate it.
+
+```{r eval=FALSE, tidy=FALSE}
+library(Rhipe)
+rhinit()
+```
+
+As a R user, we definitely want to use other useful packages during the `RHIPE` job. So we have to 
+create a shared zip file which includes R and all R packages that user has installed on R session 
+server. Then every time when we submit a `RHIPE` job, this zip file will be distributed to every 
+Hadoop servers and to make sure all of them have the same R and all R packages.
+
+```{r eval=FALSE, tidy=FALSE}
+hdfs.setwd("/shared/") 
+bashRhipeArchive("RhipeLib")
+```
+
+Function `hdfs.setwd()` is used to set a HDFS working directory for all `RHIPE` commands that use the HDFS. 
+We used "/shared/" here, but you can use whatever path you like on your HDFS.
+Then `bashRhipeArchive` function is creating an archive on the HDFS with a runner script appropriate for 
+running `RHIPE` jobs, and then uploads that archive to the HDFS working directory that we just created
+"/shared/".
+
+```{r eval=FALSE, tidy=FALSE}
+rhls("/shared/")
+```
+```
+  permission owner      group     size          modtime                    file
+1 -rw-rw-rw- tongx supergroup 81.02 mb 2014-06-02 15:55 /shared/RhipeLib.tar.gz       
+```
+
+You can check what has been created on HDFS by using `rhls` function. There is a "RhipeLib.tar.gz" 
+file created under "/shared/" on HDFS. It is an R distribution loaded with every shared lib file 
+that a package R has installed might have used. This tar.gz file basically included R, all R 
+packages user have installed on R session server, and all shared lib files that R packages need. 
+
+Finally, every time when the user starts to use `RHIPE` package, the following lines of commands 
+should be included.
+
+```{r eval=FALSE, tidy=FALSE}
+library(Rhipe)
+rhinit()
+rhoptions(zips = "/shared/RhipeLib.tar.gz")
+rhoptions(runner = "sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh")
+```

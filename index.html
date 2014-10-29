@@ -205,6 +205,18 @@
          <a target='_self' class='nav-not-header' href='#summary'>Summary</a>
       </li>
 
+
+<li class='nav-header unselectable' data-edit-href='07.install.Rmd'>Installation</li>
+      
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#installing-rhipe-and-dependencies'>Installing RHIPE and Dependencies</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#initializing-rhipe'>Initializing RHIPE</a>
+      </li>
+
    </ul>
    </div>
 
@@ -2618,6 +2630,79 @@ Recombine computation type. And the &#39;S&#39; stands for the Serial Computatio
 <p>As we can see from the plot, the Divid and Recombine Computation by RHIPE has much more prevailing 
 advantages than the Serial Computation in R in the aspect of computation speed as well as the 
 computation ablity. </p>
+
+</div>
+
+
+<div class='tab-pane' id='installing-rhipe-and-dependencies'>
+<h3>Installing RHIPE and Dependencies</h3>
+
+<p>In order to install the <code>RHIPE</code> package, we first will download the installation zip file.
+All installation step described here is in the R on R session server.</p>
+
+<pre><code class="r">system(&quot;wget http://ml.stat.purdue.edu/rhipebin/Rhipe_0.74.0.tar.gz&quot;)
+</code></pre>
+
+<p>After successfully downloaded the source zip file to your R working directory on R session server,
+we will start to install the <code>RHIPE</code>.</p>
+
+<pre><code class="r">install.packages(&quot;testthat&quot;)
+install.packages(&quot;rJava&quot;)
+install.packages(&quot;Rhipe_0.74.0.tar.gz&quot;, repos=NULL, type=&quot;source&quot;)
+</code></pre>
+
+<p>The first two installation commands are trying to install two dependencies of <code>RHIPE</code>. Sometimes you
+may face difficulty of installing <code>rJava</code> package, please consult your server administrator for Java
+configuration information to successfully install <code>rJava</code>.</p>
+
+</div>
+
+
+<div class='tab-pane' id='initializing-rhipe'>
+<h3>Initializing RHIPE</h3>
+
+<p>Now, you have successfully installed <code>RHIPE</code> on R session server. The next two thing you have to do
+is to call the <code>RHIPE</code> library and initiate it.</p>
+
+<pre><code class="r">library(Rhipe)
+rhinit()
+</code></pre>
+
+<p>As a R user, we definitely want to use other useful packages during the <code>RHIPE</code> job. So we have to 
+create a shared zip file which includes R and all R packages that user has installed on R session 
+server. Then every time when we submit a <code>RHIPE</code> job, this zip file will be distributed to every 
+Hadoop servers and to make sure all of them have the same R and all R packages.</p>
+
+<pre><code class="r">hdfs.setwd(&quot;/shared/&quot;) 
+bashRhipeArchive(&quot;RhipeLib&quot;)
+</code></pre>
+
+<p>Function <code>hdfs.setwd()</code> is used to set a HDFS working directory for all <code>RHIPE</code> commands that use the HDFS. 
+We used &quot;/shared/&quot; here, but you can use whatever path you like on your HDFS.
+Then <code>bashRhipeArchive</code> function is creating an archive on the HDFS with a runner script appropriate for 
+running <code>RHIPE</code> jobs, and then uploads that archive to the HDFS working directory that we just created
+&quot;/shared/&quot;.</p>
+
+<pre><code class="r">rhls(&quot;/shared/&quot;)
+</code></pre>
+
+<pre><code>  permission owner      group     size          modtime                    file
+1 -rw-rw-rw- tongx supergroup 81.02 mb 2014-06-02 15:55 /shared/RhipeLib.tar.gz       
+</code></pre>
+
+<p>You can check what has been created on HDFS by using <code>rhls</code> function. There is a &quot;RhipeLib.tar.gz&quot; 
+file created under &quot;/shared/&quot; on HDFS. It is an R distribution loaded with every shared lib file 
+that a package R has installed might have used. This tar.gz file basically included R, all R 
+packages user have installed on R session server, and all shared lib files that R packages need. </p>
+
+<p>Finally, every time when the user starts to use <code>RHIPE</code> package, the following lines of commands 
+should be included.</p>
+
+<pre><code class="r">library(Rhipe)
+rhinit()
+rhoptions(zips = &quot;/shared/RhipeLib.tar.gz&quot;)
+rhoptions(runner = &quot;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&quot;)
+</code></pre>
 
 </div>
 
