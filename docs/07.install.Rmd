@@ -25,7 +25,7 @@ configuration information to successfully install `rJava`.
 ### Initializing RHIPE ###
 
 Now, you have successfully installed `RHIPE` on R session server. The next two thing you have to do
-is to call the `RHIPE` library and initiate it.
+is to call the `RHIPE` library and initializes it.
 
 ```{r eval=FALSE, tidy=FALSE}
 library(Rhipe)
