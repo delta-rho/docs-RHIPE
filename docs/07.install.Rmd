@@ -64,7 +64,7 @@ that a package R has installed might have used. This tar.gz file basically inclu
 packages user have installed on R session server, and all shared lib files that R packages need. 
 
 Finally, every time when the user starts to use `RHIPE` package, the following lines of commands 
-should be included.
+should be called in R on R session server.
 
 ```{r eval=FALSE, tidy=FALSE}
 library(Rhipe)
