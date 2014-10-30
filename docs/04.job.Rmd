@@ -19,7 +19,7 @@ mr13 <- rhwatch(
   readback = FALSE,
   noeval   = TRUE
 )
-badjob <- rhex(mr6, async = TRUE) 
+badjob <- rhex(mr13, async = TRUE) 
 ```
 
 We've set `mapred.reduce.tasks` to be 0, because this job omits the optional reduce expression.  

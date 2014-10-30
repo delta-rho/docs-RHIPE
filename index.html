@@ -108,7 +108,7 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#compute-state--means'>Compute State  Means</a>
+         <a target='_self' class='nav-not-header' href='#compute-state-means'>Compute State Means</a>
       </li>
 
 
@@ -206,15 +206,15 @@
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='07.install.Rmd'>Installation</li>
+<li class='nav-header unselectable' data-edit-href='07.install.Rmd'>Your Installation of Packages</li>
       
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#installing-rhipe-and-dependencies'>Installing RHIPE and Dependencies</a>
+         <a target='_self' class='nav-not-header' href='#background'>Background</a>
       </li>
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#initializing-rhipe'>Initializing RHIPE</a>
+         <a target='_self' class='nav-not-header' href='#installing-rhipe-yourself'>Installing RHIPE Yourself</a>
       </li>
 
    </ul>
@@ -418,7 +418,7 @@ Make sure you specify the same directory as you used in the last step.</p>
 </code></pre>
 
 <p><code>rhls()</code> is very similar to the bash command <code>ls</code>.  It will list all content under a given address. 
-We can see that the <code>housing.txt</code> file with size 11.82Mb is located under <code>/user/tongx/housing/</code> 
+We can see that the &quot;housing.txt&quot; file with size 11.82Mb is located under &quot;/ln/tongx/housing/&quot; 
 on HDFS.</p>
 
 <p>With our data on the HDFS, we are ready to start a D&amp;R analysis.</p>
@@ -579,47 +579,36 @@ are in no particular order.    </p>
 <pre><code class="r">str(stateSubsets)
 </code></pre>
 
-<pre><code>List of 49
- $ :List of 2
+<pre><code> $ :List of 2
   ..$ : chr &quot;WV&quot;
-  ..$ :&#39;data.frame&#39;:  3836 obs. of  6 variables:
-  .. ..$ FIPS   : chr [1:3836] &quot;54001&quot; &quot;54109&quot; &quot;54109&quot; &quot;54109&quot; ...
-  .. ..$ county : chr [1:3836] &quot;Barbour&quot; &quot;Wyoming&quot; &quot;Wyoming&quot; &quot;Wyoming&quot; ...
-  .. ..$ date   : chr [1:3836] &quot;1&quot; &quot;66&quot; &quot;65&quot; &quot;64&quot; ...
-  .. ..$ units  : num [1:3836] NA NA NA NA NA NA NA NA NA NA ...
-  .. ..$ list   : num [1:3836] 71.7 50 50 44.4 44.4 ...
-  .. ..$ selling: num [1:3836] NA NA NA NA NA NA NA NA NA NA ...
+  ..$ :&#39;data.frame&#39;:  3630 obs. of  6 variables:
+  .. ..$ FIPS   : chr [1:3630] &quot;54103&quot; &quot;54103&quot; &quot;54033&quot; &quot;54051&quot; ...
+  .. ..$ county : chr [1:3630] &quot;Wetzel&quot; &quot;Wetzel&quot; &quot;Harrison&quot; &quot;Marshall&quot; ...
+  .. ..$ date   : chr [1:3630] &quot;65&quot; &quot;66&quot; &quot;66&quot; &quot;1&quot; ...
+  .. ..$ units  : num [1:3630] NA NA NA NA NA NA NA NA NA NA ...
+  .. ..$ list   : num [1:3630] 57.9 52.7 91.4 67 63.8 ...
+  .. ..$ selling: num [1:3630] NA NA NA NA NA NA NA NA NA NA ...
   .. ..- attr(*, &quot;state&quot;)= chr &quot;WV&quot;
  $ :List of 2
   ..$ : chr &quot;KY&quot;
-  ..$ :&#39;data.frame&#39;:    8059 obs. of  6 variables:
-  .. ..$ FIPS   : chr [1:8059] &quot;21033&quot; &quot;21033&quot; &quot;21239&quot; &quot;21239&quot; ...
-  .. ..$ county : chr [1:8059] &quot;Caldwell&quot; &quot;Caldwell&quot; &quot;Woodford&quot; &quot;Woodford&quot; ...
-  .. ..$ date   : chr [1:8059] &quot;83&quot; &quot;84&quot; &quot;69&quot; &quot;68&quot; ...
-  .. ..$ units  : num [1:8059] NA NA NA NA NA NA NA NA NA NA ...
-  .. ..$ list   : num [1:8059] NA 75 97.2 96.3 97.1 ...
-  .. ..$ selling: num [1:8059] 45.4 NA NA NA NA ...
+  ..$ :&#39;data.frame&#39;:    7458 obs. of  6 variables:
+  .. ..$ FIPS   : chr [1:7458] &quot;21173&quot; &quot;21173&quot; &quot;21155&quot; &quot;21155&quot; ...
+  .. ..$ county : chr [1:7458] &quot;Montgomery&quot; &quot;Montgomery&quot; &quot;Marion&quot; &quot;Marion&quot; ...
+  .. ..$ date   : chr [1:7458] &quot;2&quot; &quot;1&quot; &quot;66&quot; &quot;65&quot; ...
+  .. ..$ units  : num [1:7458] NA NA NA NA NA NA NA NA NA NA ...
+  .. ..$ list   : num [1:7458] 76 80.2 60.6 71.5 72.5 ...
+  .. ..$ selling: num [1:7458] NA NA NA NA NA NA NA NA NA NA ...
   .. ..- attr(*, &quot;state&quot;)= chr &quot;KY&quot;
  $ :List of 2
   ..$ : chr &quot;NV&quot;
-  ..$ :&#39;data.frame&#39;:    1284 obs. of  6 variables:
-  .. ..$ FIPS   : chr [1:1284] &quot;32019&quot; &quot;32019&quot; &quot;32019&quot; &quot;32019&quot; ...
-  .. ..$ county : chr [1:1284] &quot;Lyon&quot; &quot;Lyon&quot; &quot;Lyon&quot; &quot;Lyon&quot; ...
-  .. ..$ date   : chr [1:1284] &quot;24&quot; &quot;25&quot; &quot;26&quot; &quot;27&quot; ...
-  .. ..$ units  : num [1:1284] NA NA 84 91 135 NA NA 134 134 148 ...
-  .. ..$ list   : num [1:1284] 90.3 NA 89.9 88.2 NA ...
-  .. ..$ selling: num [1:1284] NA 74.2 NA 72.8 71 ...
+  ..$ :&#39;data.frame&#39;:    1056 obs. of  6 variables:
+  .. ..$ FIPS   : chr [1:1056] &quot;32029&quot; &quot;32029&quot; &quot;32029&quot; &quot;32029&quot; ...
+  .. ..$ county : chr [1:1056] &quot;Storey&quot; &quot;Storey&quot; &quot;Storey&quot; &quot;Storey&quot; ...
+  .. ..$ date   : chr [1:1056] &quot;3&quot; &quot;4&quot; &quot;5&quot; &quot;6&quot; ...
+  .. ..$ units  : num [1:1056] NA NA NA NA NA NA 11 NA 11 12 ...
+  .. ..$ list   : num [1:1056] 155 149 143 147 149 ...
+  .. ..$ selling: num [1:1056] NA NA NA NA NA NA NA NA NA NA ...
   .. ..- attr(*, &quot;state&quot;)= chr &quot;NV&quot;
- $ :List of 2
-  ..$ : chr &quot;OK&quot;
-  ..$ :&#39;data.frame&#39;:    6468 obs. of  6 variables:
-  .. ..$ FIPS   : chr [1:6468] &quot;40151&quot; &quot;40151&quot; &quot;40151&quot; &quot;40151&quot; ...
-  .. ..$ county : chr [1:6468] &quot;Woods&quot; &quot;Woods&quot; &quot;Woods&quot; &quot;Woods&quot; ...
-  .. ..$ date   : chr [1:6468] &quot;57&quot; &quot;55&quot; &quot;54&quot; &quot;53&quot; ...
-  .. ..$ units  : num [1:6468] NA 13 NA NA NA NA NA NA NA NA ...
-  .. ..$ list   : num [1:6468] 51.7 53.7 NA 53.5 NA ...
-  .. ..$ selling: num [1:6468] NA NA NA NA NA NA NA NA NA NA ...
-  .. ..- attr(*, &quot;state&quot;)= chr &quot;OK&quot;
 ......
 </code></pre>
 
@@ -629,8 +618,8 @@ They will persist on HDFS and be used for many analytic methods, each applied us
 </div>
 
 
-<div class='tab-pane' id='compute-state--means'>
-<h3>Compute State  Means</h3>
+<div class='tab-pane' id='compute-state-means'>
+<h3>Compute State Means</h3>
 
 <p>Now we&#39;ll apply an analytic method to the subsets of our housing data.  Our analytic
 method will be to take the mean.  We have monthly list prices and sale prices per square foot, 
@@ -733,7 +722,7 @@ map      0       10       0      10        0      0               0             
 reduce   0        5       5       0        0      0               0               0
 Waiting 5 seconds
 .......
-Read 1 objects(2.42 KB) in 0.06 seconds
+Read 1 objects(1.2 KB) in 0.09 seconds
 </code></pre>
 
 <pre><code class="r">str(stateMeans)
@@ -743,9 +732,9 @@ Read 1 objects(2.42 KB) in 0.06 seconds
  $ :List of 2
   ..$ : num 1
   ..$ :&#39;data.frame&#39;:  49 obs. of  3 variables:
-  .. ..$ state      : Factor w/ 49 levels &quot;IA&quot;,&quot;KS&quot;,&quot;AZ&quot;,..: 1 2 3 4 5 6 7 8 9 10 ...
-  .. ..$ listmean   : num [1:49] 74.5 66 110.6 369.1 151 ...
-  .. ..$ sellingmean: num [1:49] 95.1 NaN 101.3 422.5 143.4 ...
+  .. ..$ state   : chr [1:49] &quot;CA&quot; &quot;MA&quot; &quot;NJ&quot; &quot;TN&quot; ...
+  .. ..$ listMean: num [1:49] 192.6 259.1 180 85.3 81.7 ...
+  .. ..$ saleMean: num [1:49] 185.9 210.9 171.4 80 76.3 ...
 </code></pre>
 
 <p>As we can see, the result is a list of length 1.  This make sense, since we only output a single
@@ -758,13 +747,13 @@ median sale price per square feet.</p>
 head(stateMeans)
 </code></pre>
 
-<pre><code>   state listMean    saleMean
-4     DC 369.0546    422.4744
-45    MA 259.1316    210.8714
-44    CA 192.6343    185.8716
-10    RI 188.9953    174.9670
-46    NJ 180.0136    171.4495
-22    CT 162.4686    151.7553
+<pre><code>  state  listMean  saleMean
+1    CA 192.63429 185.87159
+2    MA 259.13164 210.87140
+3    NJ 180.01365 171.44946
+4    TN  85.28335  80.00628
+5    TX  81.67656  76.32277
+6    WA 134.67467 128.54734
 </code></pre>
 
 <p>Let&#39;s take a look at how the output was stored on HDFS using <code>rhls</code>.</p>
@@ -843,10 +832,9 @@ as the key.  It contains the unique FIPS code, the county name, and the state na
     oneCounty &lt;- rbind(oneCounty, do.call(rbind, reduce.values))
   },
   post = {
-    attr(oneCounty, &quot;FIPS&quot;) &lt;- reduce.key[1]
     attr(oneCounty, &quot;county&quot;) &lt;- reduce.key[2]
     attr(oneCounty, &quot;state&quot;) &lt;- reduce.key[3]
-    rhcollect(reduce.key, oneCounty)
+    rhcollect(reduce.key[1], oneCounty)
   }
 )
 </code></pre>
@@ -854,7 +842,8 @@ as the key.  It contains the unique FIPS code, the county name, and the state na
 <p>By removing the FIPS, county, and state columns from the data frame and storing them as
 attributes, we&#39;ve eliminated redundant information in each data frame. Working with massive 
 data sets, we want our data to take up the least possible space on disk in order to save 
-read/write time.</p>
+read/write time. Also we only keep the first element in <code>reduce.key</code> which is the <code>FIPS</code>
+as the key in output key/value pairs.</p>
 
 <h4>Execution Function</h4>
 
@@ -935,7 +924,7 @@ calculated them by state. </p>
     )
     value$state &lt;- attr(map.values[[r]], &quot;state&quot;)
     value$county &lt;- attr(map.values[[r]], &quot;county&quot;)
-    value$FIPS &lt;- attr(map.values[[r]], &quot;FIPS&quot;)
+    value$FIPS &lt;- map.keys[[r]]
     rhcollect(1, value)
   })
 })
@@ -990,24 +979,24 @@ can speed up this job and future jobs which read its output.</p>
 <pre><code>List of 1
  $ :List of 2
   ..$ : num 1
-  ..$ :&#39;data.frame&#39; :    2883 obs. of  5 variables:
-  .. ..$ fips       : chr [1:2883] &quot;01005&quot; &quot;01023&quot; &quot;01041&quot; &quot;01069&quot; ...
-  .. ..$ listmean   : num [1:2883] 85.5 54.3 59.3 87.6 74.4 ...
-  .. ..$ sellingmean: num [1:2883] NaN NaN NaN NaN NaN ...
-  .. ..$ state      : chr [1:2883] &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; ...
-  .. ..$ county     : chr [1:2883] &quot;Barbour&quot; &quot;Choctaw&quot; &quot;Crenshaw&quot; &quot;Houston&quot; ...
+  ..$ :&#39;data.frame&#39;:  2883 obs. of  5 variables:
+  .. ..$ listMean: num [1:2883] 66.3 74.9 86.5 68.3 74.4 ...
+  .. ..$ saleMean: num [1:2883] NaN NaN 66.6 52.2 NaN ...
+  .. ..$ state   : chr [1:2883] &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; ...
+  .. ..$ county  : chr [1:2883] &quot;Chambers&quot; &quot;Colbert&quot; &quot;Cullman&quot; &quot;Lawrence&quot; ...
+  .. ..$ FIPS    : chr [1:2883] &quot;01017&quot; &quot;01033&quot; &quot;01043&quot; &quot;01079&quot; ...
 </code></pre>
 
 <pre><code class="r">head(meansByCounty[[1]][[2]])
 </code></pre>
 
-<pre><code>   FIPS listMean  saleMean state       county
-1 01005 85.46983       NaN    AL      Barbour
-2 01023 54.27378       NaN    AL      Choctaw
-3 01041 59.29840       NaN    AL     Crenshaw
-4 01069 87.64237       NaN    AL      Houston
-5 01087 74.35722       NaN    AL        Macon
-6 01113 70.92100       NaN    AL      Russell
+<pre><code>   listMean saleMean state   county  FIPS
+1  66.26665      NaN    AL Chambers 01017
+2  74.91187      NaN    AL  Colbert 01033
+3  86.54870 66.56352    AL  Cullman 01043
+4  68.32503 52.17811    AL Lawrence 01079
+5  74.35722      NaN    AL    Macon 01087
+6 103.70687 94.27969    AZ   Mohave 04015
 </code></pre>
 
 </div>
@@ -1050,7 +1039,7 @@ of month, and rest of columns saved as a data frame was collected as correspondi
   reduce = {
     date500 &lt;- do.call(rbind, reduce.values)
     names(date500) &lt;- c(
-      &quot;fips&quot;, &quot;county&quot;, &quot;state&quot;, 
+      &quot;FIPS&quot;, &quot;county&quot;, &quot;state&quot;, 
       &quot;units&quot;, &quot;list&quot;, &quot;selling&quot;
     )
     date500$list &lt;- as.numeric(date500$list)
@@ -1307,7 +1296,15 @@ one argument - the directory to be deleted - and it recursively deletes any subd
 <pre><code class="r">rhls(&quot;/ln/tongx/housing&quot;)
 </code></pre>
 
-<pre><code>Philip, you should put the output of rhls right here
+<pre><code>  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29            /ln/tongx/housing/byCounty
+2 drwxrwxrwt tongx supergroup        0 2014-09-30 14:27             /ln/tongx/housing/byState
+3 drwxrwxrwt tongx supergroup        0 2014-10-28 14:07              /ln/tongx/housing/bydate
+4 drwxrwxrwt tongx supergroup        0 2014-09-18 23:56         /ln/tongx/housing/meanByState
+5 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
+6 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
+7 drwxrwxrwt tongx supergroup        0 2014-10-28 14:28          /ln/tongx/housing/soldbydate
+8 drwxrwxrwt tongx supergroup        0 2014-10-20 16:00 /ln/tongx/housing/soldbydate.combiner
 </code></pre>
 
 <p>We can delete it with the <code>rhdel</code> function:</p>
@@ -1315,15 +1312,19 @@ one argument - the directory to be deleted - and it recursively deletes any subd
 <pre><code class="r">rhdel(&quot;/ln/tongx/housing/byState&quot;)
 </code></pre>
 
-<pre><code>Philip, you should put the output of rhdel right here
-</code></pre>
-
 <p>And we can use <code>rhls</code> again to see that we were successful:</p>
 
 <pre><code class="r">rhls(&quot;/ln/tongx/housing&quot;)
 </code></pre>
 
-<pre><code>Philip, you should put the new output of rhls right here
+<pre><code>  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29            /ln/tongx/housing/byCounty
+2 drwxrwxrwt tongx supergroup        0 2014-10-28 14:07              /ln/tongx/housing/bydate
+3 drwxrwxrwt tongx supergroup        0 2014-09-18 23:56         /ln/tongx/housing/meanByState
+4 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
+5 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
+6 drwxrwxrwt tongx supergroup        0 2014-10-28 14:28          /ln/tongx/housing/soldbydate
+7 drwxrwxrwt tongx supergroup        0 2014-10-20 16:00 /ln/tongx/housing/soldbydate.combiner
 </code></pre>
 
 <p>As long as we&#39;re talking about HDFS file management, let&#39;s try out a few more functions.  Suppose
@@ -1332,20 +1333,30 @@ we want to make a copy of the original text file on the HDFS.  We can use the
 want to copy.  The second is the target, or location for the new copy.</p>
 
 <pre><code class="r">rhcp(&quot;/ln/tongx/housing/housing.txt&quot;, &quot;/ln/tongx/housing/tmp/housing.txt&quot;)
-rhls(&quot;/ln/tongx/housing/tmp&quot;
+rhls(&quot;/ln/tongx/housing/tmp&quot;)
 </code></pre>
 
-<pre><code>Philip, you should put the output of rhls here
+<pre><code>  permission owner      group     size          modtime                              file
+1 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-30 15:25 /ln/tongx/housing/tmp/housing.txt
 </code></pre>
 
 <p>We can use <code>rhmv</code> to move the text file to a different folder.  This
 function also takes two arguments, just like <code>rhcp</code>.</p>
 
 <pre><code class="r">rhmv(&quot;/ln/tongx/housing/tmp/housing.txt&quot;, &quot;/ln/tongx/housing/tmp2/housing.txt&quot;)
-rhls(&quot;/ln/tongx/housing/&quot;
+rhls(&quot;/ln/tongx/housing/&quot;)
 </code></pre>
 
-<pre><code>Philip, you should put the output of rhls here
+<pre><code>  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29            /ln/tongx/housing/byCounty
+2 drwxrwxrwt tongx supergroup        0 2014-10-28 14:07              /ln/tongx/housing/bydate
+3 drwxrwxrwt tongx supergroup        0 2014-09-18 23:56         /ln/tongx/housing/meanByState
+4 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
+5 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
+6 drwxrwxrwt tongx supergroup        0 2014-10-28 14:28          /ln/tongx/housing/soldbydate
+7 drwxrwxrwt tongx supergroup        0 2014-10-20 16:00 /ln/tongx/housing/soldbydate.combiner
+8 drwxrwxrwt tongx supergroup        0 2014-09-30 15:25                 /ln/tongx/housing/tmp
+9 drwxrwxrwt tongx supergroup        0 2014-09-30 15:28                /ln/tongx/housing/tmp2
 </code></pre>
 
 <p>That&#39;s enough file management.  Now let&#39;s recreate the division by state from the division by 
@@ -1357,8 +1368,8 @@ county, which is still on the HDFS.</p>
   lapply(seq_along(map.keys), function(r) {
     key &lt;- attr(map.values[[r]], &quot;state&quot;)
     value &lt;- map.values[[r]]
-    value$FIPS &lt;- attr(map.keys[[r]], &quot;FIPS&quot;)
-    value$county &lt;- attr(map.keys[[r]], &quot;county&quot;)
+    value$FIPS &lt;- attr(map.values[[r]], &quot;FIPS&quot;)
+    value$county &lt;- attr(map.values[[r]], &quot;county&quot;)
     rhcollect(key, value)
   })
 })
@@ -1410,7 +1421,7 @@ that we don&#39;t want to run this job, we just want to package it to be run lat
 <p>You won&#39;t see any output, because no commands have been sent to Hadoop.  Instead, the packaged
 job has been stored in the <code>mr5</code> object.  When we&#39;re ready to run the job, we call <code>rhex()</code>.</p>
 
-<pre><code class="r">byState &lt;- rhex(mr5, async = FALSE)
+<pre><code class="r">byState &lt;- rhex(mr9, async = FALSE)
 </code></pre>
 
 <p>The first argument to <code>rhex</code> is the packaged job we just created.  The second argument <code>async</code> 
@@ -1467,7 +1478,7 @@ reduce10 &lt;- expression(
 mr10 &lt;- rhwatch(
   map      = map10,
   reduce   = reduce10,
-  input    = rhfmt(&quot;/ln/tongx/housing/bycounty&quot;, type = &quot;sequence&quot;),
+  input    = rhfmt(&quot;/ln/tongx/housing/byCounty&quot;, type = &quot;sequence&quot;),
   output   = rhfmt(&quot;/ln/tongx/housing/countytostate.map&quot;, type = &quot;map&quot;),
   mapred   = list( 
     mapred.reduce.tasks = 10
@@ -1552,13 +1563,13 @@ part file.</p>
 <pre><code class="r">head(rst[[&quot;IN&quot;]])
 </code></pre>
 
-<pre><code>  time  sold      list  selling  fips county
-1   26    NA  56.70013       NA 18177  Wayne
-2   27    NA  52.01389       NA 18177  Wayne
-3   28    NA  49.92504       NA 18177  Wayne
-4   29    NA  51.91466       NA 18177  Wayne
-5   30    NA  55.27211       NA 18177  Wayne
-6   31    NA  56.68348       NA 18177  Wayne
+<pre><code>  date units     list selling  fips county
+1    8    NA 78.22178      NA 18109 Morgan
+2    9    NA 77.73632      NA 18109 Morgan
+3   10    NA 76.91198      NA 18109 Morgan
+4   11    NA 76.73789      NA 18109 Morgan
+5   12    NA 77.32143      NA 18109 Morgan
+6   13    NA 77.59740      NA 18109 Morgan
 </code></pre>
 
 </div>
@@ -1724,11 +1735,10 @@ When we went into it, we found following information:</p>
 4  -rw-r--r-- tongx supergroup 150.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CA.pdf
 5  -rw-r--r-- tongx supergroup 106.7 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CO.pdf
 ......
-
-Yes, all the pdf plots are saved here, on HDFS! The last step would be copy those pdf files from HDFS to our R local
-working directory on initiating R server.
-
 </code></pre>
+
+<p>Yes, all the pdf plots are saved here, on HDFS! The last step would be copy those pdf files from HDFS to our R local
+working directory on initiating R server.</p>
 
 <pre><code class="r">rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.NC.pdf&quot;, &quot;./&quot;)
 rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;, &quot;./&quot;)
@@ -1882,7 +1892,7 @@ mr13 &lt;- rhwatch(
   readback = FALSE,
   noeval   = TRUE
 )
-badjob &lt;- rhex(mr6, async = TRUE) 
+badjob &lt;- rhex(mr13, async = TRUE) 
 </code></pre>
 
 <p>We&#39;ve set <code>mapred.reduce.tasks</code> to be 0, because this job omits the optional reduce expression.<br>
@@ -2634,76 +2644,112 @@ computation ablity. </p>
 </div>
 
 
-<div class='tab-pane' id='installing-rhipe-and-dependencies'>
-<h3>Installing RHIPE and Dependencies</h3>
+<div class='tab-pane' id='background'>
+<h3>Background</h3>
 
-<p>In order to install the <code>RHIPE</code> package, we first will download the installation zip file.
-All installation step described here is in the R on R session server.</p>
+<p>As we have written earlier, you will likely want to install packages on your R
+session server, for example, R CRAN packages. And you want these packages to
+run on the Hadoop cluster as well. The mechanism for doing this is much like
+that you have been using for packages in R, but adds the push to the cluster
+which is very simple.</p>
+
+<p>The packages that are needed for everything to work are <code>RHIPE</code> from Github,
+and <code>rJava</code> and <code>testthat</code> from R CRAN. The second two are needed just for the
+<code>RHIPE</code> installation and then are no longer needed until there is a new
+installation. <code>R</code> becomes an issue too, because you certainly want the <code>R</code>
+version you choose for your <code>R</code> session server to be the <code>R</code> used on the
+cluster.</p>
+
+<p>Now suppose you are using RMR on the Amazon cloud, or Vagrant, discussed in our
+QuickStat section. Then installation of the necessary R and RHIPE packages and
+their push to the Hadoop servers is taken care of for you. So you are concerned
+only with R CRAN packages, and packages from other sources. So you need to know
+about the push mechanism up to the Hadoop cluster.</p>
+
+<p>We will proceed here as if you are intalling on a cluster at your location
+that starts off with just linux and R on the R server,
+and Hadoop and linux on the cluster. Part of the material is relevant for the
+RMR and Vagrant users. </p>
+
+<p>Now standard <code>R</code> practice for a
+server with many <code>R</code> users is for a system administator to install <code>R</code> for use
+by all. However at the same time, you can override this with your own version.
+This makes sense too for <code>RHIPE</code> and <code>R</code>. Have administrators install them on
+the R server and the Hadoop cluster. (The <code>RHIPE</code> installation manual for system
+adminstrators is available in these pages in the QuickStart section.)</p>
+
+<p>The system administrator must install protocol buffers on the Hadoop cluster
+to enable <code>RHIPE</code> communication. This is taken up in the installation manual
+described above. In addition, if you want to use RStudio on the
+R session server, pushing it all the way back to the remote device, the system
+administrator will need to install RStudio server on the R session server.</p>
+
+</div>
+
+
+<div class='tab-pane' id='installing-rhipe-yourself'>
+<h3>Installing RHIPE Yourself</h3>
+
+<p>If you want to a version of <code>Rhipe</code> youself, you run in your R session in your
+working directory</p>
 
 <pre><code class="r">system(&quot;wget http://ml.stat.purdue.edu/rhipebin/Rhipe_0.74.0.tar.gz&quot;)
 </code></pre>
 
-<p>After successfully downloaded the source zip file to your R working directory on R session server,
-we will start to install the <code>RHIPE</code>.</p>
+<p>There are other versions of <code>Rhipe</code>. You will need to go to Github to find out
+about them.</p>
+
+<p>Then run</p>
 
 <pre><code class="r">install.packages(&quot;testthat&quot;)
 install.packages(&quot;rJava&quot;)
 install.packages(&quot;Rhipe_0.74.0.tar.gz&quot;, repos=NULL, type=&quot;source&quot;)
 </code></pre>
 
-<p>The first two installation commands are trying to install two dependencies of <code>RHIPE</code>. Sometimes you
-may face difficulty of installing <code>rJava</code> package, please consult your server administrator for Java
-configuration information to successfully install <code>rJava</code>.</p>
+<p>The first two packages, are used only for <code>RHIPE</code> installation. Sometimes,
+there can be a problem with `rJava&#39; finding the R server Java location. If that
+occurs, consult your system administrator.</p>
 
-</div>
+<p>Now, you have successfully installed <code>RHIPE</code> on R session server. The next
+two thing you have to do is to call the <code>RHIPE</code> library and initializes it.</p>
 
+<p><code>{r eval=FALSE, tidy=FALSE} library(Rhipe) rhinit()</code></p>
 
-<div class='tab-pane' id='initializing-rhipe'>
-<h3>Initializing RHIPE</h3>
+<p><code>{r eval=FALSE, tidy=FALSE} rhmkdir(&quot;/shared&quot;) hdfs.setwd(&quot;/shared/&quot;)
+bashRhipeArchive(&quot;RhipeLib&quot;)</code></p>
 
-<p>Now, you have successfully installed <code>RHIPE</code> on R session server. The next two thing you have to do
-is to call the <code>RHIPE</code> library and initializes it.</p>
+<p>Function <code>hdfs.setwd()</code> is used to set a HDFS working directory for all
+<code>RHIPE</code> commands that use the HDFS.  We used &quot;/shared/&quot; here, but you can use
+whatever path you like on your HDFS. But make sure this directory on HDFS has
+been created. You can use <code>rhmkdir</code> function to create a directory on HDFS.
+Then <code>bashRhipeArchive</code> function is creating an archive on the HDFS with a
+runner script appropriate for running <code>RHIPE</code> jobs, and then uploads that
+archive to the HDFS working directory that we just created &quot;/shared/&quot;.</p>
 
-<pre><code class="r">library(Rhipe)
-rhinit()
-</code></pre>
+<p><code>{r eval=FALSE, tidy=FALSE} rhls(&quot;/shared/&quot;)</code> ```
+  permission owner      group     size          modtime                    file
+1 -rw-rw-rw- tongx supergroup 81.02 mb 2014-06-02 15:55 /shared/RhipeLib.tar.gz</p>
 
-<p>As a R user, we definitely want to use other useful packages during the <code>RHIPE</code> job. So we have to 
-create a shared zip file which includes R and all R packages that user has installed on R session 
-server. Then every time when we submit a <code>RHIPE</code> job, this zip file will be distributed to every 
-Hadoop servers and to make sure all of them have the same R and all R packages.</p>
+<pre><code>
+You can check what has been created on HDFS by using `rhls` function. There
+is a &quot;RhipeLib.tar.gz&quot; file created under &quot;/shared/&quot; on HDFS. It is an
+R distribution loaded with every shared lib file that a package R has
+installed might have used. This tar.gz file basically included R, all R
+packages user have installed on R session server, and all shared lib files
+that R packages need.
 
-<pre><code class="r">rhmkdir(&quot;/shared&quot;)
-hdfs.setwd(&quot;/shared/&quot;) 
-bashRhipeArchive(&quot;RhipeLib&quot;)
-</code></pre>
+Finally, every time when the user starts to use `RHIPE` package, the following
+lines of commands should be called in R on R session server.
 
-<p>Function <code>hdfs.setwd()</code> is used to set a HDFS working directory for all <code>RHIPE</code> commands that use the HDFS. 
-We used &quot;/shared/&quot; here, but you can use whatever path you like on your HDFS. But make sure this directory
-on HDFS has been created. You can use <code>rhmkdir</code> function to create a directory on HDFS.
-Then <code>bashRhipeArchive</code> function is creating an archive on the HDFS with a runner script appropriate for 
-running <code>RHIPE</code> jobs, and then uploads that archive to the HDFS working directory that we just created
-&quot;/shared/&quot;.</p>
+```{r eval=FALSE, tidy=FALSE} library(Rhipe) rhinit()
+rhoptions(zips = &quot;/shared/RhipeLib.tar.gz&quot;) rhoptions(runner = &quot;sh
+./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&quot;) ```
 
-<pre><code class="r">rhls(&quot;/shared/&quot;)
-</code></pre>
-
-<pre><code>  permission owner      group     size          modtime                    file
-1 -rw-rw-rw- tongx supergroup 81.02 mb 2014-06-02 15:55 /shared/RhipeLib.tar.gz       
-</code></pre>
-
-<p>You can check what has been created on HDFS by using <code>rhls</code> function. There is a &quot;RhipeLib.tar.gz&quot; 
-file created under &quot;/shared/&quot; on HDFS. It is an R distribution loaded with every shared lib file 
-that a package R has installed might have used. This tar.gz file basically included R, all R 
-packages user have installed on R session server, and all shared lib files that R packages need. </p>
-
-<p>Finally, every time when the user starts to use <code>RHIPE</code> package, the following lines of commands 
-should be called in R on R session server.</p>
-
-<pre><code class="r">library(Rhipe)
-rhinit()
-rhoptions(zips = &quot;/shared/RhipeLib.tar.gz&quot;)
-rhoptions(runner = &quot;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&quot;)
+As a R user, we definitely want to use other useful packages during the
+`RHIPE` job. So we have to create a shared zip file which includes R and all
+R packages that user has installed on R session server. Then every time when
+we submit a `RHIPE` job, this zip file will be distributed to every Hadoop
+servers and to make sure all of them have the same R and all R packages.
 </code></pre>
 
 </div>
