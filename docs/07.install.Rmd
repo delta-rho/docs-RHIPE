@@ -1,16 +1,57 @@
-## Installation ##
+## Your Installation of Packages ##
 
-### Installing RHIPE and Dependencies ###
+### Background ###
 
-In order to install the `RHIPE` package, we first will download the installation zip file.
-All installation step described here is in the R on R session server.
+As we have written earlier, you will likely want to install packages on your R
+session server, for example, R CRAN packages. And you want these packages to
+run on the Hadoop cluster as well. The mechanism for doing this is much like
+that you have been using for packages in R, but adds the push to the cluster
+which is very simple.
+
+The packages that are needed for everything to work are `RHIPE` from Github,
+and `rJava` and `testthat` from R CRAN. The second two are needed just for the
+`RHIPE` installation and then are no longer needed until there is a new
+installation. `R` becomes an issue too, because you certainly want the `R`
+version you choose for your `R` session server to be the `R` used on the
+cluster.
+
+Now suppose you are using RMR on the Amazon cloud, or Vagrant, discussed in our
+QuickStat section. Then installation of the necessary R and RHIPE packages and
+their push to the Hadoop servers is taken care of for you. So you are concerned
+only with R CRAN packages, and packages from other sources. So you need to know
+about the push mechanism up to the Hadoop cluster.
+
+We will proceed here as if you are intalling on a cluster at your location
+that starts off with just linux and R on the R server,
+and Hadoop and linux on the cluster. Part of the material is relevant for the
+RMR and Vagrant users. 
+
+Now standard `R` practice for a
+server with many `R` users is for a system administator to install `R` for use
+by all. However at the same time, you can override this with your own version.
+This makes sense too for `RHIPE` and `R`. Have administrators install them on
+the R server and the Hadoop cluster. (The `RHIPE` installation manual for system
+adminstrators is available in these pages in the QuickStart section.)
+
+The system administrator must install protocol buffers on the Hadoop cluster
+to enable `RHIPE` communication. This is taken up in the installation manual
+described above. In addition, if you want to use RStudio on the
+R session server, pushing it all the way back to the remote device, the system
+administrator will need to install RStudio server on the R session server.
+
+### Installing RHIPE Yourself ###
+
+If you want to a version of `Rhipe` youself, you run in your R session in your
+working directory
 
 ```{r eval=FALSE, tidy=FALSE}
 system("wget http://ml.stat.purdue.edu/rhipebin/Rhipe_0.74.0.tar.gz")
 ```
 
-After successfully downloaded the source zip file to your R working directory on R session server,
-we will start to install the `RHIPE`.
+There are other versions of `Rhipe`. You will need to go to Github to find out
+about them.
+
+Then run
 
 ```{r eval=FALSE, tidy=FALSE}
 install.packages("testthat")
@@ -18,57 +59,47 @@ install.packages("rJava")
 install.packages("Rhipe_0.74.0.tar.gz", repos=NULL, type="source")
 ```
 
-The first two installation commands are trying to install two dependencies of `RHIPE`. Sometimes you
-may face difficulty of installing `rJava` package, please consult your server administrator for Java
-configuration information to successfully install `rJava`.
+The first two packages, are used only for `RHIPE` installation. Sometimes,
+there can be a problem with `rJava' finding the R server Java location. If that
+occurs, consult your system administrator.
 
-### Initializing RHIPE ###
+Now, you have successfully installed `RHIPE` on R session server. The next
+two thing you have to do is to call the `RHIPE` library and initializes it.
 
-Now, you have successfully installed `RHIPE` on R session server. The next two thing you have to do
-is to call the `RHIPE` library and initializes it.
+```{r eval=FALSE, tidy=FALSE} library(Rhipe) rhinit() ```
 
-```{r eval=FALSE, tidy=FALSE}
-library(Rhipe)
-rhinit()
-```
+```{r eval=FALSE, tidy=FALSE} rhmkdir("/shared") hdfs.setwd("/shared/")
+bashRhipeArchive("RhipeLib") ```
 
-As a R user, we definitely want to use other useful packages during the `RHIPE` job. So we have to 
-create a shared zip file which includes R and all R packages that user has installed on R session 
-server. Then every time when we submit a `RHIPE` job, this zip file will be distributed to every 
-Hadoop servers and to make sure all of them have the same R and all R packages.
+Function `hdfs.setwd()` is used to set a HDFS working directory for all
+`RHIPE` commands that use the HDFS.  We used "/shared/" here, but you can use
+whatever path you like on your HDFS. But make sure this directory on HDFS has
+been created. You can use `rhmkdir` function to create a directory on HDFS.
+Then `bashRhipeArchive` function is creating an archive on the HDFS with a
+runner script appropriate for running `RHIPE` jobs, and then uploads that
+archive to the HDFS working directory that we just created "/shared/".
 
-```{r eval=FALSE, tidy=FALSE}
-rhmkdir("/shared")
-hdfs.setwd("/shared/") 
-bashRhipeArchive("RhipeLib")
-```
-
-Function `hdfs.setwd()` is used to set a HDFS working directory for all `RHIPE` commands that use the HDFS. 
-We used "/shared/" here, but you can use whatever path you like on your HDFS. But make sure this directory
-on HDFS has been created. You can use `rhmkdir` function to create a directory on HDFS.
-Then `bashRhipeArchive` function is creating an archive on the HDFS with a runner script appropriate for 
-running `RHIPE` jobs, and then uploads that archive to the HDFS working directory that we just created
-"/shared/".
-
-```{r eval=FALSE, tidy=FALSE}
-rhls("/shared/")
-```
-```
+```{r eval=FALSE, tidy=FALSE} rhls("/shared/") ``` ```
   permission owner      group     size          modtime                    file
-1 -rw-rw-rw- tongx supergroup 81.02 mb 2014-06-02 15:55 /shared/RhipeLib.tar.gz       
+1 -rw-rw-rw- tongx supergroup 81.02 mb 2014-06-02 15:55 /shared/RhipeLib.tar.gz
 ```
 
-You can check what has been created on HDFS by using `rhls` function. There is a "RhipeLib.tar.gz" 
-file created under "/shared/" on HDFS. It is an R distribution loaded with every shared lib file 
-that a package R has installed might have used. This tar.gz file basically included R, all R 
-packages user have installed on R session server, and all shared lib files that R packages need. 
+You can check what has been created on HDFS by using `rhls` function. There
+is a "RhipeLib.tar.gz" file created under "/shared/" on HDFS. It is an
+R distribution loaded with every shared lib file that a package R has
+installed might have used. This tar.gz file basically included R, all R
+packages user have installed on R session server, and all shared lib files
+that R packages need.
 
-Finally, every time when the user starts to use `RHIPE` package, the following lines of commands 
-should be called in R on R session server.
+Finally, every time when the user starts to use `RHIPE` package, the following
+lines of commands should be called in R on R session server.
 
-```{r eval=FALSE, tidy=FALSE}
-library(Rhipe)
-rhinit()
-rhoptions(zips = "/shared/RhipeLib.tar.gz")
-rhoptions(runner = "sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh")
-```
+```{r eval=FALSE, tidy=FALSE} library(Rhipe) rhinit()
+rhoptions(zips = "/shared/RhipeLib.tar.gz") rhoptions(runner = "sh
+./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh") ```
+
+As a R user, we definitely want to use other useful packages during the
+`RHIPE` job. So we have to create a shared zip file which includes R and all
+R packages that user has installed on R session server. Then every time when
+we submit a `RHIPE` job, this zip file will be distributed to every Hadoop
+servers and to make sure all of them have the same R and all R packages.
