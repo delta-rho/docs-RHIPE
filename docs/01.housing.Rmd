@@ -11,7 +11,7 @@ which  we treat as a state with one county. The data were derived from
 A housing unit is a house, an apartment, a mobile home, a group of rooms, or a
 single room that is occupied or intended to occupied  as
 separate living quarter. Separate living quarters are those in which the
-occupants live and eat separately from any other persons in the 
+occupants live and eat separately from any other persons in the
 building and which have direct access from the outside of the building or
 through a common hall.
 
@@ -19,13 +19,14 @@ The variables are
 - **FIPS**: FIPS county code, an unique identifier for each U.S. county
 - **county**: county name
 - **state**: state abbreviation
-- **date**: measurement month, from 1 to 66
+- **date**: time measured in months, from 1 to 66, the number of months
 - **units**: number of units sold
 - **list**: monthly median list price (dollars per square foot)
 - **selling**: monthly median selling (dollars per square foot)
+
 Many observations of the last three variables are missing: units 68%, list 7%,
 and selling 68%.
-
+ 
 The number of measurements (including missing), is 7 x 66 x 2883 = 1,331,946.
 So this is in fact a small dataset that could be analyzed in the standard
 serial R. However, we can use them to illustate RHIPE R commands, and how
@@ -36,11 +37,12 @@ yourself with other R commands.
 The raw data are in a text file whose size is about 8 MB.
 It is available as "housing.txt" in our Tesseradata Github repository of the
 `RHIPE` documentation [here]
-(https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt).
+(https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt).   
 The file is a table with 190,278 rows (66 months x 2883 counties) and
 7 columns (the variables). The fields in each row are separated by a comma,
 and there are no headers in the first line. Here are the first few lines of
 the file:
+
 ```
 01001,Autauga,AL,1,27,96.616541353383,99.1324
 01001,Autauga,AL,2,28,96.856993190152,95.8209
@@ -59,13 +61,14 @@ session is running. We will suppose the that the full path name of this
 directory is, which we need below is
 
 ```{r eval=FALSE, tidy=FALSE}
-"/home/myusername/myRdirectory/"
+[1] "/home/myusername/myRdirectory/"
 ```
+
 Your next step is to get that text file onto the
 HDFS as a text file, so we can read it into R on the cluster.
 There are Hadoop commands that could be used directly to copy the file, but
 our promise to you is that you never need to use Hadoop commands, so we
-provide a RHIPE function, `\rhput()` that will do it for you. 
+provide a RHIPE function, `\rhput()` that will do it for you.
 
 ```{r eval=FALSE, tidy=FALSE}
 rhput("/home/myusername/mydirectory/housing.txt", "/ln/tongx/housing/housing.txt")
@@ -75,7 +78,13 @@ copied. Because the R session is that directory, the name could have been
 The
 second argument is a pather
 
-------------------------------------------------------------------------------
+<!--
+Recall that this directory is on the initiating R server. Then download the data file to your 
+local working directory with the following command:
+
+```{r eval=FALSE, tidy=FALSE}
+system("wget https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt")
+```
 
 If it downloaded properly, then "housing.txt" will show up in the output of this command, which lists files
 in your local working directory:
@@ -95,7 +104,13 @@ rhoptions(zips = "/ln/share/RhipeLib.tar.gz")
 rhoptions(runner = "sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh")
 ```
 
-------------------------------------------------------------------------------
+Now we want to copy the raw text file to the HDFS.  The function that writes files to HDFS is `rhput()`.  
+Replace `tongx` with an appropriate HDFS directory, such as your user name.
+
+```{r eval=FALSE, tidy=FALSE}
+rhput("./housing.txt", "/ln/tongx/housing/housing.txt")
+```
+-->
 
 The `rhput` function takes two arguments.
 The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
@@ -122,7 +137,7 @@ rhls("/ln/tongx/housing")
 1 -rw-rw-rw- tongx supergroup 7.683 mb 2014-09-17 11:11   /ln/tongx/housing/housing.txt
 ```
 `rhls()` is very similar to the bash command `ls`.  It will list all content under a given address. 
-We can see that the `housing.txt` file with size 11.82Mb is located under `/user/tongx/housing/` 
+We can see that the "housing.txt" file with size 11.82Mb is located under "/ln/tongx/housing/" 
 on HDFS.
 
 With our data on the HDFS, we are ready to start a D\&R analysis.
@@ -287,54 +302,43 @@ str(stateSubsets)
 ```
 
 ```
-List of 49
  $ :List of 2
   ..$ : chr "WV"
-  ..$ :'data.frame':  3836 obs. of  6 variables:
-  .. ..$ FIPS   : chr [1:3836] "54001" "54109" "54109" "54109" ...
-  .. ..$ county : chr [1:3836] "Barbour" "Wyoming" "Wyoming" "Wyoming" ...
-  .. ..$ date   : chr [1:3836] "1" "66" "65" "64" ...
-  .. ..$ units  : num [1:3836] NA NA NA NA NA NA NA NA NA NA ...
-  .. ..$ list   : num [1:3836] 71.7 50 50 44.4 44.4 ...
-  .. ..$ selling: num [1:3836] NA NA NA NA NA NA NA NA NA NA ...
+  ..$ :'data.frame':  3630 obs. of  6 variables:
+  .. ..$ FIPS   : chr [1:3630] "54103" "54103" "54033" "54051" ...
+  .. ..$ county : chr [1:3630] "Wetzel" "Wetzel" "Harrison" "Marshall" ...
+  .. ..$ date   : chr [1:3630] "65" "66" "66" "1" ...
+  .. ..$ units  : num [1:3630] NA NA NA NA NA NA NA NA NA NA ...
+  .. ..$ list   : num [1:3630] 57.9 52.7 91.4 67 63.8 ...
+  .. ..$ selling: num [1:3630] NA NA NA NA NA NA NA NA NA NA ...
   .. ..- attr(*, "state")= chr "WV"
  $ :List of 2
   ..$ : chr "KY"
-  ..$ :'data.frame':	8059 obs. of  6 variables:
-  .. ..$ FIPS   : chr [1:8059] "21033" "21033" "21239" "21239" ...
-  .. ..$ county : chr [1:8059] "Caldwell" "Caldwell" "Woodford" "Woodford" ...
-  .. ..$ date   : chr [1:8059] "83" "84" "69" "68" ...
-  .. ..$ units  : num [1:8059] NA NA NA NA NA NA NA NA NA NA ...
-  .. ..$ list   : num [1:8059] NA 75 97.2 96.3 97.1 ...
-  .. ..$ selling: num [1:8059] 45.4 NA NA NA NA ...
+  ..$ :'data.frame':	7458 obs. of  6 variables:
+  .. ..$ FIPS   : chr [1:7458] "21173" "21173" "21155" "21155" ...
+  .. ..$ county : chr [1:7458] "Montgomery" "Montgomery" "Marion" "Marion" ...
+  .. ..$ date   : chr [1:7458] "2" "1" "66" "65" ...
+  .. ..$ units  : num [1:7458] NA NA NA NA NA NA NA NA NA NA ...
+  .. ..$ list   : num [1:7458] 76 80.2 60.6 71.5 72.5 ...
+  .. ..$ selling: num [1:7458] NA NA NA NA NA NA NA NA NA NA ...
   .. ..- attr(*, "state")= chr "KY"
  $ :List of 2
   ..$ : chr "NV"
-  ..$ :'data.frame':	1284 obs. of  6 variables:
-  .. ..$ FIPS   : chr [1:1284] "32019" "32019" "32019" "32019" ...
-  .. ..$ county : chr [1:1284] "Lyon" "Lyon" "Lyon" "Lyon" ...
-  .. ..$ date   : chr [1:1284] "24" "25" "26" "27" ...
-  .. ..$ units  : num [1:1284] NA NA 84 91 135 NA NA 134 134 148 ...
-  .. ..$ list   : num [1:1284] 90.3 NA 89.9 88.2 NA ...
-  .. ..$ selling: num [1:1284] NA 74.2 NA 72.8 71 ...
+  ..$ :'data.frame':	1056 obs. of  6 variables:
+  .. ..$ FIPS   : chr [1:1056] "32029" "32029" "32029" "32029" ...
+  .. ..$ county : chr [1:1056] "Storey" "Storey" "Storey" "Storey" ...
+  .. ..$ date   : chr [1:1056] "3" "4" "5" "6" ...
+  .. ..$ units  : num [1:1056] NA NA NA NA NA NA 11 NA 11 12 ...
+  .. ..$ list   : num [1:1056] 155 149 143 147 149 ...
+  .. ..$ selling: num [1:1056] NA NA NA NA NA NA NA NA NA NA ...
   .. ..- attr(*, "state")= chr "NV"
- $ :List of 2
-  ..$ : chr "OK"
-  ..$ :'data.frame':	6468 obs. of  6 variables:
-  .. ..$ FIPS   : chr [1:6468] "40151" "40151" "40151" "40151" ...
-  .. ..$ county : chr [1:6468] "Woods" "Woods" "Woods" "Woods" ...
-  .. ..$ date   : chr [1:6468] "57" "55" "54" "53" ...
-  .. ..$ units  : num [1:6468] NA 13 NA NA NA NA NA NA NA NA ...
-  .. ..$ list   : num [1:6468] 51.7 53.7 NA 53.5 NA ...
-  .. ..$ selling: num [1:6468] NA NA NA NA NA NA NA NA NA NA ...
-  .. ..- attr(*, "state")= chr "OK"
 ......
 ```
 
 We've now successfully divided our data into subsets and stored each subset as an R object.  
 They will persist on HDFS and be used for many analytic methods, each applied using `RHIPE`. 
 
-### Compute State  Means ###
+### Compute State Means ###
 
 Now we'll apply an analytic method to the subsets of our housing data.  Our analytic
 method will be to take the mean.  We have monthly list prices and sale prices per square foot, 
@@ -441,7 +445,7 @@ map      0       10       0      10        0      0               0             
 reduce   0        5       5       0        0      0               0               0
 Waiting 5 seconds
 .......
-Read 1 objects(2.42 KB) in 0.06 seconds
+Read 1 objects(1.2 KB) in 0.09 seconds
 ```
 
 ```{r eval=FALSE, tidy=FALSE}
@@ -452,9 +456,9 @@ List of 1
  $ :List of 2
   ..$ : num 1
   ..$ :'data.frame':  49 obs. of  3 variables:
-  .. ..$ state      : Factor w/ 49 levels "IA","KS","AZ",..: 1 2 3 4 5 6 7 8 9 10 ...
-  .. ..$ listmean   : num [1:49] 74.5 66 110.6 369.1 151 ...
-  .. ..$ sellingmean: num [1:49] 95.1 NaN 101.3 422.5 143.4 ...
+  .. ..$ state   : chr [1:49] "CA" "MA" "NJ" "TN" ...
+  .. ..$ listMean: num [1:49] 192.6 259.1 180 85.3 81.7 ...
+  .. ..$ saleMean: num [1:49] 185.9 210.9 171.4 80 76.3 ...
 ```
 
 As we can see, the result is a list of length 1.  This make sense, since we only output a single
@@ -468,13 +472,13 @@ stateMeans <- stateMeans[[1]][[2]]
 head(stateMeans)
 ```
 ```
-   state listMean    saleMean
-4     DC 369.0546    422.4744
-45    MA 259.1316    210.8714
-44    CA 192.6343    185.8716
-10    RI 188.9953    174.9670
-46    NJ 180.0136    171.4495
-22    CT 162.4686    151.7553
+  state  listMean  saleMean
+1    CA 192.63429 185.87159
+2    MA 259.13164 210.87140
+3    NJ 180.01365 171.44946
+4    TN  85.28335  80.00628
+5    TX  81.67656  76.32277
+6    WA 134.67467 128.54734
 ```
 
 Let's take a look at how the output was stored on HDFS using `rhls`.
@@ -554,10 +558,9 @@ reduce3 <- expression(
     oneCounty <- rbind(oneCounty, do.call(rbind, reduce.values))
   },
   post = {
-    attr(oneCounty, "FIPS") <- reduce.key[1]
     attr(oneCounty, "county") <- reduce.key[2]
     attr(oneCounty, "state") <- reduce.key[3]
-    rhcollect(reduce.key, oneCounty)
+    rhcollect(reduce.key[1], oneCounty)
   }
 )
 ```
@@ -565,7 +568,8 @@ reduce3 <- expression(
 By removing the FIPS, county, and state columns from the data frame and storing them as
 attributes, we've eliminated redundant information in each data frame. Working with massive 
 data sets, we want our data to take up the least possible space on disk in order to save 
-read/write time.
+read/write time. Also we only keep the first element in `reduce.key` which is the `FIPS`
+as the key in output key/value pairs.
 
 #### Execution Function ####
 
@@ -646,7 +650,7 @@ map4 <- expression({
     )
     value$state <- attr(map.values[[r]], "state")
     value$county <- attr(map.values[[r]], "county")
-    value$FIPS <- attr(map.values[[r]], "FIPS")
+    value$FIPS <- map.keys[[r]]
     rhcollect(1, value)
   })
 })
@@ -704,24 +708,24 @@ str(meansByCounty)
 List of 1
  $ :List of 2
   ..$ : num 1
-  ..$ :'data.frame' :    2883 obs. of  5 variables:
-  .. ..$ fips       : chr [1:2883] "01005" "01023" "01041" "01069" ...
-  .. ..$ listmean   : num [1:2883] 85.5 54.3 59.3 87.6 74.4 ...
-  .. ..$ sellingmean: num [1:2883] NaN NaN NaN NaN NaN ...
-  .. ..$ state      : chr [1:2883] "AL" "AL" "AL" "AL" ...
-  .. ..$ county     : chr [1:2883] "Barbour" "Choctaw" "Crenshaw" "Houston" ...
+  ..$ :'data.frame':  2883 obs. of  5 variables:
+  .. ..$ listMean: num [1:2883] 66.3 74.9 86.5 68.3 74.4 ...
+  .. ..$ saleMean: num [1:2883] NaN NaN 66.6 52.2 NaN ...
+  .. ..$ state   : chr [1:2883] "AL" "AL" "AL" "AL" ...
+  .. ..$ county  : chr [1:2883] "Chambers" "Colbert" "Cullman" "Lawrence" ...
+  .. ..$ FIPS    : chr [1:2883] "01017" "01033" "01043" "01079" ...
 ```
 ```{r eval=FALSE, tidy=FALSE}
 head(meansByCounty[[1]][[2]])
 ```
 ```
-   FIPS listMean  saleMean state       county
-1 01005 85.46983       NaN    AL      Barbour
-2 01023 54.27378       NaN    AL      Choctaw
-3 01041 59.29840       NaN    AL     Crenshaw
-4 01069 87.64237       NaN    AL      Houston
-5 01087 74.35722       NaN    AL        Macon
-6 01113 70.92100       NaN    AL      Russell
+   listMean saleMean state   county  FIPS
+1  66.26665      NaN    AL Chambers 01017
+2  74.91187      NaN    AL  Colbert 01033
+3  86.54870 66.56352    AL  Cullman 01043
+4  68.32503 52.17811    AL Lawrence 01079
+5  74.35722      NaN    AL    Macon 01087
+6 103.70687 94.27969    AZ   Mohave 04015
 ```
 
 ### Read and Divide by Date ###
@@ -762,7 +766,7 @@ reduce5 <- expression(
   reduce = {
     date500 <- do.call(rbind, reduce.values)
     names(date500) <- c(
-      "fips", "county", "state", 
+      "FIPS", "county", "state", 
       "units", "list", "selling"
     )
     date500$list <- as.numeric(date500$list)
@@ -1020,16 +1024,21 @@ We can use `rhls` to see that the division by state is on the HDFS, right where 
 rhls("/ln/tongx/housing")
 ```
 ```
-Philip, you should put the output of rhls right here
+  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29            /ln/tongx/housing/byCounty
+2 drwxrwxrwt tongx supergroup        0 2014-09-30 14:27             /ln/tongx/housing/byState
+3 drwxrwxrwt tongx supergroup        0 2014-10-28 14:07              /ln/tongx/housing/bydate
+4 drwxrwxrwt tongx supergroup        0 2014-09-18 23:56         /ln/tongx/housing/meanByState
+5 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
+6 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
+7 drwxrwxrwt tongx supergroup        0 2014-10-28 14:28          /ln/tongx/housing/soldbydate
+8 drwxrwxrwt tongx supergroup        0 2014-10-20 16:00 /ln/tongx/housing/soldbydate.combiner
 ```
 
 We can delete it with the `rhdel` function:
 
 ```{r eval=FALSE, tidy=FALSE}
 rhdel("/ln/tongx/housing/byState")
-```
-```
-Philip, you should put the output of rhdel right here
 ```
 
 And we can use `rhls` again to see that we were successful:
@@ -1038,7 +1047,14 @@ And we can use `rhls` again to see that we were successful:
 rhls("/ln/tongx/housing")
 ```
 ```
-Philip, you should put the new output of rhls right here
+  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29            /ln/tongx/housing/byCounty
+2 drwxrwxrwt tongx supergroup        0 2014-10-28 14:07              /ln/tongx/housing/bydate
+3 drwxrwxrwt tongx supergroup        0 2014-09-18 23:56         /ln/tongx/housing/meanByState
+4 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
+5 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
+6 drwxrwxrwt tongx supergroup        0 2014-10-28 14:28          /ln/tongx/housing/soldbydate
+7 drwxrwxrwt tongx supergroup        0 2014-10-20 16:00 /ln/tongx/housing/soldbydate.combiner
 ```
 
 As long as we're talking about HDFS file management, let's try out a few more functions.  Suppose
@@ -1048,10 +1064,11 @@ want to copy.  The second is the target, or location for the new copy.
 
 ```{r eval=FALSE, tidy=FALSE}
 rhcp("/ln/tongx/housing/housing.txt", "/ln/tongx/housing/tmp/housing.txt")
-rhls("/ln/tongx/housing/tmp"
+rhls("/ln/tongx/housing/tmp")
 ```
 ```
-Philip, you should put the output of rhls here
+  permission owner      group     size          modtime                              file
+1 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-30 15:25 /ln/tongx/housing/tmp/housing.txt
 ```
 
 We can use `rhmv` to move the text file to a different folder.  This
@@ -1059,10 +1076,19 @@ function also takes two arguments, just like `rhcp`.
 
 ```{r eval=FALSE, tidy=FALSE}
 rhmv("/ln/tongx/housing/tmp/housing.txt", "/ln/tongx/housing/tmp2/housing.txt")
-rhls("/ln/tongx/housing/"
+rhls("/ln/tongx/housing/")
 ```
 ```
-Philip, you should put the output of rhls here
+  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29            /ln/tongx/housing/byCounty
+2 drwxrwxrwt tongx supergroup        0 2014-10-28 14:07              /ln/tongx/housing/bydate
+3 drwxrwxrwt tongx supergroup        0 2014-09-18 23:56         /ln/tongx/housing/meanByState
+4 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
+5 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
+6 drwxrwxrwt tongx supergroup        0 2014-10-28 14:28          /ln/tongx/housing/soldbydate
+7 drwxrwxrwt tongx supergroup        0 2014-10-20 16:00 /ln/tongx/housing/soldbydate.combiner
+8 drwxrwxrwt tongx supergroup        0 2014-09-30 15:25                 /ln/tongx/housing/tmp
+9 drwxrwxrwt tongx supergroup        0 2014-09-30 15:28                /ln/tongx/housing/tmp2
 ```
 
 That's enough file management.  Now let's recreate the division by state from the division by 
@@ -1075,8 +1101,8 @@ map9 <- expression({
   lapply(seq_along(map.keys), function(r) {
     key <- attr(map.values[[r]], "state")
     value <- map.values[[r]]
-    value$FIPS <- attr(map.keys[[r]], "FIPS")
-    value$county <- attr(map.keys[[r]], "county")
+    value$FIPS <- attr(map.values[[r]], "FIPS")
+    value$county <- attr(map.values[[r]], "county")
     rhcollect(key, value)
   })
 })
@@ -1131,7 +1157,7 @@ You won't see any output, because no commands have been sent to Hadoop.  Instead
 job has been stored in the `mr5` object.  When we're ready to run the job, we call `rhex()`.
 
 ```{r eval=FALSE, tidy=FALSE}
-byState <- rhex(mr5, async = FALSE)
+byState <- rhex(mr9, async = FALSE)
 ```
 
 The first argument to `rhex` is the packaged job we just created.  The second argument `async` 
