@@ -2,56 +2,66 @@
 
 ### Background ###
 
-As we have written earlier, you will likely want to install packages on your R
+You will likely want to install packages on your R
 session server, for example, R CRAN packages. And you want these packages to
 run on the Hadoop cluster as well. The mechanism for doing this is much like
-that you have been using for packages in R, but adds the push to the cluster
-which is very simple.
+what you have been using for packages in R, but adds a push of the packages to
+the cluster nodes since you will want to use them there too. It is all quite
+simple.
 
-The packages that are needed for everything to work are `RHIPE` from Github,
-and `rJava` and `testthat` from R CRAN. The second two are needed just for the
+Also, to use `RHIPE` working, packages that are needed are, obviously,
+`RHIPE` from Tessera, but also `rJava` and `testthat` from R CRAN.
+The second two are needed just for the
 `RHIPE` installation and then are no longer needed until there is a new
 installation. `R` becomes an issue too, because you certainly want the `R`
 version you choose for your `R` session server to be the `R` used on the
-cluster.
+cluster. So it needs a push to the cluster too.
 
-Now suppose you are using RMR on the Amazon cloud, or Vagrant, discussed in our
-QuickStat section. Then installation of the necessary R and RHIPE packages and
-their push to the Hadoop servers is taken care of for you. So you are concerned
-only with R CRAN packages, and packages from other sources. So you need to know
-about the push mechanism up to the Hadoop cluster.
+Now suppose you are using RMR on the Amazon cloud, or Vagrant, both
+discussed in our QuickStat section. Then installation that provides you with R
+and RHIPE on the R session server and the cluster as well
+has been taken care of for you. But if you want to use
+R CRAN packages or packages from other sources that you install on your R
+session server, then you need to know about the push mechanism to the
+Hadoop cluster.
 
-We will proceed here as if you are intalling on a cluster at your location
-that starts off with just linux and R on the R server,
+We will proceed here as if you are intalling on a R session server and Hadoop
+cluster at your location that starts off with just linux and R on the R server,
 and Hadoop and linux on the cluster. Part of the material is relevant for the
 RMR and Vagrant users. 
 
 Now standard `R` practice for a
 server with many `R` users is for a system administator to install `R` for use
 by all. However at the same time, you can override this with your own version.
-This makes sense too for `RHIPE` and `R`. Have administrators install them on
-the R server and the Hadoop cluster. (The `RHIPE` installation manual for system
-adminstrators is available in these pages in the QuickStart section.)
+This makes sense too for `RHIPE` and `R`. It makes sense to have administrators
+install them on the R server and the Hadoop cluster. (The `RHIPE` installation
+manual for system adminstrators is available in these pages in the QuickStart
+section.)
 
-The system administrator must install protocol buffers on the Hadoop cluster
-to enable `RHIPE` communication. This is taken up in the installation manual
-described above. In addition, if you want to use RStudio on the
-R session server, pushing it all the way back to the remote device, the system
-administrator will need to install RStudio server on the R session server.
+Now there is one caution here. You are best served if the linux versions you
+run are the same on the R server and cluster, and, in fact, also if the
+hardware is the same. The first is more critical, but the second is a
+nice bonus.  Part of the reason is that Java plays a critical roll in RHIPE,
+and Java likes homogeniety.
 
-### Installing RHIPE Yourself ###
+The system administrator must also install protocol buffers on the Hadoop
+cluster to enable `RHIPE` communication. This is taken up in the
+installation manual. In addition, if you want to use RStudio on the
+R session server,  the system administrator will need to install RStudio
+server on the R session server.
 
-If you want to a version of `Rhipe` youself, you run in your R session in your
-working directory
+### Install Packages on the R Session Server and Push ###
+
+Suppose you want to install `Rhipe` youself, say to get a version different
+from that installed by the system administrator. To download the package,
+run in your R session in your working directory
 
 ```{r eval=FALSE, tidy=FALSE}
 system("wget http://ml.stat.purdue.edu/rhipebin/Rhipe_0.74.0.tar.gz")
 ```
 
 There are other versions of `Rhipe`. You will need to go to Github to find out
-about them.
-
-Then run
+about them. To install the package on your R session server, run
 
 ```{r eval=FALSE, tidy=FALSE}
 install.packages("testthat")
@@ -59,14 +69,16 @@ install.packages("rJava")
 install.packages("Rhipe_0.74.0.tar.gz", repos=NULL, type="source")
 ```
 
-The first two packages, are used only for `RHIPE` installation. Sometimes,
-there can be a problem with `rJava' finding the R server Java location. If that
-occurs, consult your system administrator.
-
-Now, you have successfully installed `RHIPE` on R session server. The next
-two thing you have to do is to call the `RHIPE` library and initializes it.
+The first two packages, are used only for `RHIPE` installation. You do not need
+them again until you reinstall. Each time you get in R to use `RHIPE` you do
 
 ```{r eval=FALSE, tidy=FALSE} library(Rhipe) rhinit() ```
+
+Now you are ready for the push of `RHIPE` , `R`, and other packages to
+the cluster HDFS. Part of the system administor's job is configue the HDFS so
+you can do this, and other tasks where you write to thd HDFS. You need to have
+a directory on the HDFS where you have write permission. A common convention is
+for the admin 
 
 ```{r eval=FALSE, tidy=FALSE} rhmkdir("/shared") hdfs.setwd("/shared/")
 bashRhipeArchive("RhipeLib") ```

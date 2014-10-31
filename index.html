@@ -71,7 +71,7 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#the-r-session-server'>The R-Session Server</a>
+         <a target='_self' class='nav-not-header' href='#the-r-session-server-and-rstudio'>The R-Session Server and RStudio</a>
       </li>
 
 
@@ -81,24 +81,19 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#rstudio'>RStudio</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#where-are-the-data-analyses-carried-out'>Where Are the Data Analyses Carried Out</a>
+         <a target='_self' class='nav-not-header' href='#where-are-the-data-analyzed'>Where Are the Data Analyzed</a>
       </li>
 
 
 <li class='nav-header unselectable' data-edit-href='01.housing.Rmd'>Housing Data</li>
       
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#information-about-data'>Information about Data</a>
+         <a target='_self' class='nav-not-header' href='#the-data'>The Data</a>
       </li>
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#write-text-to-hdfs'>Write Text to HDFS</a>
+         <a target='_self' class='nav-not-header' href='#write-housingtxt-to-the-hdfs'>Write housing.txt to the HDFS</a>
       </li>
 
 
@@ -206,15 +201,15 @@
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='07.install.Rmd'>Installation</li>
+<li class='nav-header unselectable' data-edit-href='07.install.Rmd'>Your Installation of Packages</li>
       
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#installing-rhipe-and-dependencies'>Installing RHIPE and Dependencies</a>
+         <a target='_self' class='nav-not-header' href='#background'>Background</a>
       </li>
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#initializing-rhipe'>Initializing RHIPE</a>
+         <a target='_self' class='nav-not-header' href='#installing-rhipe-yourself'>Installing RHIPE Yourself</a>
       </li>
 
    </ul>
@@ -226,32 +221,45 @@
 <h3>Overview</h3>
 
 <p>The setting has three components: remote computer, one or more Unix
-R-session servers, and a Unix Hadoop cluster. You work on a remote
-computer, say your laptop, and login to an R-session server with RHIPE
-installed where you do all of your programming of R and RHIPE R commands.
-In other words, this is where your R global environment runs executes.
-The remote computer is typically for you to maintain, but the R-session
-servers and the Hadoop will almost always require IT staff to help design,
-configure, and maintain.</p>
+R-session servers, and a Unix Hadoop cluster. The second two components are
+running R and RHIPE.  You work on the remote
+computer, say your laptop, and login to an R-session server.
+This is home base, where you do all of your programming
+of R and RHIPE R commands. The R commands you write for division, anpplication
+of analytic methods, and recombination that are destined for Hadoop on the
+cluster are passed along by RHIPE R commands.</p>
+
+<p>The remote computer is typically for you to maintain. The R-session
+servers  require IT staff to help install software, configure, and maintain. 
+However you install packages too on the R-session servers, just you do when you
+want to use an R CRAN package in R. There is an extra task though; you want
+packages you install to be pushed up the Hadoop cluster so they can be used
+there too.  Except for this push by you, the Hadoop cluster is the
+domain of the systems administrators who must, among other tasks, install
+Hadoop.</p>
 
 </div>
 
 
-<div class='tab-pane' id='the-r-session-server'>
-<h3>The R-Session Server</h3>
+<div class='tab-pane' id='the-r-session-server-and-rstudio'>
+<h3>The R-Session Server and RStudio</h3>
 
 <p>Now the R-session server can be separate from the Hadoop cluster, handling
-only R sessions, or it can be one of the servers on the Hadoop cluster. If on
-the Hadoop cluster, there must be some precautions taken in the Hadoop
-configuration to protect the programming of the R session.
-This is needed because the RHIPE Hadoop jobs compete with the R sessions.
-There are never full
-guarantees though, so <code>safe mode</code> is separate R session servers. The last thing
-you want is for R sessions to get bogged down.</p>
+only R sessions, or it can be one of the servers on the Hadoop cluster. If it
+is on the Hadoop cluster, there must be some precautions taken in the Hadoop
+configuration to protect the programming of the R session. This is needed
+because the RHIPE Hadoop jobs compete with the R sessions. There are never full
+guarantees though, so &quot;safe mode&quot; is separate R session servers. The last thing
+you want is for R sessions to get bogged down. If the cluster option is chosen,
+then you want to mount a file server on the cluster that contains the files
+associated with the R session such as .RData and files read into to R or
+written by R.</p>
 
-<p>If the cluster option is chosen, then you want to mount a file server on the
-cluster that contains the files associated with the R session such as .RData
-and files read into to R or written by R.</p>
+<p>There is a vast segment of the R community that uses RStudio, for good reason.
+RStudio can join the setting. You have RStudio server  installed on the
+R-session servers by system administators. A web browser on the R server runs
+the RStudio interface which is accessed by you on your remote device via the
+remote login.</p>
 
 </div>
 
@@ -261,56 +269,53 @@ and files read into to R or written by R.</p>
 
 <p>The remote computer is just a communication device, and does not carry out data
 analysis, so it can run any operating system, such as Windows. This is
-especially important for teaching, since Windows labs are very plentiful at
-academic institutions, but not Unix labs.
+especially important for teaching, since Windows labs are typically very
+plentiful at academic institutions, but Unix labs much less so.
 Whatever the operating system, a common communication protocol that  is used
 is the SSH protocol. SSH is typically used to log into a remote machine and
 execute commands or to transfer files. But a critical capability of it for our
-purposes here is that it supports your R session command-line window, showing
-both input and output, and also opening a separate window to show graphics.</p>
+purposes here is that it supports both your R session command-line window,
+showing both input and output, and a separate window to show graphics.</p>
 
 </div>
 
 
-<div class='tab-pane' id='rstudio'>
-<h3>RStudio</h3>
-
-<p>There is a vast segment of the R community that uses RStudio, for good reason.
-That can be used too. RStudio server is installed on the R-session servers,
-which then, using a Web browser, provide the RStudio interface that is then
-accessed by the remote device via the remote login. </p>
-
-</div>
-
-
-<div class='tab-pane' id='where-are-the-data-analyses-carried-out'>
-<h3>Where Are the Data Analyses Carried Out</h3>
+<div class='tab-pane' id='where-are-the-data-analyzed'>
+<h3>Where Are the Data Analyzed</h3>
 
 <p>Obviously, much data analysis is carried out by Hadoop on the Hadoop cluster.
 Your R commands are given to RHIPE, passed along to Hadoop, and the outputs
-written by Hadoop to the HDFS.</p>
+are written by Hadoop to the HDFS.</p>
 
 <p>But in many analyses of larger and more complex data, it is common to have
-outputs of a recombination method be a relatively small amount of data, and
-that the anlysis continues studying these outputs. If they are small enough to
-readily analyze in your R session then for sure that is where you want to be.
+(1) outputs of a recombination method that constitute a relatively small
+dataset, and (2) the outputs are further analyzed as part of the overall
+analysis. If they are small enough to be readily analyzed in your R session,
+then for sure that is where you want to be.
+RHIPE commands allow you to write the recombination outputs from the HDFS to
+the R global environment of your R session. They become a dataset in .RData.
 While programming R and RHIPE is easy, it is not as easy as plain old serial R.
-RHIPE commands allow you to write the outputs to the R global environment of
-your R session. They become a dataset in .RData. And that is where the analysis
-is finished off.</p>
+The point is that a lot of data analysis can be carried out in just R even when
+the data are large and complex.</p>
 
 </div>
 
 
-<div class='tab-pane' id='information-about-data'>
-<h3>Information about Data</h3>
+<div class='tab-pane' id='the-data'>
+<h3>The Data</h3>
 
-<p>We introduce <code>RHIPE</code> using
-housing data that consist of 7 monthly variables on housing sales from Oct
-2008 to Mar 2014 for 2883 counties in the 49 U.S. states, excluding Hawaii and
-Alaska, but including the District of Columbia which for simplicity here we
-will refer to as a ``state&#39;&#39;.  The data were harvested from Quandl&#39;s Zillow
-Housing Data. The data contain 224,369 sales of housing units.</p>
+<p>The housing data consist of 7 monthly variables on housing sales from Oct
+2008 to Mar 2014, which is 66 months, for 2883 counties in 48 U.S. states,
+excluding Hawaii and Alaska, and also for the District of Columbia which
+which  we treat as a state with one county. The data were derived from
+224,369 sales of housing units from Quandl&#39;s Zillow Housing Data
+(<a href="http://www.quandl.com/c/housing">www.quandl.com/c/housing</a>).
+A housing unit is a house, an apartment, a mobile home, a group of rooms, or a
+single room that is occupied or intended to occupied  as
+separate living quarter. Separate living quarters are those in which the
+occupants live and eat separately from any other persons in the 
+building and which have direct access from the outside of the building or
+through a common hall.</p>
 
 <p>The variables are</p>
 
@@ -318,23 +323,28 @@ Housing Data. The data contain 224,369 sales of housing units.</p>
 <li><strong>FIPS</strong>: FIPS county code, an unique identifier for each U.S. county</li>
 <li><strong>county</strong>: county name</li>
 <li><strong>state</strong>: state abbreviation</li>
-<li><strong>date</strong>: time measured in months, from 1 to 66, the number of months</li>
+<li><strong>date</strong>: measurement month, from 1 to 66</li>
 <li><strong>units</strong>: number of units sold</li>
 <li><strong>list</strong>: monthly median list price (dollars per square foot)</li>
-<li><strong>selling</strong>: monthly median selling (dollars per square foot)</li>
+<li><strong>selling</strong>: monthly median selling (dollars per square foot)
+Many observations of the last three variables are missing: units 68%, list 7%,
+and selling 68%.</li>
 </ul>
 
-<p>Many observations of the last three variables are missing: units 68%, list 7%,
-and selling 68%.</p>
+<p>The number of measurements (including missing), is 7 x 66 x 2883 = 1,331,946.
+So this is in fact a small dataset that could be analyzed in the standard
+serial R. However, we can use them to illustate RHIPE R commands, and how
+they are used to analyze data. The small size let&#39;s you easily pick up the
+data, follow along using the R commands in the tutorial, and explore RHIPE
+yourself with other R commands.</p>
 
 <p>The raw data are in a text file whose size is about 8 MB.
 It is available as &quot;housing.txt&quot; in our Tesseradata Github repository of the
-<code>RHIPE</code> documentation <a href="https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt">here</a>.   </p>
-
-<p>So the raw data are a table with 190,278 rows (units) and 7 columns (variables).
-In the text file, the fields in each row are separated by a comma, and there
-are not headers
-Here are the first few lines of the file:</p>
+<code>RHIPE</code> documentation <a href="https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt">here</a>.
+The file is a table with 190,278 rows (66 months x 2883 counties) and
+7 columns (the variables). The fields in each row are separated by a comma,
+and there are no headers in the first line. Here are the first few lines of
+the file:</p>
 
 <pre><code>01001,Autauga,AL,1,27,96.616541353383,99.1324
 01001,Autauga,AL,2,28,96.856993190152,95.8209
@@ -343,33 +353,37 @@ Here are the first few lines of the file:</p>
 01001,Autauga,AL,5,22,97.747480735033,92.7127
 </code></pre>
 
-<p>A housing unit is a house, an apartment, a mobile home, a group of rooms, or a
-single room that is occupied or intended to occupied  as
-separate living quarter. Separate living quarters are those in which the
-occupants live and eat separately from any other persons in the 
-building and which have direct access from the outside of the building or
-through a common hall.</p>
-
 </div>
 
 
-<div class='tab-pane' id='write-text-to-hdfs'>
-<h3>Write Text to HDFS</h3>
+<div class='tab-pane' id='write-housingtxt-to-the-hdfs'>
+<h3>Write housing.txt to the HDFS</h3>
 
-<p>First of all, you can double-check the name of your local working directory with the <code>getwd</code> command
-in R.  Mine is called &quot;/home/median/u41/tongx&quot; but yours will be different.</p>
+<p>You want to read housing.txt into the R instance running on the Hadoop cluster,
+form subsets, and then write the subsets as R objects to the HDFS.
+Your first step is to copy
+housing.txt to the directory on the R-session server where your R
+session is running. We will suppose the that the full path name of this
+directory is, which we need below is</p>
 
-<pre><code class="r">getwd()
+<pre><code class="r">&quot;/home/myusername/myRdirectory/&quot;
 </code></pre>
 
-<pre><code>[1] &quot;/home/median/u41/tongx&quot;
+<p>Your next step is to get that text file onto the
+HDFS as a text file, so we can read it into R on the cluster.
+There are Hadoop commands that could be used directly to copy the file, but
+our promise to you is that you never need to use Hadoop commands, so we
+provide a RHIPE function, <code>\rhput()</code> that will do it for you. </p>
+
+<pre><code class="r">rhput(&quot;/home/myusername/mydirectory/housing.txt&quot;, &quot;/ln/tongx/housing/housing.txt&quot;)
 </code></pre>
 
-<p>Recall that this directory is on the initiating R server. Then download the data file to your 
-local working directory with the following command:</p>
+<p>The first argument is the file name on the R session server that is to be
+copied. Because the R session is that directory, the name could have been
+The
+second argument is a pather</p>
 
-<pre><code class="r">system(&quot;wget https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt&quot;)
-</code></pre>
+<hr>
 
 <p>If it downloaded properly, then &quot;housing.txt&quot; will show up in the output of this command, which lists files
 in your local working directory:</p>
@@ -387,11 +401,7 @@ rhoptions(zips = &quot;/ln/share/RhipeLib.tar.gz&quot;)
 rhoptions(runner = &quot;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&quot;)
 </code></pre>
 
-<p>Now we want to copy the raw text file to the HDFS.  The function that writes files to HDFS is <code>rhput()</code>.<br>
-Replace <code>tongx</code> with an appropriate HDFS directory, such as your user name.</p>
-
-<pre><code class="r">rhput(&quot;./housing.txt&quot;, &quot;/ln/tongx/housing/housing.txt&quot;)
-</code></pre>
+<hr>
 
 <p>The <code>rhput</code> function takes two arguments.
 The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
@@ -2634,76 +2644,112 @@ computation ablity. </p>
 </div>
 
 
-<div class='tab-pane' id='installing-rhipe-and-dependencies'>
-<h3>Installing RHIPE and Dependencies</h3>
+<div class='tab-pane' id='background'>
+<h3>Background</h3>
 
-<p>In order to install the <code>RHIPE</code> package, we first will download the installation zip file.
-All installation step described here is in the R on R session server.</p>
+<p>As we have written earlier, you will likely want to install packages on your R
+session server, for example, R CRAN packages. And you want these packages to
+run on the Hadoop cluster as well. The mechanism for doing this is much like
+that you have been using for packages in R, but adds the push to the cluster
+which is very simple.</p>
+
+<p>The packages that are needed for everything to work are <code>RHIPE</code> from Github,
+and <code>rJava</code> and <code>testthat</code> from R CRAN. The second two are needed just for the
+<code>RHIPE</code> installation and then are no longer needed until there is a new
+installation. <code>R</code> becomes an issue too, because you certainly want the <code>R</code>
+version you choose for your <code>R</code> session server to be the <code>R</code> used on the
+cluster.</p>
+
+<p>Now suppose you are using RMR on the Amazon cloud, or Vagrant, discussed in our
+QuickStat section. Then installation of the necessary R and RHIPE packages and
+their push to the Hadoop servers is taken care of for you. So you are concerned
+only with R CRAN packages, and packages from other sources. So you need to know
+about the push mechanism up to the Hadoop cluster.</p>
+
+<p>We will proceed here as if you are intalling on a cluster at your location
+that starts off with just linux and R on the R server, where you chose the R,
+and Hadoop and linux on the cluster. Part of the material is relevant for the
+RMR and Vagrant users. </p>
+
+<p>Now standard <code>R</code> practice for a
+server with many <code>R</code> users is for a system administator to install <code>R</code> for use
+by all. However at the same time, you can override this with your own version.
+This makes sense too for <code>RHIPE</code> and <code>R</code>. Have administrators install them on
+the R server and the Hadoop cluster. (The <code>RHIPE</code> installation manual for system
+adminstrators is available in these pages in the QuickStart section.)</p>
+
+<p>The system administrator must install protocol buffers on the Hadoop cluster
+to enable <code>RHIPE</code> communication. This is taken up in the installation manual
+described above. In addition, if you want to use RStudio on the
+R session server, pushing it all the way back to the remote device, the system
+administrator will need to install RStudio server on the R session server.</p>
+
+</div>
+
+
+<div class='tab-pane' id='installing-rhipe-yourself'>
+<h3>Installing RHIPE Yourself</h3>
+
+<p>If you want to a version of <code>Rhipe</code> youself, you run in your R session in your
+working directory</p>
 
 <pre><code class="r">system(&quot;wget http://ml.stat.purdue.edu/rhipebin/Rhipe_0.74.0.tar.gz&quot;)
 </code></pre>
 
-<p>After successfully downloaded the source zip file to your R working directory on R session server,
-we will start to install the <code>RHIPE</code>.</p>
+<p>There are other versions of <code>Rhipe</code>. You will need to go to Github to find out
+about them.</p>
+
+<p>Then run</p>
 
 <pre><code class="r">install.packages(&quot;testthat&quot;)
 install.packages(&quot;rJava&quot;)
 install.packages(&quot;Rhipe_0.74.0.tar.gz&quot;, repos=NULL, type=&quot;source&quot;)
 </code></pre>
 
-<p>The first two installation commands are trying to install two dependencies of <code>RHIPE</code>. Sometimes you
-may face difficulty of installing <code>rJava</code> package, please consult your server administrator for Java
-configuration information to successfully install <code>rJava</code>.</p>
+<p>The first two packages, are used only for <code>RHIPE</code> installation. Sometimes,
+there can be a problem with `rJava&#39; finding the R server Java location. If that
+occurs, consult your system administrator.</p>
 
-</div>
+<p>Now, you have successfully installed <code>RHIPE</code> on R session server. The next
+two thing you have to do is to call the <code>RHIPE</code> library and initializes it.</p>
 
+<p><code>{r eval=FALSE, tidy=FALSE} library(Rhipe) rhinit()</code></p>
 
-<div class='tab-pane' id='initializing-rhipe'>
-<h3>Initializing RHIPE</h3>
+<p><code>{r eval=FALSE, tidy=FALSE} rhmkdir(&quot;/shared&quot;) hdfs.setwd(&quot;/shared/&quot;)
+bashRhipeArchive(&quot;RhipeLib&quot;)</code></p>
 
-<p>Now, you have successfully installed <code>RHIPE</code> on R session server. The next two thing you have to do
-is to call the <code>RHIPE</code> library and initializes it.</p>
+<p>Function <code>hdfs.setwd()</code> is used to set a HDFS working directory for all
+<code>RHIPE</code> commands that use the HDFS.  We used &quot;/shared/&quot; here, but you can use
+whatever path you like on your HDFS. But make sure this directory on HDFS has
+been created. You can use <code>rhmkdir</code> function to create a directory on HDFS.
+Then <code>bashRhipeArchive</code> function is creating an archive on the HDFS with a
+runner script appropriate for running <code>RHIPE</code> jobs, and then uploads that
+archive to the HDFS working directory that we just created &quot;/shared/&quot;.</p>
 
-<pre><code class="r">library(Rhipe)
-rhinit()
-</code></pre>
+<p><code>{r eval=FALSE, tidy=FALSE} rhls(&quot;/shared/&quot;)</code> ```
+  permission owner      group     size          modtime                    file
+1 -rw-rw-rw- tongx supergroup 81.02 mb 2014-06-02 15:55 /shared/RhipeLib.tar.gz</p>
 
-<p>As a R user, we definitely want to use other useful packages during the <code>RHIPE</code> job. So we have to 
-create a shared zip file which includes R and all R packages that user has installed on R session 
-server. Then every time when we submit a <code>RHIPE</code> job, this zip file will be distributed to every 
-Hadoop servers and to make sure all of them have the same R and all R packages.</p>
+<pre><code>
+You can check what has been created on HDFS by using `rhls` function. There
+is a &quot;RhipeLib.tar.gz&quot; file created under &quot;/shared/&quot; on HDFS. It is an
+R distribution loaded with every shared lib file that a package R has
+installed might have used. This tar.gz file basically included R, all R
+packages user have installed on R session server, and all shared lib files
+that R packages need.
 
-<pre><code class="r">rhmkdir(&quot;/shared&quot;)
-hdfs.setwd(&quot;/shared/&quot;) 
-bashRhipeArchive(&quot;RhipeLib&quot;)
-</code></pre>
+Finally, every time when the user starts to use `RHIPE` package, the following
+lines of commands should be called in R on R session server.
 
-<p>Function <code>hdfs.setwd()</code> is used to set a HDFS working directory for all <code>RHIPE</code> commands that use the HDFS. 
-We used &quot;/shared/&quot; here, but you can use whatever path you like on your HDFS. But make sure this directory
-on HDFS has been created. You can use <code>rhmkdir</code> function to create a directory on HDFS.
-Then <code>bashRhipeArchive</code> function is creating an archive on the HDFS with a runner script appropriate for 
-running <code>RHIPE</code> jobs, and then uploads that archive to the HDFS working directory that we just created
-&quot;/shared/&quot;.</p>
+```{r eval=FALSE, tidy=FALSE} library(Rhipe) rhinit()
+rhoptions(zips = &quot;/shared/RhipeLib.tar.gz&quot;) rhoptions(runner = &quot;sh
+./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&quot;) ```
 
-<pre><code class="r">rhls(&quot;/shared/&quot;)
-</code></pre>
-
-<pre><code>  permission owner      group     size          modtime                    file
-1 -rw-rw-rw- tongx supergroup 81.02 mb 2014-06-02 15:55 /shared/RhipeLib.tar.gz       
-</code></pre>
-
-<p>You can check what has been created on HDFS by using <code>rhls</code> function. There is a &quot;RhipeLib.tar.gz&quot; 
-file created under &quot;/shared/&quot; on HDFS. It is an R distribution loaded with every shared lib file 
-that a package R has installed might have used. This tar.gz file basically included R, all R 
-packages user have installed on R session server, and all shared lib files that R packages need. </p>
-
-<p>Finally, every time when the user starts to use <code>RHIPE</code> package, the following lines of commands 
-should be called in R on R session server.</p>
-
-<pre><code class="r">library(Rhipe)
-rhinit()
-rhoptions(zips = &quot;/shared/RhipeLib.tar.gz&quot;)
-rhoptions(runner = &quot;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&quot;)
+As a R user, we definitely want to use other useful packages during the
+`RHIPE` job. So we have to create a shared zip file which includes R and all
+R packages that user has installed on R session server. Then every time when
+we submit a `RHIPE` job, this zip file will be distributed to every Hadoop
+servers and to make sure all of them have the same R and all R packages.
 </code></pre>
 
 </div>

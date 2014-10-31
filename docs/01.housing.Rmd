@@ -1,34 +1,46 @@
 ## Housing Data ##
 
-### Information about Data ###
+### The Data ###
 
-We introduce `RHIPE` using
-housing data that consist of 7 monthly variables on housing sales from Oct
-2008 to Mar 2014 for 2883 counties in the 49 U.S. states, excluding Hawaii and
-Alaska, but including the District of Columbia which for simplicity here we
-will refer to as a ``state''.  The data were harvested from Quandl's Zillow
-Housing Data. The data contain 224,369 sales of housing units.
+The housing data consist of 7 monthly variables on housing sales from Oct
+2008 to Mar 2014, which is 66 months, for 2883 counties in 48 U.S. states,
+excluding Hawaii and Alaska, and also for the District of Columbia which
+which  we treat as a state with one county. The data were derived from
+224,369 sales of housing units from Quandl's Zillow Housing Data
+(www.quandl.com/c/housing).
+A housing unit is a house, an apartment, a mobile home, a group of rooms, or a
+single room that is occupied or intended to occupied  as
+separate living quarter. Separate living quarters are those in which the
+occupants live and eat separately from any other persons in the 
+building and which have direct access from the outside of the building or
+through a common hall.
 
 The variables are
 - **FIPS**: FIPS county code, an unique identifier for each U.S. county
 - **county**: county name
 - **state**: state abbreviation
-- **date**: time measured in months, from 1 to 66, the number of months
+- **date**: measurement month, from 1 to 66
 - **units**: number of units sold
 - **list**: monthly median list price (dollars per square foot)
 - **selling**: monthly median selling (dollars per square foot)
-
 Many observations of the last three variables are missing: units 68%, list 7%,
 and selling 68%.
- 
+
+The number of measurements (including missing), is 7 x 66 x 2883 = 1,331,946.
+So this is in fact a small dataset that could be analyzed in the standard
+serial R. However, we can use them to illustate RHIPE R commands, and how
+they are used to analyze data. The small size let's you easily pick up the
+data, follow along using the R commands in the tutorial, and explore RHIPE
+yourself with other R commands.
+
 The raw data are in a text file whose size is about 8 MB.
 It is available as "housing.txt" in our Tesseradata Github repository of the
-`RHIPE` documentation [here](https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt).   
-
-So the raw data are a table with 190,278 rows (units) and 7 columns (variables).
-In the text file, the fields in each row are separated by a comma, and there
-are not headers
-Here are the first few lines of the file:
+`RHIPE` documentation [here]
+(https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt).
+The file is a table with 190,278 rows (66 months x 2883 counties) and
+7 columns (the variables). The fields in each row are separated by a comma,
+and there are no headers in the first line. Here are the first few lines of
+the file:
 ```
 01001,Autauga,AL,1,27,96.616541353383,99.1324
 01001,Autauga,AL,2,28,96.856993190152,95.8209
@@ -37,31 +49,33 @@ Here are the first few lines of the file:
 01001,Autauga,AL,5,22,97.747480735033,92.7127
 ```
 
-A housing unit is a house, an apartment, a mobile home, a group of rooms, or a
-single room that is occupied or intended to occupied  as
-separate living quarter. Separate living quarters are those in which the
-occupants live and eat separately from any other persons in the 
-building and which have direct access from the outside of the building or
-through a common hall.
+### Write housing.txt to the HDFS ###
 
-### Write Text to HDFS ###
-
-First of all, you can double-check the name of your local working directory with the `getwd` command
-in R.  Mine is called "/home/median/u41/tongx" but yours will be different.
+You want to read housing.txt into the R instance running on the Hadoop cluster,
+form subsets, and then write the subsets as R objects to the HDFS.
+Your first step is to copy
+housing.txt to the directory on the R-session server where your R
+session is running. We will suppose the that the full path name of this
+directory is, which we need below is
 
 ```{r eval=FALSE, tidy=FALSE}
-getwd()
+"/home/myusername/myRdirectory/"
 ```
-```
-[1] "/home/median/u41/tongx"
-```
-
-Recall that this directory is on the initiating R server. Then download the data file to your 
-local working directory with the following command:
+Your next step is to get that text file onto the
+HDFS as a text file, so we can read it into R on the cluster.
+There are Hadoop commands that could be used directly to copy the file, but
+our promise to you is that you never need to use Hadoop commands, so we
+provide a RHIPE function, `\rhput()` that will do it for you. 
 
 ```{r eval=FALSE, tidy=FALSE}
-system("wget https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt")
+rhput("/home/myusername/mydirectory/housing.txt", "/ln/tongx/housing/housing.txt")
 ```
+The first argument is the file name on the R session server that is to be
+copied. Because the R session is that directory, the name could have been
+The
+second argument is a pather
+
+------------------------------------------------------------------------------
 
 If it downloaded properly, then "housing.txt" will show up in the output of this command, which lists files
 in your local working directory:
@@ -81,12 +95,7 @@ rhoptions(zips = "/ln/share/RhipeLib.tar.gz")
 rhoptions(runner = "sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh")
 ```
 
-Now we want to copy the raw text file to the HDFS.  The function that writes files to HDFS is `rhput()`.  
-Replace `tongx` with an appropriate HDFS directory, such as your user name.
-
-```{r eval=FALSE, tidy=FALSE}
-rhput("./housing.txt", "/ln/tongx/housing/housing.txt")
-```
+------------------------------------------------------------------------------
 
 The `rhput` function takes two arguments.
 The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
