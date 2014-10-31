@@ -5,59 +5,67 @@
 ### Overview ###
 
 The setting has three components: remote computer, one or more Unix
-R-session servers, and a Unix Hadoop cluster. You work on a remote
-computer, say your laptop, and login to an R-session server with RHIPE
-installed where you do all of your programming of R and RHIPE R commands.
-In other words, this is where your R global environment runs executes.
-The remote computer is typically for you to maintain, but the R-session
-servers and the Hadoop will almost always require IT staff to help design,
-configure, and maintain.
+R-session servers, and a Unix Hadoop cluster. The second two components are
+running R and RHIPE.  You work on the remote
+computer, say your laptop, and login to an R-session server.
+This is home base, where you do all of your programming
+of R and RHIPE R commands. The R commands you write for division, anpplication
+of analytic methods, and recombination that are destined for Hadoop on the
+cluster are passed along by RHIPE R commands.
 
-### The R-Session Server ###
+The remote computer is typically for you to maintain. The R-session
+servers  require IT staff to help install software, configure, and maintain. 
+However you install packages too on the R-session servers, just you do when you
+want to use an R CRAN package in R. There is an extra task though; you want
+packages you install to be pushed up the Hadoop cluster so they can be used
+there too.  Except for this push by you, the Hadoop cluster is the
+domain of the systems administrators who must, among other tasks, install
+Hadoop.
+
+### The R-Session Server and RStudio ###
 
 Now the R-session server can be separate from the Hadoop cluster, handling
-only R sessions, or it can be one of the servers on the Hadoop cluster. If on
-the Hadoop cluster, there must be some precautions taken in the Hadoop
-configuration to protect the programming of the R session.
-This is needed because the RHIPE Hadoop jobs compete with the R sessions.
-There are never full
-guarantees though, so `safe mode` is separate R session servers. The last thing
-you want is for R sessions to get bogged down.
+only R sessions, or it can be one of the servers on the Hadoop cluster. If it
+is on the Hadoop cluster, there must be some precautions taken in the Hadoop
+configuration to protect the programming of the R session. This is needed
+because the RHIPE Hadoop jobs compete with the R sessions. There are never full
+guarantees though, so "safe mode" is separate R session servers. The last thing
+you want is for R sessions to get bogged down. If the cluster option is chosen,
+then you want to mount a file server on the cluster that contains the files
+associated with the R session such as .RData and files read into to R or
+written by R.
 
-If the cluster option is chosen, then you want to mount a file server on the
-cluster that contains the files associated with the R session such as .RData
-and files read into to R or written by R.
+There is a vast segment of the R community that uses RStudio, for good reason.
+RStudio can join the setting. You have RStudio server  installed on the
+R-session servers by system administators. A web browser on the R server runs
+the RStudio interface which is accessed by you on your remote device via the
+remote login.
 
 ### The Remote Computer ###
 
 The remote computer is just a communication device, and does not carry out data
 analysis, so it can run any operating system, such as Windows. This is
-especially important for teaching, since Windows labs are very plentiful at
-academic institutions, but not Unix labs.
+especially important for teaching, since Windows labs are typically very
+plentiful at academic institutions, but Unix labs much less so.
 Whatever the operating system, a common communication protocol that  is used
 is the SSH protocol. SSH is typically used to log into a remote machine and
 execute commands or to transfer files. But a critical capability of it for our
-purposes here is that it supports your R session command-line window, showing
-both input and output, and also opening a separate window to show graphics.
+purposes here is that it supports both your R session command-line window,
+showing both input and output, and a separate window to show graphics.
 
-### RStudio ###
-
-There is a vast segment of the R community that uses RStudio, for good reason.
-That can be used too. RStudio server is installed on the R-session servers,
-which then, using a Web browser, provide the RStudio interface that is then
-accessed by the remote device via the remote login. 
-
-### Where Are the Data Analyses Carried Out ###
+### Where Are the Data Analyzed ###
 
 Obviously, much data analysis is carried out by Hadoop on the Hadoop cluster.
 Your R commands are given to RHIPE, passed along to Hadoop, and the outputs
-written by Hadoop to the HDFS.
+are written by Hadoop to the HDFS.
 
 But in many analyses of larger and more complex data, it is common to have
-outputs of a recombination method be a relatively small amount of data, and
-that the anlysis continues studying these outputs. If they are small enough to
-readily analyze in your R session then for sure that is where you want to be.
+(1) outputs of a recombination method that constitute a relatively small
+dataset, and (2) the outputs are further analyzed as part of the overall
+analysis. If they are small enough to be readily analyzed in your R session,
+then for sure that is where you want to be.
+RHIPE commands allow you to write the recombination outputs from the HDFS to
+the R global environment of your R session. They become a dataset in .RData.
 While programming R and RHIPE is easy, it is not as easy as plain old serial R.
-RHIPE commands allow you to write the outputs to the R global environment of
-your R session. They become a dataset in .RData. And that is where the analysis
-is finished off.
+The point is that a lot of data analysis can be carried out in just R even when
+the data are large and complex.

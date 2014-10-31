@@ -162,11 +162,11 @@ rhls("/ln/tongx/housing/timeplotbystate/_outputs")
 4  -rw-r--r-- tongx supergroup 150.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CA.pdf
 5  -rw-r--r-- tongx supergroup 106.7 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CO.pdf
 ......
+```
 
 Yes, all the pdf plots are saved here, on HDFS! The last step would be copy those pdf files from HDFS to our R local
 working directory on initiating R server.
 
-```
 ```{r eval=FALSE, tidy=FALSE}
 rhget("/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.NC.pdf", "./")
 rhget("/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf", "./")

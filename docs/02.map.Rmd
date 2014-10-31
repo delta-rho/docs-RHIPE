@@ -39,7 +39,7 @@ reduce10 <- expression(
 mr10 <- rhwatch(
   map      = map10,
   reduce   = reduce10,
-  input    = rhfmt("/ln/tongx/housing/bycounty", type = "sequence"),
+  input    = rhfmt("/ln/tongx/housing/byCounty", type = "sequence"),
   output   = rhfmt("/ln/tongx/housing/countytostate.map", type = "map"),
   mapred   = list( 
     mapred.reduce.tasks = 10
@@ -128,11 +128,11 @@ Finally, we can access the subset of data frame of Indiana state by:
 head(rst[["IN"]])
 ```
 ```
-  time  sold      list  selling  fips county
-1   26    NA  56.70013       NA 18177  Wayne
-2   27    NA  52.01389       NA 18177  Wayne
-3   28    NA  49.92504       NA 18177  Wayne
-4   29    NA  51.91466       NA 18177  Wayne
-5   30    NA  55.27211       NA 18177  Wayne
-6   31    NA  56.68348       NA 18177  Wayne
+  date units     list selling  fips county
+1    8    NA 78.22178      NA 18109 Morgan
+2    9    NA 77.73632      NA 18109 Morgan
+3   10    NA 76.91198      NA 18109 Morgan
+4   11    NA 76.73789      NA 18109 Morgan
+5   12    NA 77.32143      NA 18109 Morgan
+6   13    NA 77.59740      NA 18109 Morgan
 ```
