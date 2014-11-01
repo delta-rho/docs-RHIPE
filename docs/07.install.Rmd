@@ -1,4 +1,4 @@
-## Your Installation of Packages ##
+## Installing Packages ##
 
 ### Background ###
 
@@ -9,69 +9,61 @@ what you have been using for packages in R, but adds a push of the packages to
 the cluster nodes since you will want to use them there too. It is all quite
 simple.
 
-Also, to use `RHIPE` working, packages that are needed are, obviously,
-`RHIPE` from Tessera, but also `rJava` and `testthat` from R CRAN.
-The second two are needed just for the
-`RHIPE` installation and then are no longer needed until there is a new
-installation. R becomes an issue too, because you certainly want the R
-version you choose for your R session server to be the R used on the
-cluster. So it needs a push to the cluster too.
+Now standard R practice for a server with many R users is for a system
+administator to install R for use by all. However at the same time, you can
+override this with your own version. You can follow this practice on the R
+session server, and add the `RHIPE` package to it. It makes sense to have
+administrators install them both on the R session server and the Hadoop
+cluster. (The `RHIPE` installation manual for system adminstrators is
+available in these pages in the QuickStart section.) But you can override
+this and install your own `RHIPE` and R, and push them to the cluster.
+You do need to be careful to check versions of R, `RHIPE`, and Hadoop for
+compatibility.
 
 Now suppose you are using RMR on the Amazon cloud, or Vagrant, both
-discussed in our QuickStat section. Then installation that provides you with R
-and RHIPE on the R session server and the cluster as well
+discussed in our QuickStat section. Then installation of R
+and RHIPE on the R session server and the cluster push
 has been taken care of for you. But if you want to use
 R CRAN packages or packages from other sources that you install on your R
-session server, then you need to know about the push mechanism to the
-Hadoop cluster.
+session server, you will still need to know about the push mechanism to the
+Hadoop cluster. Or you can install a different R or `RHIPE` if you choose.
 
-We will proceed here as if you are intalling on a R session server and Hadoop
-cluster at your location that starts off with just linux and R on the R server,
-and Hadoop and linux on the cluster. Part of the material is relevant for the
-RMR and Vagrant users. 
+There are some other things that are the sole domain of the the system
+administrator install. Obviously linux and Hadoop. But also
+protocol buffers on the Hadoop cluster to enable `RHIPE` communication.
+This is also in the installation manual. In addition, if you want to use
+RStudio on the R session server, the system administrator will need to install
+RStudio server on the R session server.
 
-Now standard R practice for a
-server with many R users is for a system administator to install R for use
-by all. However at the same time, you can override this with your own version.
-This makes sense too for `RHIPE` and R. It makes sense to have administrators
-install them on the R server and the Hadoop cluster. (The `RHIPE` installation
-manual for system adminstrators is available in these pages in the QuickStart
-section.)
-
-Now there is one caution here. You are best served if the linux versions you
+Now there is one caution here for both users and system administors to consider.
+You are best served if the linux versions you
 run are the same on the R server and cluster, and, in fact, also if the
 hardware is the same. The first is more critical, but the second is a
 nice bonus.  Part of the reason is that Java plays a critical roll in RHIPE,
 and Java likes homogeniety.
 
-The system administrator must also install protocol buffers on the Hadoop
-cluster to enable `RHIPE` communication. This is taken up in the
-installation manual. In addition, if you want to use RStudio on the
-R session server,  the system administrator will need to install RStudio
-server on the R session server.
+### Install and Push ###
 
-### Install Packages and Push ###
-
-Suppose you want to install `Rhipe` youself, say to get a version different
-from that installed by the system administrator. To download the package,
-run in your R session in your working directory
+To install `Rhipe` you first down the package in R
 
 ```{r eval=FALSE, tidy=FALSE}
 system("wget http://ml.stat.purdue.edu/rhipebin/Rhipe_0.74.0.tar.gz")
-```
 
+```
+This puts the package in your R session directory.
 There are other versions of `Rhipe`. You will need to go to Github to find out
-about them. To install the package on your R session server, run
+about them.
+
+To install the package on your R session server, run
 ```{r eval=FALSE, tidy=FALSE}
 install.packages("testthat")
 install.packages("rJava")
 install.packages("Rhipe_0.74.0.tar.gz", repos=NULL, type="source")
 ```
-The first two packages, are used only for `RHIPE` installation. You do not need
-them again until you reinstall.
+The first two R CRAN packages are used only for `RHIPE` installation.
+You do not need them again until you reinstall.
 
 `RHIPE` is now installed. In each start up of R, to use `RHIPE` you run
-
 ```{r eval=FALSE, tidy=FALSE}
 library(Rhipe)
 rhinit()
@@ -79,27 +71,25 @@ rhinit()
 
 Next is the push of `RHIPE` , R, and other packages to
 the cluster HDFS. Part of the system administor's job is configue the HDFS so
-you can do this, and other tasks where you need to write to thd HDFS.
+you can do this, and also analysis tasks where you need to write to the HDFS.
 You need to have a directory on the HDFS where you have write permission.
 A common convention is for the administrator is to set up for you
 the directory `/yourloginname` using the name of the login, and do the same
 thing for other users. We will assume that has happened.
 
-Suppose in `/yourloginname` you want to create a directory `packages` where you
-will put the packages. You can do this are part of the push, which in this case
-is
-
+Suppose in `/yourloginname` you want to create a directory `packages` on the
+HDFS where you will push R, `RHIPE` and other packages you have installed on
+the R session server. You can do this as part of the push, which in this case is
 ```{r eval=FALSE, tidy=FALSE}
-rhmkdir("/yourloginname/packages")
-hdfs.setwd("/yourloginname/packages")
-bashRhipeArchive("???")
+rhmkdir("/yourloginname/software")
+hdfs.setwd("/yourloginname/software")
+bashRhipeArchive("RandPackages")
 ```
-
-`rhmkdir()` creates your directory `packages`.
-hdfs.setwd()` makes this directory the location of the RHIPE commands on
-on the HDFS.  bashRhipeArchive()` is creates an archive for the HDFS with a
-runner script for running `RHIPE` jobs, and then uploads all
-archive to the HDFS working directory that we just created "/shared/".
+`rhmkdir()` creates your directory `software`.
+hdfs.setwd()` makes this directory the location of R and your packages, makes
+known that is where to go when they are called.
+`bashRhipeArchive()` creates the actual archive of R and your packages
+that is accessed by the calls.
 
 ```{r eval=FALSE, tidy=FALSE} rhls("/shared/") ``` ```
   permission owner      group     size          modtime                    file
