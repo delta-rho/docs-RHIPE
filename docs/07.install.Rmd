@@ -81,7 +81,7 @@ do this and carry out the push by
 ```{r eval=FALSE, tidy=FALSE}
 rhmkdir("/yourloginname/bin")
 hdfs.setwd("/yourloginname/bin")
-bashRhipeArchive("MyBin")
+bashRhipeArchive("R.Pkg")
 ```
 `rhmkdir()` creates your directory `bin` in the directory `yourloginname`.
 `hdfs.setwd()` declares `/yourloginname/bin` to be the directory with your
@@ -92,6 +92,6 @@ Each time your R code will require the installations on the HDFS, you
 must in your R session run
 ```{r eval=FALSE, tidy=FALSE}
 library(Rhipe) rhinit()
-rhoptions(zips = "/myloginname/bin/MyBin")
-rhoptions(runner = "sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh")
+rhoptions(zips = "/myloginname/bin/R.Pkg.tar.gz")
+rhoptions(runner = "sh ./R.Pkg/library/Rhipe/bin/RhipeMapReduce.sh")
 ```

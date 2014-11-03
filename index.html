@@ -2759,7 +2759,7 @@ do this and carry out the push by</p>
 
 <pre><code class="r">rhmkdir(&quot;/yourloginname/bin&quot;)
 hdfs.setwd(&quot;/yourloginname/bin&quot;)
-bashRhipeArchive(&quot;MyBin&quot;)
+bashRhipeArchive(&quot;R.Pkg&quot;)
 </code></pre>
 
 <p><code>rhmkdir()</code> creates your directory <code>bin</code> in the directory <code>yourloginname</code>.
@@ -2771,8 +2771,8 @@ your installations and names it as <code>MyBin</code>.</p>
 must in your R session run</p>
 
 <pre><code class="r">library(Rhipe) rhinit()
-rhoptions(zips = &quot;/myloginname/bin/MyBin&quot;)
-rhoptions(runner = &quot;sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh&quot;)
+rhoptions(zips = &quot;/myloginname/bin/R.Pkg.tar.gz&quot;)
+rhoptions(runner = &quot;sh ./R.Pkg/library/Rhipe/bin/RhipeMapReduce.sh&quot;)
 </code></pre>
 
 </div>
