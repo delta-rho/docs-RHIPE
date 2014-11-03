@@ -40,7 +40,7 @@ hardware is the same. The first is more critical, but the second is a
 nice bonus.  Part of the reason is that Java plays a critical roll in RHIPE,
 and Java likes homogeneity.
 
-### Install RHIPE and Push Packages ###
+### Install and Push ###
 
 To install `Rhipe` on the R session server, you first download the package file
 from within R
@@ -88,22 +88,10 @@ bashRhipeArchive("MyBin")
 choice of installations.  `bashRhipeArchive()` creates the actual archive of
 your installations and names it as `MyBin`.
 
-Each time your R code will require the intallations on the HDFS, you
+Each time your R code will require the installations on the HDFS, you
 must in your R session run
 ```{r eval=FALSE, tidy=FALSE}
 library(Rhipe) rhinit()
 rhoptions(zips = "/myloginname/bin/MyBin")
 rhoptions(runner = "sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh")
-```
-
-You can check what has been created on HDFS by using `rhls` function. There
-is a "RhipeLib.tar.gz" file created under "/shared/" on HDFS. It is an
-R distribution loaded with every shared lib file that a package R has
-installed might have used. This tar.gz file basically included R, all R
-packages user have installed on R session server, and all shared lib files
-that R packages need.
-
-```{r eval=FALSE, tidy=FALSE} rhls("/shared/") ``` ```
-  permission owner      group     size          modtime                    file
-1 -rw-rw-rw- tongx supergroup 81.02 mb 2014-06-02 15:55 /shared/RhipeLib.tar.gz
 ```
