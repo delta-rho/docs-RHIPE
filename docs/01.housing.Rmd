@@ -3,41 +3,37 @@
 ### The Data ###
 
 The housing data consist of 7 monthly variables on housing sales from Oct
-2008 to Mar 2014, which is 66 months, for 2883 counties in 48 U.S. states,
-excluding Hawaii and Alaska, and also for the District of Columbia which
-which  we treat as a state with one county. The data were derived from
-224,369 sales of housing units from Quandl's Zillow Housing Data
-(www.quandl.com/c/housing).
+2008 to Mar 2014, which is 66 months. The measurements are for 2883 counties
+in 48 U.S. states, excluding Hawaii and Alaska, and also for the District of
+Columbia which we treat as a state with one county.
+The data were derived from sales of housing units from Quandl's Zillow Housing
+Data (www.quandl.com/c/housing).
 A housing unit is a house, an apartment, a mobile home, a group of rooms, or a
-single room that is occupied or intended to occupied  as
-separate living quarter. Separate living quarters are those in which the
-occupants live and eat separately from any other persons in the
-building and which have direct access from the outside of the building or
-through a common hall.
+single room that is occupied or intended to be occupied  as a
+separate living quarter.
 
 The variables are
 - **FIPS**: FIPS county code, an unique identifier for each U.S. county
 - **county**: county name
 - **state**: state abbreviation
-- **date**: time measured in months, from 1 to 66, the number of months
+- **date**: time of sale measured in months, from 1 to 66
 - **units**: number of units sold
 - **list**: monthly median list price (dollars per square foot)
-- **selling**: monthly median selling (dollars per square foot)
+- **selling**: monthly median selling price (dollars per square foot)
 
 Many observations of the last three variables are missing: units 68%, list 7%,
 and selling 68%.
  
 The number of measurements (including missing), is 7 x 66 x 2883 = 1,331,946.
 So this is in fact a small dataset that could be analyzed in the standard
-serial R. However, we can use them to illustate RHIPE R commands, and how
-they are used to analyze data. The small size let's you easily pick up the
-data, follow along using the R commands in the tutorial, and explore RHIPE
-yourself with other R commands.
+serial R. However, we can use them to illustate how RHIPE R commands implement
+Divide and Recombine. We simply pretend the data are large and complex, break
+into subsets, and continuing on with D&amp;R. The small size let's you easily
+pick up the data, follow along using the R commands in the tutorial, and
+explore RHIPE yourself with other RHIPE R commands.
 
-The raw data are in a text file whose size is about 8 MB.
-It is available as "housing.txt" in our Tesseradata Github repository of the
+"housing.txt" is available in our Tesseradata Github repository of the
 `RHIPE` documentation [here]
-(https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt).   
 The file is a table with 190,278 rows (66 months x 2883 counties) and
 7 columns (the variables). The fields in each row are separated by a comma,
 and there are no headers in the first line. Here are the first few lines of
@@ -53,18 +49,23 @@ the file:
 
 ### Write housing.txt to the HDFS ###
 
-You want to read housing.txt into the R instance running on the Hadoop cluster,
-form subsets, and then write the subsets as R objects to the HDFS.
-Your first step is to copy
-housing.txt to the directory on the R-session server where your R
-session is running. We will suppose the that the full path name of this
-directory is, which we need below is
+To get started, we need to make `housing.txt` available as a text file within
+the HDFS file system. This puts it in a place where it can be read into R, form
+subsets, and then write them to the HDFS. This is similar to what we do
+using R in the standard serial way. If we have a text file to read into R, we
+move put it in a place where we can read it into R, for example, in the working
+directory of the R session.
+
+The first step, as for the standard R case, is to copy `housing.txt` to a
+directory on the R-session server where your R session is running.
+We will suppose that the full path name of this directory, which we need
+below, is
 
 ```{r eval=FALSE, tidy=FALSE}
 [1] "/home/myusername/myRdirectory/"
 ```
 
-Your next step is to get that text file onto the
+The next step is to get `housing.txt` onto the
 HDFS as a text file, so we can read it into R on the cluster.
 There are Hadoop commands that could be used directly to copy the file, but
 our promise to you is that you never need to use Hadoop commands, so we
