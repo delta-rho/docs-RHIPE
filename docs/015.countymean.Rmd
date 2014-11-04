@@ -1,0 +1,94 @@
+### Compute County Means ###
+
+We calculate the mean list price and mean sale price by county exactly the same way we 
+calculated them by state. 
+
+#### Map ####
+
+```{r eval=FALSE, tidy=FALSE}
+map4 <- expression({
+  lapply(seq_along(map.keys), function(r) {
+    value <- data.frame(
+      listMean = mean(map.values[[r]]$list, na.rm = TRUE),
+      saleMean = mean(map.values[[r]]$selling, na.rm = TRUE),
+      stringsAsFactors = FALSE
+    )
+    value$state <- attr(map.values[[r]], "state")
+    value$county <- attr(map.values[[r]], "county")
+    value$FIPS <- map.keys[[r]]
+    rhcollect(1, value)
+  })
+})
+```
+
+In the map expression, we create a single row data frame for each county. The data frame has five
+columns: FIPS, listMean, saleMean, state, and county name. FIPS code, state name, and county name 
+can be found in the attributes of each element of `map.values`. In order to combine all means by
+county into one data frame, we will assign 1 to be the key for all intermediate key-value pairs.
+
+#### Reduce ####
+
+```{r eval=FALSE, tidy=FALSE}
+reduce4 <- expression(
+  pre = {
+    countyMeans <- data.frame()
+  },
+  reduce = {
+    countyMeans <- rbind(countyMeans, do.call(rbind, reduce.values))
+  },
+  post = {
+    rhcollect(reduce.key, countyMeans)
+  }
+)
+```
+
+We can use the same reduce expression which we used to find the means by state. The final output
+consists of one key-value pair, where the key is 1, and value is the data frame with all county
+means.
+
+#### Execution Function ####
+
+```{r eval=FALSE, tidy=FALSE}
+meansByCounty <- rhwatch(
+  map      = map4,
+  reduce   = reduce4,
+  input    = rhfmt("/ln/tongx/housing/byCounty", type = "sequence"),
+  output   = rhfmt("/ln/tongx/housing/meansByCounty", type = "sequence"),
+  mapred   = list( 
+    mapred.reduce.tasks = 1
+  ),
+  readback = TRUE
+)
+```
+
+This time we specify only one reduce task by setting `mapred.reduce.tasks` to be 1.
+Since we know there is only one
+key-value pair in the output, we only need one output file. Eliminating unnecessary output files 
+can speed up this job and future jobs which read its output.
+
+```{r eval=FALSE, tidy=FALSE}
+str(meansByCounty)
+```
+```
+List of 1
+ $ :List of 2
+  ..$ : num 1
+  ..$ :'data.frame':  2883 obs. of  5 variables:
+  .. ..$ listMean: num [1:2883] 66.3 74.9 86.5 68.3 74.4 ...
+  .. ..$ saleMean: num [1:2883] NaN NaN 66.6 52.2 NaN ...
+  .. ..$ state   : chr [1:2883] "AL" "AL" "AL" "AL" ...
+  .. ..$ county  : chr [1:2883] "Chambers" "Colbert" "Cullman" "Lawrence" ...
+  .. ..$ FIPS    : chr [1:2883] "01017" "01033" "01043" "01079" ...
+```
+```{r eval=FALSE, tidy=FALSE}
+head(meansByCounty[[1]][[2]])
+```
+```
+   listMean saleMean state   county  FIPS
+1  66.26665      NaN    AL Chambers 01017
+2  74.91187      NaN    AL  Colbert 01033
+3  86.54870 66.56352    AL  Cullman 01043
+4  68.32503 52.17811    AL Lawrence 01079
+5  74.35722      NaN    AL    Macon 01087
+6 103.70687 94.27969    AZ   Mohave 04015
+```

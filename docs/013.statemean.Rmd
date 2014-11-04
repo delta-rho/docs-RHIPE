@@ -1,0 +1,173 @@
+### Compute State Means ###
+
+Now we'll apply an analytic method to the subsets of our housing data.  Our analytic
+method will be to take the mean.  We have monthly list prices and sale prices per square foot, 
+so our desired output is two numbers for each state: a mean of list prices and a mean 
+of sale prices.  The recombination step will be to put all the state means in a single data
+frame, which can be further analyzed in an interactive R session.
+
+We apply our chosen analytic method with a second `RHIPE` MapReduce job:
+
+#### Map ####
+
+```{r eval =FALSE, tidy=FALSE}
+map2 <- expression({
+  lapply(seq_along(map.keys), function(r) {
+    value <- data.frame(
+      state = attr(map.values[[r]], "state"),
+      listMean = mean(map.values[[r]]$list, na.rm = TRUE),
+      saleMean = mean(map.values[[r]]$selling, na.rm = TRUE),
+      stringsAsFactors = FALSE
+    )
+    rhcollect(1, value)
+  })
+})
+```
+
+The input to our map is the the final output we created in the previous section.  The keys 
+were state names, stored as character objects, and the values were data frames with prices,
+dates, and county information.  In general, 
+keys need not be unique, but in this case we know that there are 49 state names, where no state
+is duplicated.  
+
+To each state's data frame, we apply the same action: take the mean of the list price and 
+the mean of the sale price.  These are stored in a single row data frame to be recombined in 
+the reduce step below.  The row has three columns: state name plus the two calculated means.
+As before, `rhcollect` emits intermediate key-value pairs.  One key-value pair is emitted per
+state.  The value is the single row data frame we just created.  We use the same key for all 49
+states so that they will all appear together in the reduce step.  The key itself is meaningless,
+so we'll use 1 as a placeholder.
+
+#### Reduce ####
+
+```{r eval=FALSE, tidy=FALSE}
+reduce2 <- expression(
+  pre = {
+    allMeans <- data.frame()
+  },
+  reduce = {
+    allMeans <- rbind(allMeans, do.call(rbind, reduce.values))
+  },
+  post = {
+    rhcollect(reduce.key, allMeans)
+  }
+)
+```
+
+We divided our data into subsets and applied an analytic method to each subset.  The reduce step
+above is our recombination.  We recombine the state means into a data frame with 49 rows and 3
+columns.  Later, we can read that data frame from HDFS into our interactive R session for further
+analysis.
+
+The input key is the placeholder value 1, which is left unchanged as the output key.  The input
+values are the single row data frames for each state, and the output values is the 49 row data 
+frame with all states represented.  In the `pre` step we initialize an empty data frame.  In
+`reduce` we use `rbind` to append the single row data frames to the empty data frame we created, 
+and in `post` we use `rhcollect` to emit the final output so that it will be written to HDFS.
+
+#### Execution Function ####
+
+```{r eval=FALSE, tidy=FALSE}
+stateMeans <- rhwatch(
+  map      = map2,
+  reduce   = reduce2,
+  input    = rhfmt("/ln/tongx/housing/byState", type = "sequence"),
+  output   = rhfmt("/ln/tongx/housing/meanByState", type = "sequence"),
+  mapred   = list( 
+    mapred.reduce.tasks = 5
+  ),
+  readback = TRUE
+)
+```
+
+In `rhwatch()` this time, we've changed several arguments. First, in the `rhfmt` of `input` argument,
+`type` is specified to be "sequence", since the input file to this mapreduce job is the output
+from our division. This indicates to `RHIPE` that the input is not a raw text file, but rather a 
+file already organized as key-value pairs.  Also we request 5 reduce tasks for this job using
+the `mapred.reduce.tasks` option.  Finally, we assign
+`readback` to be `TRUE`. By doing this, the final results not only will be saved on HDFS, but also
+will be read back from HDFS (without using `rhread()`) and assigned to an object in our interactive R
+session.  We've named that object `stateMeans`.
+
+Just as before, once we submit the job, we see job status information.
+
+```
+[Thu Sep 18 23:48:19 2014] Name:2014-09-18 23:48:19 Job: job_201405301308_4715  State: PREP Duration: 0.175
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4715
+       pct numtasks pending running complete killed failed_attempts killed_attempts
+map      0       10      10       0        0      0               0               0
+reduce   0        5       5       0        0      0               0               0
+Waiting 5 seconds
+[Thu Sep 18 23:48:24 2014] Name:2014-09-18 23:48:19 Job: job_201405301308_4715  State: RUNNING Duration: 5.206
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4715
+       pct numtasks pending running complete killed failed_attempts killed_attempts
+map      0       10       0      10        0      0               0               0
+reduce   0        5       5       0        0      0               0               0
+Waiting 5 seconds
+.......
+Read 1 objects(1.2 KB) in 0.09 seconds
+```
+
+```{r eval=FALSE, tidy=FALSE}
+str(stateMeans)
+```
+```
+List of 1
+ $ :List of 2
+  ..$ : num 1
+  ..$ :'data.frame':  49 obs. of  3 variables:
+  .. ..$ state   : chr [1:49] "CA" "MA" "NJ" "TN" ...
+  .. ..$ listMean: num [1:49] 192.6 259.1 180 85.3 81.7 ...
+  .. ..$ saleMean: num [1:49] 185.9 210.9 171.4 80 76.3 ...
+```
+
+As we can see, the result is a list of length 1.  This make sense, since we only output a single
+key-value pair.  This single element is itself a list of length 2: one element for the key, and 
+another for the value.  The value is what we're interested in, namely, the data frame of 49 state means.
+It has three columns which are state abbreviation, mean of median list price per square feet, and mean of 
+median sale price per square feet.
+ 
+```{r eval=FALSE, tidy=FALSE}
+stateMeans <- stateMeans[[1]][[2]]
+head(stateMeans)
+```
+```
+  state  listMean  saleMean
+1    CA 192.63429 185.87159
+2    MA 259.13164 210.87140
+3    NJ 180.01365 171.44946
+4    TN  85.28335  80.00628
+5    TX  81.67656  76.32277
+6    WA 134.67467 128.54734
+```
+
+Let's take a look at how the output was stored on HDFS using `rhls`.
+
+```{r eval=FALSE, tidy=FALSE}
+rhls("/ln/tongx/housing/meanByState")
+```
+```
+  permission owner      group        size          modtime                                         file
+1 -rw-r--r-- tongx supergroup           0 2014-09-18 23:56     /ln/tongx/housing/meanByState/_SUCCESS
+2 drwxrwxrwx tongx supergroup           0 2014-09-18 23:56        /ln/tongx/housing/meanByState/_logs
+3 -rw-r--r-- tongx supergroup    1.363 kb 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00000
+4 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00001
+5 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00002
+6 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00003
+7 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00004
+```
+
+There are five files in "/ln/tongx/housing/meansByState", named from "part-r-00000" to 
+"part-r-00004". There are five of these because we selected 5 reduce tasks with `mapred.reduce.tasks`.
+Besides these five files, there are another two files named "_SUCCESS" and 
+"_logs" which record the metadata and log information. 
+
+Notice that four of the five files have the same size, 94 bytes, which is quite small. 
+This is because those four files are 
+empty. Since we only had one intermediate key-value pair (the output of the map), four of the 
+reduce tasks we requested did nothing.
+
+We've now successfully completed our first D\&R analysis with `RHIPE`.  We created a division by state, applied an
+analytic method to each subset when we took the mean, and recombined the subset outputs into an R
+data frame for further interactive analysis.  We did the division in one Rhipe MapReduce job, and 
+the analytic method and recombination in a second job.
