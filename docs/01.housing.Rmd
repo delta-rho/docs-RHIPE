@@ -58,8 +58,7 @@ directory of the R session.
 
 The first step, as for the standard R case, is to copy `housing.txt` to a
 directory on the R-session server where your R session is running.
-We will suppose that the full path name of this directory, which we need
-below, is
+Suppose the path name of this directory is
 
 ```{r eval=FALSE, tidy=FALSE}
 [1] "/home/myusername/myRdirectory/"
@@ -68,18 +67,19 @@ below, is
 The next step is to get `housing.txt` onto the
 HDFS as a text file, so we can read it into R on the cluster.
 There are Hadoop commands that could be used directly to copy the file, but
-our promise to you is that you never need to use Hadoop commands, so we
-provide a RHIPE function, `\rhput()` that will do it for you.
+our promise to you is that you never need to use Hadoop commands. There is a
+a RHIPE function, `\rhput()` that will do it for you.
 
 ```{r eval=FALSE, tidy=FALSE}
-rhput("/home/myusername/mydirectory/housing.txt", "/ln/tongx/housing/housing.txt")
+rhput("/home/myusername/mydirectory/housing.txt", "/yourloginname/housing/housing.txt")
 ```
-The first argument is the file name on the R session server that is to be
-copied. Because the R session is that directory, the name could have been
-The
-second argument is a pather
+
+The first argument specifies the full linux path of the text file on the R
+session server to be copied. The second argument is the path name of a
+directory on the HDFS.
 
 <!--
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Recall that this directory is on the initiating R server. Then download the data file to your 
 local working directory with the following command:
 
@@ -111,12 +111,14 @@ Replace `tongx` with an appropriate HDFS directory, such as your user name.
 ```{r eval=FALSE, tidy=FALSE}
 rhput("./housing.txt", "/ln/tongx/housing/housing.txt")
 ```
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -->
 
 The `rhput` function takes two arguments.
 The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
 the file will be written. `rhput` creates the file at destination, overwriting the destination if
-it already exists.  We can also copy files onto HDFS via Hadoop's command line interface, but
+it already exists.
+We can also copy files onto HDFS via Hadoop's command line interface, but
 `RHIPE` allows us to achieve this task from within R.
 
 We can confirm that the housing data text file has been written to HDFS with the `rhexists` function.
