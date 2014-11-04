@@ -85,6 +85,18 @@
       </li>
 
 
+<li class='nav-header unselectable' data-edit-href='001.install.Rmd'>Installing Packages</li>
+      
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#background'>Background</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#install-and-push'>Install and Push</a>
+      </li>
+
+
 <li class='nav-header unselectable' data-edit-href='01.housing.Rmd'>Housing Data</li>
       
       <li class='active'>
@@ -200,18 +212,6 @@
          <a target='_self' class='nav-not-header' href='#summary'>Summary</a>
       </li>
 
-
-<li class='nav-header unselectable' data-edit-href='07.install.Rmd'>Installing Packages</li>
-      
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#background'>Background</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#install-and-push'>Install and Push</a>
-      </li>
-
    </ul>
    </div>
 
@@ -301,6 +301,111 @@ the data are large and complex.</p>
 </div>
 
 
+<div class='tab-pane' id='background'>
+<h3>Background</h3>
+
+<p>You will likely want to install packages on your R
+session server, for example, R CRAN packages. And you want these packages to
+run on the Hadoop cluster as well. The mechanism for doing this is much like
+what you have been using for packages in R, but adds a push of the packages to
+the cluster nodes since you will want to use them there too. It is all quite
+simple.</p>
+
+<p>Standard R practice for a server with many R users is for a system
+administrator to install R for use by all. However, you can
+override this by installing your own version. It makes sense to follow this
+practice in this setting too, and have the systems administrators install R
+and <code>RHIPE</code> on the R session server and the Hadoop cluster.
+(The <code>RHIPE</code> installation manual for system administrators is available in
+these pages in the QuickStart section.) But you can override this and install
+your own <code>RHIPE</code> and R, and push them to
+the cluster along with any other packages you installed.
+You do need to be careful to check versions of R, <code>RHIPE</code>, and
+Hadoop for compatibility. The Tessera GitHub site has this information.</p>
+
+<p>Now suppose you are using RMR on the Amazon cloud or Vagrant, both
+discussed in our QuickStart section. Then installation of R
+and RHIPE on the R session server and the push to the cluster 
+has been taken care of for you. But if you want to install
+R CRAN packages or packages from other sources you will need to understand the
+installation mechanism.</p>
+
+<p>There are some other installation matters that are the sole domain of the
+system administrator. Obviously linux and Hadoop are. But also
+protocol buffers must be installed on the Hadoop cluster to enable <code>RHIPE</code>
+communication. In addition, if you want to use RStudio on the R session
+server, the system administrator will need to install RStudio server on the R
+session server. Now there is one caution here for both users and system
+administrators to consider.  You are best served if the linux versions you
+run are the same on the R server and cluster nodes, and also if the
+hardware is the same. The first is more critical, but the second is a
+nice bonus.  Part of the reason is that Java plays a critical roll in RHIPE,
+and Java likes homogeneity.</p>
+
+</div>
+
+
+<div class='tab-pane' id='install-and-push'>
+<h3>Install and Push</h3>
+
+<p>To install <code>Rhipe</code> on the R session server, you first download the package file
+from within R</p>
+
+<pre><code class="r">system(&quot;wget http://ml.stat.purdue.edu/rhipebin/Rhipe_0.74.0.tar.gz&quot;)
+</code></pre>
+
+<p>This puts the package in your R session directory.
+There are other versions of <code>Rhipe</code>. You will need to go to Github to find out
+about them.  To install the package on your R session server, run</p>
+
+<pre><code class="r">install.packages(&quot;testthat&quot;)
+install.packages(&quot;rJava&quot;)
+install.packages(&quot;Rhipe_0.74.0.tar.gz&quot;, repos=NULL, type=&quot;source&quot;)
+</code></pre>
+
+<p>The first two R CRAN packages are used only for <code>RHIPE</code> installation.
+You do not need them again until you reinstall.
+<code>RHIPE</code> is now installed. Each time you startup an R session and you
+want<code>RHIPE</code> to be available, you run</p>
+
+<pre><code class="r">library(Rhipe)
+rhinit()
+</code></pre>
+
+<p>Next, you push to the cluster HDFS the software you have installed on the R
+session server, choosing from among  R, <code>RHIPE</code> , and other R packages.
+First, you need the system administrator to configure the HDFS so
+you can do both this and other analysis tasks where you need to write to the
+HDFS. You need to have a directory on the HDFS where you have write permission.
+A common convention is for the administrator is to set up for you
+the directory <code>/yourloginname</code> using your login name, and do the same
+thing for other users. We will assume that has happened.</p>
+
+<p>Suppose in <code>/yourloginname</code> you want to create a directory <code>bin</code> on the
+HDFS where you will push your installations on the R session server. You can
+do this and carry out the push by</p>
+
+<pre><code class="r">rhmkdir(&quot;/yourloginname/bin&quot;)
+hdfs.setwd(&quot;/yourloginname/bin&quot;)
+bashRhipeArchive(&quot;R.Pkg&quot;)
+</code></pre>
+
+<p><code>rhmkdir()</code> creates your directory <code>bin</code> in the directory <code>yourloginname</code>.
+<code>hdfs.setwd()</code> declares <code>/yourloginname/bin</code> to be the directory with your
+choice of installations.  <code>bashRhipeArchive()</code> creates the actual archive of
+your installations and names it as <code>MyBin</code>.</p>
+
+<p>Each time your R code will require the installations on the HDFS, you
+must in your R session run</p>
+
+<pre><code class="r">library(Rhipe) rhinit()
+rhoptions(zips = &quot;/myloginname/bin/R.Pkg.tar.gz&quot;)
+rhoptions(runner = &quot;sh ./R.Pkg/library/Rhipe/bin/RhipeMapReduce.sh&quot;)
+</code></pre>
+
+</div>
+
+
 <div class='tab-pane' id='the-data'>
 <h3>The Data</h3>
 
@@ -377,7 +482,9 @@ There are Hadoop commands that could be used directly to copy the file, but
 our promise to you is that you never need to use Hadoop commands. There is a
 a RHIPE function, <code>\rhput()</code> that will do it for you.</p>
 
-<pre><code class="r">rhput(&quot;/home/myusername/mydirectory/housing.txt&quot;, &quot;/yourloginname/housing/housing.txt&quot;)
+<p>rhmkdir(&quot;/yourloginname/housing&quot;)</p>
+
+<pre><code class="r">rhput(&quot;/home/myusername/mydRirectory/housing.txt&quot;, &quot;/yourloginname/housing/housing.txt&quot;)
 </code></pre>
 
 <p>The first argument specifies the full linux path of the text file on the R
@@ -2672,111 +2779,6 @@ Recombine computation type. And the &#39;S&#39; stands for the Serial Computatio
 <p>As we can see from the plot, the Divid and Recombine Computation by RHIPE has much more prevailing 
 advantages than the Serial Computation in R in the aspect of computation speed as well as the 
 computation ablity. </p>
-
-</div>
-
-
-<div class='tab-pane' id='background'>
-<h3>Background</h3>
-
-<p>You will likely want to install packages on your R
-session server, for example, R CRAN packages. And you want these packages to
-run on the Hadoop cluster as well. The mechanism for doing this is much like
-what you have been using for packages in R, but adds a push of the packages to
-the cluster nodes since you will want to use them there too. It is all quite
-simple.</p>
-
-<p>Standard R practice for a server with many R users is for a system
-administrator to install R for use by all. However, you can
-override this by installing your own version. It makes sense to follow this
-practice in this setting too, and have the systems administrators install R
-and <code>RHIPE</code> on the R session server and the Hadoop cluster.
-(The <code>RHIPE</code> installation manual for system administrators is available in
-these pages in the QuickStart section.) But you can override this and install
-your own <code>RHIPE</code> and R, and push them to
-the cluster along with any other packages you installed.
-You do need to be careful to check versions of R, <code>RHIPE</code>, and
-Hadoop for compatibility. The Tessera GitHub site has this information.</p>
-
-<p>Now suppose you are using RMR on the Amazon cloud or Vagrant, both
-discussed in our QuickStart section. Then installation of R
-and RHIPE on the R session server and the push to the cluster 
-has been taken care of for you. But if you want to install
-R CRAN packages or packages from other sources you will need to understand the
-installation mechanism.</p>
-
-<p>There are some other installation matters that are the sole domain of the
-system administrator. Obviously linux and Hadoop are. But also
-protocol buffers must be installed on the Hadoop cluster to enable <code>RHIPE</code>
-communication. In addition, if you want to use RStudio on the R session
-server, the system administrator will need to install RStudio server on the R
-session server. Now there is one caution here for both users and system
-administrators to consider.  You are best served if the linux versions you
-run are the same on the R server and cluster nodes, and also if the
-hardware is the same. The first is more critical, but the second is a
-nice bonus.  Part of the reason is that Java plays a critical roll in RHIPE,
-and Java likes homogeneity.</p>
-
-</div>
-
-
-<div class='tab-pane' id='install-and-push'>
-<h3>Install and Push</h3>
-
-<p>To install <code>Rhipe</code> on the R session server, you first download the package file
-from within R</p>
-
-<pre><code class="r">system(&quot;wget http://ml.stat.purdue.edu/rhipebin/Rhipe_0.74.0.tar.gz&quot;)
-</code></pre>
-
-<p>This puts the package in your R session directory.
-There are other versions of <code>Rhipe</code>. You will need to go to Github to find out
-about them.  To install the package on your R session server, run</p>
-
-<pre><code class="r">install.packages(&quot;testthat&quot;)
-install.packages(&quot;rJava&quot;)
-install.packages(&quot;Rhipe_0.74.0.tar.gz&quot;, repos=NULL, type=&quot;source&quot;)
-</code></pre>
-
-<p>The first two R CRAN packages are used only for <code>RHIPE</code> installation.
-You do not need them again until you reinstall.
-<code>RHIPE</code> is now installed. Each time you startup an R session and you
-want<code>RHIPE</code> to be available, you run</p>
-
-<pre><code class="r">library(Rhipe)
-rhinit()
-</code></pre>
-
-<p>Next, you push to the cluster HDFS the software you have installed on the R
-session server, choosing from among  R, <code>RHIPE</code> , and other R packages.
-First, you need the system administrator to configure the HDFS so
-you can do both this and other analysis tasks where you need to write to the
-HDFS. You need to have a directory on the HDFS where you have write permission.
-A common convention is for the administrator is to set up for you
-the directory <code>/yourloginname</code> using your login name, and do the same
-thing for other users. We will assume that has happened.</p>
-
-<p>Suppose in <code>/yourloginname</code> you want to create a directory <code>bin</code> on the
-HDFS where you will push your installations on the R session server. You can
-do this and carry out the push by</p>
-
-<pre><code class="r">rhmkdir(&quot;/yourloginname/bin&quot;)
-hdfs.setwd(&quot;/yourloginname/bin&quot;)
-bashRhipeArchive(&quot;R.Pkg&quot;)
-</code></pre>
-
-<p><code>rhmkdir()</code> creates your directory <code>bin</code> in the directory <code>yourloginname</code>.
-<code>hdfs.setwd()</code> declares <code>/yourloginname/bin</code> to be the directory with your
-choice of installations.  <code>bashRhipeArchive()</code> creates the actual archive of
-your installations and names it as <code>MyBin</code>.</p>
-
-<p>Each time your R code will require the installations on the HDFS, you
-must in your R session run</p>
-
-<pre><code class="r">library(Rhipe) rhinit()
-rhoptions(zips = &quot;/myloginname/bin/R.Pkg.tar.gz&quot;)
-rhoptions(runner = &quot;sh ./R.Pkg/library/Rhipe/bin/RhipeMapReduce.sh&quot;)
-</code></pre>
 
 </div>
 
