@@ -193,3 +193,5 @@ str(stateSubsets)
 
 We've now successfully divided our data into subsets and stored each subset as an R object.  
 They will persist on HDFS and be used for many analytic methods, each applied using `RHIPE`. 
+
+
