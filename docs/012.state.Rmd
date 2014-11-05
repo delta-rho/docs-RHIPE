@@ -1,75 +1,90 @@
 ### Read and Divide by State ###
 
-The first step in a D\&R analysis is to choose a division method and create subsets.  We'll
-divide the housing data by state. `RHIPE` allows us to read the raw text file on HDFS and 
-create a copy of the data broken into subsets using a MapReduce job.  The original data file
-will remain on HDFS. The data within each subset will be stored as R objects, rather than raw
-text.  This will allow us to apply subsequent data analytic and visual methods using familiar
-R commands.
+In the first study of the housing data we will divide the data by state so
+there will 49 subsets. Each subset will be a `dataframe` with six variables.
+The state variable is not there, of course, because there is only one value per
+subset, and so appears once on the data structure.
 
-In the MapReduce framework, we keep track of subsets as key-value pairs.  The key is a identifier for
-the subset.  It's usually a small data object, like a single number or character string.  There
-can be multiple subsets that share a common key.  The value is where we store the data.  For 
-example, it may be an R data frame.
+The first step is to read each line of the file 'house.txt' into R. By
+convention there are alreay key-values pairs for the text file.
+Each line is a key-value pair. The line number is the key. The value is the
+data for each line which are 7 observations of the 7 variables of the data,
+which consist of the data for one month and one county. However, when a line is
+read into R, each observation becomes type character.
 
-The map is a function applied to every key-value pair.  Its output is one or more key-value
-pairs, where the key may or may not have changed from the input key.  The output key-value 
-pairs of the map are sometimes called intermediate key-value pairs, because they will be the
-input to the reduce function.  The intermediate key-value pairs are grouped by key, and then
-the reduce function is applied to each group.  The output of the reduce function is again
-one or more key-value pairs.  `RHIPE` allows us to write the map and reduce functions in
-R code, using R objects for the keys and values.
+Each line is read as part of a Map R code written by the user.
+The output of the function is a
+key-value pair for each line. The key is the observed state variable for the
+line, and the value is the 6 observations of the other variables for the line.
+The Map outputs are the inputs for Reduce R code written by the user.
+Reduce assembles the line outputs into groups by state, and creates the
+subset `dataframe' object for each state, and then writes every object to a
+directory in the HDFS specfied by the user.
 
-A valid MapReduce job in Rhipe consists of a map expression, an optional reduce expression, 
-and an execution function `rhwatch()`.  If no reduce expression is given, the output of the
-map is the final output.
 
-#### Map ####
+#### The Map R Code ####
+
+Here is the R code.
 
 ```{r eval =FALSE, tidy=FALSE}
 map1 <- expression({
   lapply(seq_along(map.keys), function(r) {
-    line = strsplit(map.values[[r]], ",")[[1]]
-    key <- line[3]
-    value <- as.data.frame(rbind(line[-3]), stringsAsFactors = FALSE)
-    names(value) <- c(
+    line <- strsplit(map.values[[r]], ",")[[1]]
+    outputkey <- line[3]
+    outputvalue <- as.data.frame(rbind(line[-3]), stringsAsFactors = FALSE)
+    names(outputvalue) <- c(
       "FIPS", "county", "date", 
       "units", "list", "selling"
     )
-    value$list <- as.numeric(value$list)
-    value$selling <- as.numeric(value$selling)
-    value$units <- as.numeric(value$units)
+    inputvalue$units <- as.numeric(inputvalue$units)
+    inputvalue$list <- as.numeric(inputvalue$list)
+    inputvalue$selling <- as.numeric(inputvalue$selling)
     rhcollect(key, value)
   })
 })
 ```
+This code is really a `for loop`, but is done by `lapply()` because it is in
+general faster. But we could have used `for r in 1:length(map.keys)'.
+The loop proceeds throught the input keys, the line numbers, as specified by
+the first argument of `lapply`. The R `list` object `map.keys` contains them;
+it is created by the RHIPE R function that manages the running of the user Map
+and Reduce R code. We will show this function later.  The second argument of
+the above `lapply' defines the Map function with the
+argument `r`, an index for the Map keys that goes from 1 to `length(map.keys)`. 
 
-The input keys are line numbers in the housing data text file.  They are the elements of the list
-object `map.keys`.  The input values are the lines of text, which are the elements of the list 
-object `map.values`. This is the default when the input is a raw text file.  For each input key-value 
-pair, `rhcollect` emits an intermediate key-value pair, where the key is the state name (the third 
-field in the comma-separated line) and the value is all other fields in the line, stored as a data 
-frame with a single row.
+`map.values' is also a `list` object created by the `RHIPE` function;
+`map.values[[r]]` is the value for key `map.keys[[r]]`.
+The result of `line' in the `lapply` function is the input values, a
+string.  The function `strsplit()` takes those values into the individual
+observations of each text line, and creates a `list` of length one whose
+element is a vector of length 7 that becomes `line`. `key` is the state
+observation for the file line. `value` is a `dataframe` with one row and 6
+columns of the values of variables for the text line that omits the state.
 
-#### Reduce ####
+The RHIPE function `rhcollect()` forms a key-value for each line.
+
+#### The Reduce R Code ####
 
 ```{r eval=FALSE, tidy=FALSE}
 reduce1 <- expression(
   pre = {
-    oneState <- data.frame()
+    reduceoutputvalue <- data.frame()
   },
   reduce = {
-    oneState <- rbind(oneState, do.call(rbind, reduce.values))
+    reduceoutputvalue <- rbind(reduceoutputvalue, do.call(rbind, reduce.values))
   },
   post = {
-    attr(oneState, "state") <- reduce.key
-    rhcollect(reduce.key, oneState)
+    attr(reduceoutputvalue), "state") <- reduce.key
+    rhcollect(reduce.key, reduceoutputvalue)
   }
 )
 ```
 
-Between the map and reduce stages, the intermediate key-value pairs are grouped by key (the state name).
-The current group's key is available in the object `reduce.key`, and all values associated with that key
+`reduce.values` is a `list` object. Each element is the Reduce input values for
+one Reduce input key.
+
+Reduce groups the Map output key-value pairs are grouped by output key,
+the state name.  The current group's key is available in the object `reduce.key`, and all values associated with that key
 are elements of the list object `reduce.values`.  The reduce expression has three parts: `pre`, which is 
 executed once first; `reduce`, which is executed repeatedly until all intermediate values associated with
 the current key have been processed; and `post`, which is executed once at the end.  
