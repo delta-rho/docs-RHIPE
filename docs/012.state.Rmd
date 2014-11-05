@@ -1,9 +1,10 @@
 ### Read and Divide by State ###
 
 In the first study of the housing data we will divide the data by state so
-there will 49 subsets. Each subset will be a `dataframe` with six variables.
-The state variable is not there, of course, because there is only one value per
-subset, and so appears once on the data structure.
+there will 49 subsets. Each subset will be a `data.frame` object with six
+variables. The state variable is not there as a variable, of course, because
+there is only one value per subset; it appears on the object as an attribute
+with the name `state`.
 
 The first step is to read each line of the file 'house.txt' into R. By
 convention there are alreay key-values pairs for the text file.
@@ -31,28 +32,23 @@ map1 <- expression({
   lapply(seq_along(map.keys), function(r) {
     line <- strsplit(map.values[[r]], ",")[[1]]
     outputkey <- line[3]
-    outputvalue <- as.data.frame(rbind(line[-3]), stringsAsFactors = FALSE)
-    names(outputvalue) <- c(
-      "FIPS", "county", "date", 
-      "units", "list", "selling"
-    )
-    inputvalue$units <- as.numeric(inputvalue$units)
-    inputvalue$list <- as.numeric(inputvalue$list)
-    inputvalue$selling <- as.numeric(inputvalue$selling)
+    outputvalue <- data.frame(FIPS = line[1], county = line[2],
+date = as.numberic(line[4]), units =  as.numeric(line[5]), list =
+as.numeric(line[6]), selling = as.numeric(line[7])  stringsAsFactors = FALSE)
     rhcollect(key, value)
   })
 })
 ```
 This code is really a `for loop`, but is done by `lapply()` because it is in
-general faster. But we could have used `for r in 1:length(map.keys)'.
-The loop proceeds throught the input keys, the line numbers, as specified by
-the first argument of `lapply`. The R `list` object `map.keys` contains them;
-it is created by the RHIPE R function that manages the running of the user Map
-and Reduce R code. We will show this function later.  The second argument of
-the above `lapply' defines the Map function with the
+general faster. But we could have used `for r in 1:length(map.keys)`.
+The loop proceeds throught the input keys, which are the line numbers, as
+specified by the first argument of `lapply`. The R `list` object `map.keys`
+contains them; it is created by the RHIPE R function that manages the running
+of the user Map and Reduce R code. We will show this function later. The
+second argument of the above `lapply` defines the Map function with the
 argument `r`, an index for the Map keys that goes from 1 to `length(map.keys)`. 
 
-`map.values' is also a `list` object created by the `RHIPE` function;
+`map.values` is also a `list` object created by the `RHIPE` function;
 `map.values[[r]]` is the value for key `map.keys[[r]]`.
 The result of `line' in the `lapply` function is the input values, a
 string.  The function `strsplit()` takes those values into the individual
