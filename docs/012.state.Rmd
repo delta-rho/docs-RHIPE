@@ -32,9 +32,15 @@ map1 <- expression({
   lapply(seq_along(map.keys), function(r) {
     line <- strsplit(map.values[[r]], ",")[[1]]
     outputkey <- line[3]
-    outputvalue <- data.frame(FIPS = line[1], county = line[2],
-date = as.numberic(line[4]), units =  as.numeric(line[5]), list =
-as.numeric(line[6]), selling = as.numeric(line[7])  stringsAsFactors = FALSE)
+    outputvalue <- data.frame(
+		FIPS = line[1], 
+		county = line[2],
+		date = as.numberic(line[4]), 
+		units =  as.numeric(line[5]), 
+		list = as.numeric(line[6]), 
+		selling = as.numeric(line[7])  
+		stringsAsFactors = FALSE
+	)
     rhcollect(key, value)
   })
 })
@@ -50,7 +56,7 @@ argument `r`, an index for the Map keys that goes from 1 to `length(map.keys)`.
 
 `map.values` is also a `list` object created by the `RHIPE` function;
 `map.values[[r]]` is the value for key `map.keys[[r]]`.
-The result of `line' in the `lapply` function is the input values, a
+The result of `line` in the `lapply` function is the input values, a
 string.  The function `strsplit()` takes those values into the individual
 observations of each text line, and creates a `list` of length one whose
 element is a vector of length 7 that becomes `line`. `key` is the state
