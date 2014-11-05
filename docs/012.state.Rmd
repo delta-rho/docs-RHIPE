@@ -33,13 +33,13 @@ map1 <- expression({
     line <- strsplit(map.values[[r]], ",")[[1]]
     outputkey <- line[3]
     outputvalue <- data.frame(
-		FIPS = line[1], 
-		county = line[2],
-		date = as.numberic(line[4]), 
-		units =  as.numeric(line[5]), 
-		list = as.numeric(line[6]), 
-		selling = as.numeric(line[7])  
-		stringsAsFactors = FALSE
+	  FIPS = line[1], 
+	  county = line[2],
+	  date = as.numberic(line[4]), 
+	  units =  as.numeric(line[5]), 
+	  list = as.numeric(line[6]), 
+	  selling = as.numeric(line[7])  
+	  stringsAsFactors = FALSE
 	)
     rhcollect(key, value)
   })

@@ -85,11 +85,6 @@
       </li>
 
 
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#a-few-basic-hadoop-features'>A Few Basic Hadoop Features</a>
-      </li>
-
-
 <li class='nav-header unselectable' data-edit-href='001.install.Rmd'>Installing Packages</li>
       
       <li class='active'>
@@ -302,42 +297,6 @@ the R global environment of your R session. They become a dataset in .RData.
 While programming R and RHIPE is easy, it is not as easy as plain old serial R.
 The point is that a lot of data analysis can be carried out in just R even when
 the data are large and complex.</p>
-
-</div>
-
-
-<div class='tab-pane' id='a-few-basic-hadoop-features'>
-<h3>A Few Basic Hadoop Features</h3>
-
-<p>The two principal computational operations of Hadoop are Map and Reduce. The
-first runs parallel computations on subsets without communication among them.
-The second can compute across subset outputs. So Map carries out the
-analytic method computation. Reduce takes the outputs from Map
-and runs the recombination computation.
-A division is typically carried out both by Map and Reduce, sometimes each used
-several times,  and can occur as
-part of the reading of the data into R at the start of the analysis.</p>
-
-<p>Usage of Map and Reduce involves the critical Hadoop element of key-value
-pairs. We give one instance here. The Map operation, instructed by the
-analyst R code, puts a key on each subset
-output. This forms a key-value pair with the output as the value.
-Each output can have a unique key, or each key can be given to many
-outputs, or all outputs can have the same key. When Reduce is given the Map
-outputs, it assembles the key-value pairs by key, which forms groups,
-and then the R recombination code is applied to the values of each group
-independently; so the running of the code on the different groups is
-embarrassingly parallel. This framework provides substantial flexibility for
-the  recombination method.</p>
-
-<p>Hadoop attempts to optimize computation in a number of ways. One example is
-Map. Typically, there are vastly more subsets than cores on the cluster.
-For example, next, we will run the above example of logistic regression with
-\(r = 2^{20}\) subsets on a cluster with 242 cores for Hadoop.
-When Map finishes the application of the analytic method to a subset on a core,
-Hadoop seeks to assign a subset on the same node as the core to avoid
-transmission of the subset across the network connecting the nodes, which is
-more time consuming.</p>
 
 </div>
 
@@ -637,9 +596,15 @@ directory in the HDFS specfied by the user.</p>
   lapply(seq_along(map.keys), function(r) {
     line &lt;- strsplit(map.values[[r]], &quot;,&quot;)[[1]]
     outputkey &lt;- line[3]
-    outputvalue &lt;- data.frame(FIPS = line[1], county = line[2],
-date = as.numberic(line[4]), units =  as.numeric(line[5]), list =
-as.numeric(line[6]), selling = as.numeric(line[7])  stringsAsFactors = FALSE)
+    outputvalue &lt;- data.frame(
+      FIPS = line[1], 
+      county = line[2],
+      date = as.numberic(line[4]), 
+      units =  as.numeric(line[5]), 
+      list = as.numeric(line[6]), 
+      selling = as.numeric(line[7])  
+      stringsAsFactors = FALSE
+    )
     rhcollect(key, value)
   })
 })
@@ -656,11 +621,11 @@ argument <code>r</code>, an index for the Map keys that goes from 1 to <code>len
 
 <p><code>map.values</code> is also a <code>list</code> object created by the <code>RHIPE</code> function;
 <code>map.values[[r]]</code> is the value for key <code>map.keys[[r]]</code>.
-The result of <code>line&#39; in the</code>lapply<code>function is the input values, a
-string.  The function</code>strsplit()<code>takes those values into the individual
-observations of each text line, and creates a</code>list<code>of length one whose
-element is a vector of length 7 that becomes</code>line<code>.</code>key<code>is the state
-observation for the file line.</code>value<code>is a</code>dataframe` with one row and 6
+The result of <code>line</code> in the <code>lapply</code> function is the input values, a
+string.  The function <code>strsplit()</code> takes those values into the individual
+observations of each text line, and creates a <code>list</code> of length one whose
+element is a vector of length 7 that becomes <code>line</code>. <code>key</code> is the state
+observation for the file line. <code>value</code> is a <code>dataframe</code> with one row and 6
 columns of the values of variables for the text line that omits the state.</p>
 
 <p>The RHIPE function <code>rhcollect()</code> forms a key-value for each line.</p>
