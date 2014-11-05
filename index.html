@@ -608,9 +608,10 @@ on HDFS.</p>
 <h3>Read and Divide by State</h3>
 
 <p>In the first study of the housing data we will divide the data by state so
-there will 49 subsets. Each subset will be a <code>dataframe</code> with six variables.
-The state variable is not there, of course, because there is only one value per
-subset, and so appears once on the data structure.</p>
+there will 49 subsets. Each subset will be a <code>data.frame</code> object with six
+variables. The state variable is not there as a variable, of course, because
+there is only one value per subset; it appears on the object as an attribute
+with the name <code>state</code>.</p>
 
 <p>The first step is to read each line of the file &#39;house.txt&#39; into R. By
 convention there are alreay key-values pairs for the text file.
@@ -636,35 +637,30 @@ directory in the HDFS specfied by the user.</p>
   lapply(seq_along(map.keys), function(r) {
     line &lt;- strsplit(map.values[[r]], &quot;,&quot;)[[1]]
     outputkey &lt;- line[3]
-    outputvalue &lt;- as.data.frame(rbind(line[-3]), stringsAsFactors = FALSE)
-    names(outputvalue) &lt;- c(
-      &quot;FIPS&quot;, &quot;county&quot;, &quot;date&quot;, 
-      &quot;units&quot;, &quot;list&quot;, &quot;selling&quot;
-    )
-    inputvalue$units &lt;- as.numeric(inputvalue$units)
-    inputvalue$list &lt;- as.numeric(inputvalue$list)
-    inputvalue$selling &lt;- as.numeric(inputvalue$selling)
+    outputvalue &lt;- data.frame(FIPS = line[1], county = line[2],
+date = as.numberic(line[4]), units =  as.numeric(line[5]), list =
+as.numeric(line[6]), selling = as.numeric(line[7])  stringsAsFactors = FALSE)
     rhcollect(key, value)
   })
 })
 </code></pre>
 
 <p>This code is really a <code>for loop</code>, but is done by <code>lapply()</code> because it is in
-general faster. But we could have used <code>for r in 1:length(map.keys)&#39;.
-The loop proceeds throught the input keys, the line numbers, as specified by
-the first argument of</code>lapply<code>. The R</code>list<code>object</code>map.keys<code>contains them;
-it is created by the RHIPE R function that manages the running of the user Map
-and Reduce R code. We will show this function later.  The second argument of
-the above</code>lapply&#39; defines the Map function with the
+general faster. But we could have used <code>for r in 1:length(map.keys)</code>.
+The loop proceeds throught the input keys, which are the line numbers, as
+specified by the first argument of <code>lapply</code>. The R <code>list</code> object <code>map.keys</code>
+contains them; it is created by the RHIPE R function that manages the running
+of the user Map and Reduce R code. We will show this function later. The
+second argument of the above <code>lapply</code> defines the Map function with the
 argument <code>r</code>, an index for the Map keys that goes from 1 to <code>length(map.keys)</code>. </p>
 
-<p><code>map.values&#39; is also a</code>list<code>object created by the</code>RHIPE<code>function;
-</code>map.values[[r]]<code>is the value for key</code>map.keys[[r]]<code>.
-The result of</code>line&#39; in the <code>lapply</code> function is the input values, a
-string.  The function <code>strsplit()</code> takes those values into the individual
-observations of each text line, and creates a <code>list</code> of length one whose
-element is a vector of length 7 that becomes <code>line</code>. <code>key</code> is the state
-observation for the file line. <code>value</code> is a <code>dataframe</code> with one row and 6
+<p><code>map.values</code> is also a <code>list</code> object created by the <code>RHIPE</code> function;
+<code>map.values[[r]]</code> is the value for key <code>map.keys[[r]]</code>.
+The result of <code>line&#39; in the</code>lapply<code>function is the input values, a
+string.  The function</code>strsplit()<code>takes those values into the individual
+observations of each text line, and creates a</code>list<code>of length one whose
+element is a vector of length 7 that becomes</code>line<code>.</code>key<code>is the state
+observation for the file line.</code>value<code>is a</code>dataframe` with one row and 6
 columns of the values of variables for the text line that omits the state.</p>
 
 <p>The RHIPE function <code>rhcollect()</code> forms a key-value for each line.</p>
