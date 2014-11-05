@@ -63,7 +63,7 @@
    
    <div class="col-md-3 well">
    <ul class = "nav nav-list" id="toc">
-   <li class='nav-header unselectable' data-edit-href='00.setup.Rmd'>The R, RHIPE, Hadoop Setting</li>
+   <li class='nav-header unselectable' data-edit-href='000.setup.Rmd'>The R, RHIPE, Hadoop Setting</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#overview'>Overview</a>
@@ -85,6 +85,11 @@
       </li>
 
 
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#a-few-basic-hadoop-features'>A Few Basic Hadoop Features</a>
+      </li>
+
+
 <li class='nav-header unselectable' data-edit-href='001.install.Rmd'>Installing Packages</li>
       
       <li class='active'>
@@ -97,7 +102,7 @@
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='01.housing.Rmd'>Housing Data</li>
+<li class='nav-header unselectable' data-edit-href='010.housing.Rmd'>Housing Data</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#the-data'>The Data</a>
@@ -159,7 +164,7 @@
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='05.performance.Rmd'>Measuring Cluster Performance</li>
+<li class='nav-header unselectable' data-edit-href='050.performance.Rmd'>Measuring Cluster Performance</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#introduction-of-the-single-run-of-the-performance'>Introduction of the Single Run of the Performance</a>
@@ -186,7 +191,7 @@
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='06.experiment.Rmd'>A Cluster Performance Experiment</li>
+<li class='nav-header unselectable' data-edit-href='060.experiment.Rmd'>A Cluster Performance Experiment</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#introduction'>Introduction</a>
@@ -297,6 +302,42 @@ the R global environment of your R session. They become a dataset in .RData.
 While programming R and RHIPE is easy, it is not as easy as plain old serial R.
 The point is that a lot of data analysis can be carried out in just R even when
 the data are large and complex.</p>
+
+</div>
+
+
+<div class='tab-pane' id='a-few-basic-hadoop-features'>
+<h3>A Few Basic Hadoop Features</h3>
+
+<p>The two principal computational operations of Hadoop are Map and Reduce. The
+first runs parallel computations on subsets without communication among them.
+The second can compute across subset outputs. So Map carries out the
+analytic method computation. Reduce takes the outputs from Map
+and runs the recombination computation.
+A division is typically carried out both by Map and Reduce, sometimes each used
+several times,  and can occur as
+part of the reading of the data into R at the start of the analysis.</p>
+
+<p>Usage of Map and Reduce involves the critical Hadoop element of key-value
+pairs. We give one instance here. The Map operation, instructed by the
+analyst R code, puts a key on each subset
+output. This forms a key-value pair with the output as the value.
+Each output can have a unique key, or each key can be given to many
+outputs, or all outputs can have the same key. When Reduce is given the Map
+outputs, it assembles the key-value pairs by key, which forms groups,
+and then the R recombination code is applied to the values of each group
+independently; so the running of the code on the different groups is
+embarrassingly parallel. This framework provides substantial flexibility for
+the  recombination method.</p>
+
+<p>Hadoop attempts to optimize computation in a number of ways. One example is
+Map. Typically, there are vastly more subsets than cores on the cluster.
+For example, next, we will run the above example of logistic regression with
+\(r = 2^{20}\) subsets on a cluster with 242 cores for Hadoop.
+When Map finishes the application of the analytic method to a subset on a core,
+Hadoop seeks to assign a subset on the same node as the core to avoid
+transmission of the subset across the network connecting the nodes, which is
+more time consuming.</p>
 
 </div>
 
@@ -480,11 +521,9 @@ Suppose the path name of this directory is</p>
 HDFS as a text file, so we can read it into R on the cluster.
 There are Hadoop commands that could be used directly to copy the file, but
 our promise to you is that you never need to use Hadoop commands. There is a
-a RHIPE function, <code>\rhput()</code> that will do it for you.</p>
+a RHIPE function, <code>rhput()</code> that will do it for you.</p>
 
-<p>rhmkdir(&quot;/yourloginname/housing&quot;)</p>
-
-<pre><code class="r">rhput(&quot;/home/myusername/mydRirectory/housing.txt&quot;, &quot;/yourloginname/housing/housing.txt&quot;)
+<pre><code class="r">rhput(&quot;/home/myusername/mydirectory/housing.txt&quot;, &quot;/yourloginname/housing/housing.txt&quot;)
 </code></pre>
 
 <p>The first argument specifies the full linux path of the text file on the R
@@ -568,74 +607,89 @@ on HDFS.</p>
 <div class='tab-pane' id='read-and-divide-by-state'>
 <h3>Read and Divide by State</h3>
 
-<p>The first step in a D&amp;R analysis is to choose a division method and create subsets.  We&#39;ll
-divide the housing data by state. <code>RHIPE</code> allows us to read the raw text file on HDFS and 
-create a copy of the data broken into subsets using a MapReduce job.  The original data file
-will remain on HDFS. The data within each subset will be stored as R objects, rather than raw
-text.  This will allow us to apply subsequent data analytic and visual methods using familiar
-R commands.</p>
+<p>In the first study of the housing data we will divide the data by state so
+there will 49 subsets. Each subset will be a <code>dataframe</code> with six variables.
+The state variable is not there, of course, because there is only one value per
+subset, and so appears once on the data structure.</p>
 
-<p>In the MapReduce framework, we keep track of subsets as key-value pairs.  The key is a identifier for
-the subset.  It&#39;s usually a small data object, like a single number or character string.  There
-can be multiple subsets that share a common key.  The value is where we store the data.  For 
-example, it may be an R data frame.</p>
+<p>The first step is to read each line of the file &#39;house.txt&#39; into R. By
+convention there are alreay key-values pairs for the text file.
+Each line is a key-value pair. The line number is the key. The value is the
+data for each line which are 7 observations of the 7 variables of the data,
+which consist of the data for one month and one county. However, when a line is
+read into R, each observation becomes type character.</p>
 
-<p>The map is a function applied to every key-value pair.  Its output is one or more key-value
-pairs, where the key may or may not have changed from the input key.  The output key-value 
-pairs of the map are sometimes called intermediate key-value pairs, because they will be the
-input to the reduce function.  The intermediate key-value pairs are grouped by key, and then
-the reduce function is applied to each group.  The output of the reduce function is again
-one or more key-value pairs.  <code>RHIPE</code> allows us to write the map and reduce functions in
-R code, using R objects for the keys and values.</p>
+<p>Each line is read as part of a Map R code written by the user.
+The output of the function is a
+key-value pair for each line. The key is the observed state variable for the
+line, and the value is the 6 observations of the other variables for the line.
+The Map outputs are the inputs for Reduce R code written by the user.
+Reduce assembles the line outputs into groups by state, and creates the
+subset `dataframe&#39; object for each state, and then writes every object to a
+directory in the HDFS specfied by the user.</p>
 
-<p>A valid MapReduce job in Rhipe consists of a map expression, an optional reduce expression, 
-and an execution function <code>rhwatch()</code>.  If no reduce expression is given, the output of the
-map is the final output.</p>
+<h4>The Map R Code</h4>
 
-<h4>Map</h4>
+<p>Here is the R code.</p>
 
 <pre><code class="r">map1 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
-    line = strsplit(map.values[[r]], &quot;,&quot;)[[1]]
-    key &lt;- line[3]
-    value &lt;- as.data.frame(rbind(line[-3]), stringsAsFactors = FALSE)
-    names(value) &lt;- c(
+    line &lt;- strsplit(map.values[[r]], &quot;,&quot;)[[1]]
+    outputkey &lt;- line[3]
+    outputvalue &lt;- as.data.frame(rbind(line[-3]), stringsAsFactors = FALSE)
+    names(outputvalue) &lt;- c(
       &quot;FIPS&quot;, &quot;county&quot;, &quot;date&quot;, 
       &quot;units&quot;, &quot;list&quot;, &quot;selling&quot;
     )
-    value$list &lt;- as.numeric(value$list)
-    value$selling &lt;- as.numeric(value$selling)
-    value$units &lt;- as.numeric(value$units)
+    inputvalue$units &lt;- as.numeric(inputvalue$units)
+    inputvalue$list &lt;- as.numeric(inputvalue$list)
+    inputvalue$selling &lt;- as.numeric(inputvalue$selling)
     rhcollect(key, value)
   })
 })
 </code></pre>
 
-<p>The input keys are line numbers in the housing data text file.  They are the elements of the list
-object <code>map.keys</code>.  The input values are the lines of text, which are the elements of the list 
-object <code>map.values</code>. This is the default when the input is a raw text file.  For each input key-value 
-pair, <code>rhcollect</code> emits an intermediate key-value pair, where the key is the state name (the third 
-field in the comma-separated line) and the value is all other fields in the line, stored as a data 
-frame with a single row.</p>
+<p>This code is really a <code>for loop</code>, but is done by <code>lapply()</code> because it is in
+general faster. But we could have used <code>for r in 1:length(map.keys)&#39;.
+The loop proceeds throught the input keys, the line numbers, as specified by
+the first argument of</code>lapply<code>. The R</code>list<code>object</code>map.keys<code>contains them;
+it is created by the RHIPE R function that manages the running of the user Map
+and Reduce R code. We will show this function later.  The second argument of
+the above</code>lapply&#39; defines the Map function with the
+argument <code>r</code>, an index for the Map keys that goes from 1 to <code>length(map.keys)</code>. </p>
 
-<h4>Reduce</h4>
+<p><code>map.values&#39; is also a</code>list<code>object created by the</code>RHIPE<code>function;
+</code>map.values[[r]]<code>is the value for key</code>map.keys[[r]]<code>.
+The result of</code>line&#39; in the <code>lapply</code> function is the input values, a
+string.  The function <code>strsplit()</code> takes those values into the individual
+observations of each text line, and creates a <code>list</code> of length one whose
+element is a vector of length 7 that becomes <code>line</code>. <code>key</code> is the state
+observation for the file line. <code>value</code> is a <code>dataframe</code> with one row and 6
+columns of the values of variables for the text line that omits the state.</p>
+
+<p>The RHIPE function <code>rhcollect()</code> forms a key-value for each line.</p>
+
+<h4>The Reduce R Code</h4>
 
 <pre><code class="r">reduce1 &lt;- expression(
   pre = {
-    oneState &lt;- data.frame()
+    reduceoutputvalue &lt;- data.frame()
   },
   reduce = {
-    oneState &lt;- rbind(oneState, do.call(rbind, reduce.values))
+    reduceoutputvalue &lt;- rbind(reduceoutputvalue, do.call(rbind, reduce.values))
   },
   post = {
-    attr(oneState, &quot;state&quot;) &lt;- reduce.key
-    rhcollect(reduce.key, oneState)
+    attr(reduceoutputvalue), &quot;state&quot;) &lt;- reduce.key
+    rhcollect(reduce.key, reduceoutputvalue)
   }
 )
 </code></pre>
 
-<p>Between the map and reduce stages, the intermediate key-value pairs are grouped by key (the state name).
-The current group&#39;s key is available in the object <code>reduce.key</code>, and all values associated with that key
+<p><code>reduce.values</code> is a <code>list</code> object. Each element is the Reduce input values for
+one Reduce input key.</p>
+
+<p>Reduce groups the Map output key-value pairs are grouped by output key,
+the state name.  The current group&#39;s key is available in the object <code>reduce.key</code>, and all values associated with that key
 are elements of the list object <code>reduce.values</code>.  The reduce expression has three parts: <code>pre</code>, which is 
 executed once first; <code>reduce</code>, which is executed repeatedly until all intermediate values associated with
 the current key have been processed; and <code>post</code>, which is executed once at the end.  </p>
@@ -730,7 +784,7 @@ are in no particular order.    </p>
   .. ..- attr(*, &quot;state&quot;)= chr &quot;WV&quot;
  $ :List of 2
   ..$ : chr &quot;KY&quot;
-  ..$ :&#39;data.frame&#39;:    7458 obs. of  6 variables:
+  ..$ :&#39;data.frame&#39;:  7458 obs. of  6 variables:
   .. ..$ FIPS   : chr [1:7458] &quot;21173&quot; &quot;21173&quot; &quot;21155&quot; &quot;21155&quot; ...
   .. ..$ county : chr [1:7458] &quot;Montgomery&quot; &quot;Montgomery&quot; &quot;Marion&quot; &quot;Marion&quot; ...
   .. ..$ date   : chr [1:7458] &quot;2&quot; &quot;1&quot; &quot;66&quot; &quot;65&quot; ...
