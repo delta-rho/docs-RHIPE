@@ -1,3 +1,5 @@
+## Various RHIPE Issues ##
+
 ### Manage RHIPE Jobs ###
 
 As you submit more `RHIPE` jobs, you'll need to check their status and manage them.  In this short
@@ -52,3 +54,7 @@ rhkill(badjob)
 ```
 
 You can call `rhstatus` again to see that the job is now in state `KILLED`
+
+### HDFS File Mangement ###
+
+### Rule for Subset Size ###
