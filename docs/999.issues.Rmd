@@ -68,7 +68,7 @@ rhls("/yourloginname/housing")
 ```
   permission owner      group     size          modtime                                  file
 1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29       /yourloginname/housing/byCounty
-2 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16   /yourloginname/housing/meanByCounty
+2 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
 3 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
 ```
 
@@ -85,7 +85,7 @@ rhls("/yourloginname/housing")
 ```
 ```
   permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16   /yourloginname/housing/meanByCounty
+1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
 2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
 ```
 
@@ -112,7 +112,7 @@ rhls("/yourloginname/housing/")
 ```
 ```
   permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
+1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16         /ln/tongx/housing/CountyStats
 2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
 3 drwxrwxrwt tongx supergroup        0 2014-09-30 15:25                 /ln/tongx/housing/tmp
 4 drwxrwxrwt tongx supergroup        0 2014-09-30 15:28                /ln/tongx/housing/tmp2
