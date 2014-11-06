@@ -13,8 +13,8 @@ map13 <- expression(
 )
 mr13 <- rhwatch(
   map      = map13,
-  input    = rhfmt("/ln/tongx/housing/housing.txt", type = "text"),
-  output   = rhfmt("/ln/tongx/housing/tmp", type = "sequence"),
+  input    = rhfmt("/yourloginname/housing/housing.txt", type = "text"),
+  output   = rhfmt("/yourloginname/housing/tmp", type = "sequence"),
   mapred   = list(
     mapred.reduce.tasks = 0
   ),
@@ -56,5 +56,69 @@ rhkill(badjob)
 You can call `rhstatus` again to see that the job is now in state `KILLED`
 
 ### HDFS File Mangement ###
+
+We can delete, move and copy files on HDFS by using diffferent `RHIPE` functions, and we 
+will illustrate how to do them in the following session.
+
+We can use `rhls()` to see that what we've already had in the `/yourloginname/housing` direcotry:
+
+```{r eval=FALSE, tidy=FALSE}
+rhls("/yourloginname/housing")
+```
+```
+  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29       /yourloginname/housing/byCounty
+2 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16   /yourloginname/housing/meanByCounty
+3 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
+```
+
+We can delete a direcoty or a file with the `rhdel()` function:
+
+```{r eval=FALSE, tidy=FALSE}
+rhdel("/yourloginname/housing/byCounty")
+```
+
+And we can use `rhls` again to see that we were successful:
+
+```{r eval=FALSE, tidy=FALSE}
+rhls("/yourloginname/housing")
+```
+```
+  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16   /yourloginname/housing/meanByCounty
+2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
+```
+
+As long as we're talking about HDFS file management, let's try out a few more functions.  Suppose
+we want to make a copy of the original text file on the HDFS.  We can use the
+`rhcp` function.  It takes two arguments.  The first is the source, or the directory on HDFS we 
+want to copy.  The second is the target, or location for the new copy.
+
+```{r eval=FALSE, tidy=FALSE}
+rhcp("/yourloginname/housing/housing.txt", "/yourloginname/housing/tmp/housing.txt")
+rhls("/yourloginname/housing/tmp")
+```
+```
+  permission owner      group     size          modtime                                   file
+1 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-30 15:25 /yourloginname/housing/tmp/housing.txt
+```
+
+We can use `rhmv` to move the text file to a different folder.  This
+function also takes two arguments, just like `rhcp`.
+
+```{r eval=FALSE, tidy=FALSE}
+rhmv("/yourloginname/housing/tmp/housing.txt", "/yourloginname/housing/tmp2/housing.txt")
+rhls("/yourloginname/housing/")
+```
+```
+  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
+2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
+3 drwxrwxrwt tongx supergroup        0 2014-09-30 15:25                 /ln/tongx/housing/tmp
+4 drwxrwxrwt tongx supergroup        0 2014-09-30 15:28                /ln/tongx/housing/tmp2
+```
+
+That's enough file management.  Now let's recreate the division by state from the division by 
+county, which is still on the HDFS.
 
 ### Rule for Subset Size ###

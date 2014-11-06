@@ -110,52 +110,12 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#read-and-divide-by-state'>Read and Divide by State</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#compute-state-means'>Compute State Means</a>
-      </li>
-
-
-      <li class='active'>
          <a target='_self' class='nav-not-header' href='#read-and-divide-by-county'>Read and Divide by County</a>
       </li>
 
 
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#compute-county-means'>Compute County Means</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#read-and-divide-by-date'>Read and Divide by Date</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#compute-total-sold-units'>Compute Total Sold Units</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#division-by-state-from-county-division'>Division by State from County Division</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#access-subset-by-state'>Access Subset by State</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#plots-by-state'>Plots by State</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#manage-rhipe-jobs'>Manage RHIPE Jobs</a>
       </li>
 
 
@@ -210,6 +170,23 @@
 
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#summary'>Summary</a>
+      </li>
+
+
+<li class='nav-header unselectable' data-edit-href='999.issues.Rmd'>Various RHIPE Issues</li>
+      
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#manage-rhipe-jobs'>Manage RHIPE Jobs</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#hdfs-file-mangement'>HDFS File Mangement</a>
+      </li>
+
+
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#rule-for-subset-size'>Rule for Subset Size</a>
       </li>
 
    </ul>
@@ -563,386 +540,6 @@ on HDFS.</p>
 </div>
 
 
-<div class='tab-pane' id='read-and-divide-by-state'>
-<h3>Read and Divide by State</h3>
-
-<p>In the first study of the housing data we will divide the data by state so
-there will 49 subsets. Each subset will be a <code>data.frame</code> object with six
-variables. The state variable is not there as a variable, of course, because
-there is only one value per subset; it appears on the object as an attribute
-with the name <code>state</code>.</p>
-
-<p>The first step is to read each line of the file &#39;house.txt&#39; into R. By
-convention there are alreay key-values pairs for the text file.
-Each line is a key-value pair. The line number is the key. The value is the
-data for each line which are 7 observations of the 7 variables of the data,
-which consist of the data for one month and one county. However, when a line is
-read into R, each observation becomes type character.</p>
-
-<p>Each line is read as part of a Map R code written by the user.
-The output of the function is a
-key-value pair for each line. The key is the observed state variable for the
-line, and the value is the 6 observations of the other variables for the line.
-The Map outputs are the inputs for Reduce R code written by the user.
-Reduce assembles the line outputs into groups by state, and creates the
-subset `dataframe&#39; object for each state, and then writes every object to a
-directory in the HDFS specfied by the user.</p>
-
-<h4>The Map R Code</h4>
-
-<p>Here is the R code.</p>
-
-<pre><code class="r">map1 &lt;- expression({
-  lapply(seq_along(map.keys), function(r) {
-    line &lt;- strsplit(map.values[[r]], &quot;,&quot;)[[1]]
-    outputkey &lt;- line[3]
-    outputvalue &lt;- data.frame(
-      FIPS = line[1], 
-      county = line[2],
-      date = as.numberic(line[4]), 
-      units =  as.numeric(line[5]), 
-      list = as.numeric(line[6]), 
-      selling = as.numeric(line[7])  
-      stringsAsFactors = FALSE
-    )
-    rhcollect(key, value)
-  })
-})
-</code></pre>
-
-<p>This code is really a <code>for loop</code>, but is done by <code>lapply()</code> because it is in
-general faster. But we could have used <code>for r in 1:length(map.keys)</code>.
-The loop proceeds throught the input keys, which are the line numbers, as
-specified by the first argument of <code>lapply</code>. The R <code>list</code> object <code>map.keys</code>
-contains them; it is created by the RHIPE R function that manages the running
-of the user Map and Reduce R code. We will show this function later. The
-second argument of the above <code>lapply</code> defines the Map function with the
-argument <code>r</code>, an index for the Map keys that goes from 1 to <code>length(map.keys)</code>. </p>
-
-<p><code>map.values</code> is also a <code>list</code> object created by the <code>RHIPE</code> function;
-<code>map.values[[r]]</code> is the value for key <code>map.keys[[r]]</code>.
-The result of <code>line</code> in the <code>lapply</code> function is the input values, a
-string.  The function <code>strsplit()</code> takes those values into the individual
-observations of each text line, and creates a <code>list</code> of length one whose
-element is a vector of length 7 that becomes <code>line</code>. <code>key</code> is the state
-observation for the file line. <code>value</code> is a <code>dataframe</code> with one row and 6
-columns of the values of variables for the text line that omits the state.</p>
-
-<p>The RHIPE function <code>rhcollect()</code> forms a key-value for each line.</p>
-
-<h4>The Reduce R Code</h4>
-
-<pre><code class="r">reduce1 &lt;- expression(
-  pre = {
-    reduceoutputvalue &lt;- data.frame()
-  },
-  reduce = {
-    reduceoutputvalue &lt;- rbind(reduceoutputvalue, do.call(rbind, reduce.values))
-  },
-  post = {
-    attr(reduceoutputvalue), &quot;state&quot;) &lt;- reduce.key
-    rhcollect(reduce.key, reduceoutputvalue)
-  }
-)
-</code></pre>
-
-<p><code>reduce.values</code> is a <code>list</code> object. Each element is the Reduce input values for
-one Reduce input key.</p>
-
-<p>Reduce groups the Map output key-value pairs are grouped by output key,
-the state name.  The current group&#39;s key is available in the object <code>reduce.key</code>, and all values associated with that key
-are elements of the list object <code>reduce.values</code>.  The reduce expression has three parts: <code>pre</code>, which is 
-executed once first; <code>reduce</code>, which is executed repeatedly until all intermediate values associated with
-the current key have been processed; and <code>post</code>, which is executed once at the end.  </p>
-
-<p>In the reduce expression above, our goal is to combine all observations associated with one particular
-state into a single data frame.  In <code>pre</code>, we initialize an empty data frame, <code>oneState</code>.  In <code>reduce</code>, 
-we use <code>rbind</code>
-to combine all observations associated with one particular state.  In <code>post</code>, we add an attribute to the
-data frame containing the state name and emit the final key-value
-pair.  The key is the state name, and the value is the data frame with all observations belonging to
-that state.  These final key-value pairs are written to HDFS, and will persist for subsequent analyses.</p>
-
-<h4>Execution Function</h4>
-
-<pre><code class="r">mr1 &lt;- rhwatch(
-  map      = map1,
-  reduce   = reduce1,
-  input    = rhfmt(&quot;/ln/tongx/housing/housing.txt&quot;, type = &quot;text&quot;),
-  output   = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
-  mapred   = list(
-    mapred.reduce.tasks = 10
-  ),
-  readback = FALSE
-)
-</code></pre>
-
-<p>The <code>rhwatch</code> function packages and executes our <code>RHIPE</code> MapReduce job.  In addition to the <code>map</code> and
-<code>reduce</code> expressions created above, we specify the HDFS locations of the input and output for this
-MapReduce job.  The input is the location where we stored our raw text file using <code>rhput</code> in the
-previous section.  The output is any location on HDFS we choose.  Be careful, as any existing data
-in the output location will be overwritten.</p>
-
-<p>The <code>mapred</code> argument contains optional configuration parameters for the MapReduce job.  In this
-case, we&#39;ve specified 10 reduce tasks using <code>mapred.reduce.tasks</code>.  This means that of the 49 groups
-of key-value pairs corresponding to the 49 states in our data set, 10 at a time will be processed
-in parallel.  Specifying 10 reduce tasks also means that the output written to HDFS will be broken
-into 10 files (we&#39;ll come back to this point in the next section).  Finally, <code>readback = FALSE</code> 
-tells <code>RHIPE</code> not to read the final output from HDFS into global environment of our interactive R 
-session.  We&#39;ll do that with a separate command. </p>
-
-<pre><code>Saving 1 parameter to /tmp/rhipe-temp-params-bbb96e029776c9953476a54c74d9eaf7 (use rhclean to delete all temp files)
-[Thu Sep 18 22:25:52 2014] Name:2014-09-18 22:25:52 Job: job_201405301308_4709  State: PREP Duration: 0.203
-URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4709
-       pct numtasks pending running complete killed failed_attempts killed_attempts
-map      0        1       1       0        0      0               0               0
-reduce   0       10      10       0        0      0               0               0
-Waiting 5 seconds
-[Thu Sep 18 22:25:57 2014] Name:2014-09-18 22:25:52 Job: job_201405301308_4709  State: RUNNING Duration: 5.24
-URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4709
-       pct numtasks pending running complete killed failed_attempts killed_attempts
-map      0        1       0       1        0      0               0               0
-reduce   0       10      10       0        0      0               0               0
-Waiting 5 seconds
-</code></pre>
-
-<p>After our job has completed successfully, the output will be in the location we specified on the HDFS.
-Since this data set is quite small, we can read the whole thing from HDFS into our interactive R
-environment using <code>rhread</code>.  All we have to specify is the HDFS location we wish to read from.</p>
-
-<pre><code class="r">stateSubsets &lt;- rhread(&quot;/ln/tongx/housing/byState&quot;)
-</code></pre>
-
-<pre><code>Read 49 objects(13.52 MB) in 1.41 seconds
-</code></pre>
-
-<p><code>RHIPE</code> conveniently packages the key-value pairs in our HDFS output location as a nested list, which we&#39;ve
-assigned to the variable <code>stateSubsets</code>.  Since there were 49 key-value pairs in the output of our reduce
-stage, there are 49 elements in <code>stateSubsets</code>.  Each element is itself a list with two elements: a key
-and a value.  In this case, the keys are character strings containing the state names, and the 
-values are data frames, just as they should be based on our reduce code.</p>
-
-<p>We can take a look at the data frame contained in the first key-value pair.  The key-value pairs
-are in no particular order.    </p>
-
-<pre><code class="r">head(stateSubsets[[1]][[2]])
-</code></pre>
-
-<p>We can also look at the structure of <code>stateSubsets</code> and confirm that it&#39;s what we expected.</p>
-
-<pre><code class="r">str(stateSubsets)
-</code></pre>
-
-<pre><code> $ :List of 2
-  ..$ : chr &quot;WV&quot;
-  ..$ :&#39;data.frame&#39;:  3630 obs. of  6 variables:
-  .. ..$ FIPS   : chr [1:3630] &quot;54103&quot; &quot;54103&quot; &quot;54033&quot; &quot;54051&quot; ...
-  .. ..$ county : chr [1:3630] &quot;Wetzel&quot; &quot;Wetzel&quot; &quot;Harrison&quot; &quot;Marshall&quot; ...
-  .. ..$ date   : chr [1:3630] &quot;65&quot; &quot;66&quot; &quot;66&quot; &quot;1&quot; ...
-  .. ..$ units  : num [1:3630] NA NA NA NA NA NA NA NA NA NA ...
-  .. ..$ list   : num [1:3630] 57.9 52.7 91.4 67 63.8 ...
-  .. ..$ selling: num [1:3630] NA NA NA NA NA NA NA NA NA NA ...
-  .. ..- attr(*, &quot;state&quot;)= chr &quot;WV&quot;
- $ :List of 2
-  ..$ : chr &quot;KY&quot;
-  ..$ :&#39;data.frame&#39;:  7458 obs. of  6 variables:
-  .. ..$ FIPS   : chr [1:7458] &quot;21173&quot; &quot;21173&quot; &quot;21155&quot; &quot;21155&quot; ...
-  .. ..$ county : chr [1:7458] &quot;Montgomery&quot; &quot;Montgomery&quot; &quot;Marion&quot; &quot;Marion&quot; ...
-  .. ..$ date   : chr [1:7458] &quot;2&quot; &quot;1&quot; &quot;66&quot; &quot;65&quot; ...
-  .. ..$ units  : num [1:7458] NA NA NA NA NA NA NA NA NA NA ...
-  .. ..$ list   : num [1:7458] 76 80.2 60.6 71.5 72.5 ...
-  .. ..$ selling: num [1:7458] NA NA NA NA NA NA NA NA NA NA ...
-  .. ..- attr(*, &quot;state&quot;)= chr &quot;KY&quot;
- $ :List of 2
-  ..$ : chr &quot;NV&quot;
-  ..$ :&#39;data.frame&#39;:    1056 obs. of  6 variables:
-  .. ..$ FIPS   : chr [1:1056] &quot;32029&quot; &quot;32029&quot; &quot;32029&quot; &quot;32029&quot; ...
-  .. ..$ county : chr [1:1056] &quot;Storey&quot; &quot;Storey&quot; &quot;Storey&quot; &quot;Storey&quot; ...
-  .. ..$ date   : chr [1:1056] &quot;3&quot; &quot;4&quot; &quot;5&quot; &quot;6&quot; ...
-  .. ..$ units  : num [1:1056] NA NA NA NA NA NA 11 NA 11 12 ...
-  .. ..$ list   : num [1:1056] 155 149 143 147 149 ...
-  .. ..$ selling: num [1:1056] NA NA NA NA NA NA NA NA NA NA ...
-  .. ..- attr(*, &quot;state&quot;)= chr &quot;NV&quot;
-......
-</code></pre>
-
-<p>We&#39;ve now successfully divided our data into subsets and stored each subset as an R object.<br>
-They will persist on HDFS and be used for many analytic methods, each applied using <code>RHIPE</code>. </p>
-
-</div>
-
-
-<div class='tab-pane' id='compute-state-means'>
-<h3>Compute State Means</h3>
-
-<p>Now we&#39;ll apply an analytic method to the subsets of our housing data.  Our analytic
-method will be to take the mean.  We have monthly list prices and sale prices per square foot, 
-so our desired output is two numbers for each state: a mean of list prices and a mean 
-of sale prices.  The recombination step will be to put all the state means in a single data
-frame, which can be further analyzed in an interactive R session.</p>
-
-<p>We apply our chosen analytic method with a second <code>RHIPE</code> MapReduce job:</p>
-
-<h4>Map</h4>
-
-<pre><code class="r">map2 &lt;- expression({
-  lapply(seq_along(map.keys), function(r) {
-    value &lt;- data.frame(
-      state = attr(map.values[[r]], &quot;state&quot;),
-      listMean = mean(map.values[[r]]$list, na.rm = TRUE),
-      saleMean = mean(map.values[[r]]$selling, na.rm = TRUE),
-      stringsAsFactors = FALSE
-    )
-    rhcollect(1, value)
-  })
-})
-</code></pre>
-
-<p>The input to our map is the the final output we created in the previous section.  The keys 
-were state names, stored as character objects, and the values were data frames with prices,
-dates, and county information.  In general, 
-keys need not be unique, but in this case we know that there are 49 state names, where no state
-is duplicated.  </p>
-
-<p>To each state&#39;s data frame, we apply the same action: take the mean of the list price and 
-the mean of the sale price.  These are stored in a single row data frame to be recombined in 
-the reduce step below.  The row has three columns: state name plus the two calculated means.
-As before, <code>rhcollect</code> emits intermediate key-value pairs.  One key-value pair is emitted per
-state.  The value is the single row data frame we just created.  We use the same key for all 49
-states so that they will all appear together in the reduce step.  The key itself is meaningless,
-so we&#39;ll use 1 as a placeholder.</p>
-
-<h4>Reduce</h4>
-
-<pre><code class="r">reduce2 &lt;- expression(
-  pre = {
-    allMeans &lt;- data.frame()
-  },
-  reduce = {
-    allMeans &lt;- rbind(allMeans, do.call(rbind, reduce.values))
-  },
-  post = {
-    rhcollect(reduce.key, allMeans)
-  }
-)
-</code></pre>
-
-<p>We divided our data into subsets and applied an analytic method to each subset.  The reduce step
-above is our recombination.  We recombine the state means into a data frame with 49 rows and 3
-columns.  Later, we can read that data frame from HDFS into our interactive R session for further
-analysis.</p>
-
-<p>The input key is the placeholder value 1, which is left unchanged as the output key.  The input
-values are the single row data frames for each state, and the output values is the 49 row data 
-frame with all states represented.  In the <code>pre</code> step we initialize an empty data frame.  In
-<code>reduce</code> we use <code>rbind</code> to append the single row data frames to the empty data frame we created, 
-and in <code>post</code> we use <code>rhcollect</code> to emit the final output so that it will be written to HDFS.</p>
-
-<h4>Execution Function</h4>
-
-<pre><code class="r">stateMeans &lt;- rhwatch(
-  map      = map2,
-  reduce   = reduce2,
-  input    = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
-  output   = rhfmt(&quot;/ln/tongx/housing/meanByState&quot;, type = &quot;sequence&quot;),
-  mapred   = list( 
-    mapred.reduce.tasks = 5
-  ),
-  readback = TRUE
-)
-</code></pre>
-
-<p>In <code>rhwatch()</code> this time, we&#39;ve changed several arguments. First, in the <code>rhfmt</code> of <code>input</code> argument,
-<code>type</code> is specified to be &quot;sequence&quot;, since the input file to this mapreduce job is the output
-from our division. This indicates to <code>RHIPE</code> that the input is not a raw text file, but rather a 
-file already organized as key-value pairs.  Also we request 5 reduce tasks for this job using
-the <code>mapred.reduce.tasks</code> option.  Finally, we assign
-<code>readback</code> to be <code>TRUE</code>. By doing this, the final results not only will be saved on HDFS, but also
-will be read back from HDFS (without using <code>rhread()</code>) and assigned to an object in our interactive R
-session.  We&#39;ve named that object <code>stateMeans</code>.</p>
-
-<p>Just as before, once we submit the job, we see job status information.</p>
-
-<pre><code>[Thu Sep 18 23:48:19 2014] Name:2014-09-18 23:48:19 Job: job_201405301308_4715  State: PREP Duration: 0.175
-URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4715
-       pct numtasks pending running complete killed failed_attempts killed_attempts
-map      0       10      10       0        0      0               0               0
-reduce   0        5       5       0        0      0               0               0
-Waiting 5 seconds
-[Thu Sep 18 23:48:24 2014] Name:2014-09-18 23:48:19 Job: job_201405301308_4715  State: RUNNING Duration: 5.206
-URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4715
-       pct numtasks pending running complete killed failed_attempts killed_attempts
-map      0       10       0      10        0      0               0               0
-reduce   0        5       5       0        0      0               0               0
-Waiting 5 seconds
-.......
-Read 1 objects(1.2 KB) in 0.09 seconds
-</code></pre>
-
-<pre><code class="r">str(stateMeans)
-</code></pre>
-
-<pre><code>List of 1
- $ :List of 2
-  ..$ : num 1
-  ..$ :&#39;data.frame&#39;:  49 obs. of  3 variables:
-  .. ..$ state   : chr [1:49] &quot;CA&quot; &quot;MA&quot; &quot;NJ&quot; &quot;TN&quot; ...
-  .. ..$ listMean: num [1:49] 192.6 259.1 180 85.3 81.7 ...
-  .. ..$ saleMean: num [1:49] 185.9 210.9 171.4 80 76.3 ...
-</code></pre>
-
-<p>As we can see, the result is a list of length 1.  This make sense, since we only output a single
-key-value pair.  This single element is itself a list of length 2: one element for the key, and 
-another for the value.  The value is what we&#39;re interested in, namely, the data frame of 49 state means.
-It has three columns which are state abbreviation, mean of median list price per square feet, and mean of 
-median sale price per square feet.</p>
-
-<pre><code class="r">stateMeans &lt;- stateMeans[[1]][[2]]
-head(stateMeans)
-</code></pre>
-
-<pre><code>  state  listMean  saleMean
-1    CA 192.63429 185.87159
-2    MA 259.13164 210.87140
-3    NJ 180.01365 171.44946
-4    TN  85.28335  80.00628
-5    TX  81.67656  76.32277
-6    WA 134.67467 128.54734
-</code></pre>
-
-<p>Let&#39;s take a look at how the output was stored on HDFS using <code>rhls</code>.</p>
-
-<pre><code class="r">rhls(&quot;/ln/tongx/housing/meanByState&quot;)
-</code></pre>
-
-<pre><code>  permission owner      group        size          modtime                                         file
-1 -rw-r--r-- tongx supergroup           0 2014-09-18 23:56     /ln/tongx/housing/meanByState/_SUCCESS
-2 drwxrwxrwx tongx supergroup           0 2014-09-18 23:56        /ln/tongx/housing/meanByState/_logs
-3 -rw-r--r-- tongx supergroup    1.363 kb 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00000
-4 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00001
-5 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00002
-6 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00003
-7 -rw-r--r-- tongx supergroup    94 bytes 2014-09-18 23:56 /ln/tongx/housing/meanByState/part-r-00004
-</code></pre>
-
-<p>There are five files in &quot;/ln/tongx/housing/meansByState&quot;, named from &quot;part-r-00000&quot; to 
-&quot;part-r-00004&quot;. There are five of these because we selected 5 reduce tasks with <code>mapred.reduce.tasks</code>.
-Besides these five files, there are another two files named &quot;_SUCCESS&quot; and 
-&quot;_logs&quot; which record the metadata and log information. </p>
-
-<p>Notice that four of the five files have the same size, 94 bytes, which is quite small. 
-This is because those four files are 
-empty. Since we only had one intermediate key-value pair (the output of the map), four of the 
-reduce tasks we requested did nothing.</p>
-
-<p>We&#39;ve now successfully completed our first D&amp;R analysis with <code>RHIPE</code>.  We created a division by state, applied an
-analytic method to each subset when we took the mean, and recombined the subset outputs into an R
-data frame for further interactive analysis.  We did the division in one Rhipe MapReduce job, and 
-the analytic method and recombination in a second job.</p>
-
-</div>
-
-
 <div class='tab-pane' id='read-and-divide-by-county'>
 <h3>Read and Divide by County</h3>
 
@@ -1152,931 +749,6 @@ can speed up this job and future jobs which read its output.</p>
 5  74.35722      NaN    AL    Macon 01087
 6 103.70687 94.27969    AZ   Mohave 04015
 </code></pre>
-
-</div>
-
-
-<div class='tab-pane' id='read-and-divide-by-date'>
-<h3>Read and Divide by Date</h3>
-
-<p>Same as before, we can create the subsets of dataset divided by date variable. But here one of
-potential problem that we may face is that what if some of the subsets are very large? This is
-a very general problem if we are dealing with a large and complex dataset. In fact, <code>RHIPE</code> is 
-able to write any size of one subset to HDFS, but only can read one subset less than 256 Mb 
-from HDFS. In other words, we are able to create any size of subset in a mapreduce job, but we
-will get issue when we are trying to read and apply analysis method on oversize subset.</p>
-
-<p>In this example, we are assuming that each subset by date is oversize. One way to overcome this
-issue is that we are going to create multiple subsets for each month. </p>
-
-<h4>Map</h4>
-
-<pre><code class="r">map5 &lt;- expression({
-  lapply(seq_along(map.keys), function(r) {
-    line = strsplit(map.values[[r]], &quot;,&quot;)[[1]]
-    key &lt;- line[[4]]
-    value &lt;- as.data.frame(rbind(line[-4]), stringsAsFactors = FALSE)
-    rhcollect(key, value)
-  })
-})
-</code></pre>
-
-<p>There is not too much difference in the map expression comparing with the map expression in previous 
-two division sessions. We used the fourth column in each row of text file as the key which is the index
-of month, and rest of columns saved as a data frame was collected as corresponding value.</p>
-
-<h4>Reduce</h4>
-
-<pre><code class="r">reduce5 &lt;- expression(
-  pre = {
-  },
-  reduce = {
-    date500 &lt;- do.call(rbind, reduce.values)
-    names(date500) &lt;- c(
-      &quot;FIPS&quot;, &quot;county&quot;, &quot;state&quot;, 
-      &quot;units&quot;, &quot;list&quot;, &quot;selling&quot;
-    )
-    date500$list &lt;- as.numeric(date500$list)
-    date500$selling &lt;- as.numeric(date500$selling)
-    rhcollect(reduce.key, date500)
-  },
-  post = {
-  }
-)
-</code></pre>
-
-<p>Here, the reduce expression is not similar as before. We left <code>pre</code> and <code>post</code> as empty. Recall that <code>pre</code> 
-and <code>post</code> in reduce expression will be executed only once for each unique key. <code>reduce</code> part, on the other 
-hand, will be executed repeatedly until all intermediate values associated with the current key have been 
-processed. And we actually can control how many intermediate values to be executed in <code>reduce</code> every time. 
-Suppose we want to execute 500 intermediate values for each key at one time, then the <code>reduce.values</code> is a 
-list only includes 500 intermediate values for corresponding <code>reduce.key</code>. In other words, we use the 
-property that intermediate values for a given key can be executed by part in <code>reduce</code> to create 
-multiple subsets for a given key. Previously we only created one subset for a given key, like a state or 
-county.</p>
-
-<p>What we have done above in <code>reduce</code> is for a given key, for every 500 (later one we will illustrate where 
-we specified this 500) intermediate value corresponding to this key, we created a data.frame named
-<code>date500</code> which is the row-bind of all these 500 rows(recall that each value is a data frame with single 
-row from map output) for this key. Then we collected <code>date500</code> as value with the key. Then is the next
-500 rows for the same key, repeatedly until all rows for this key has been processed. If, for example, for 
-one key we have 1324 values(rows), then finally we will get three key-value pairs with same key by using 
-this reduce expression.</p>
-
-<h4>Execution Function</h4>
-
-<pre><code class="r">mr5 &lt;- rhwatch(
-  map      = map5,
-  reduce   = reduce5,
-  input    = rhfmt(&quot;/ln/tongx/housing/housing.txt&quot;, type = &quot;text&quot;),
-  output   = rhfmt(&quot;/ln/tongx/housing/bydate&quot;, type = &quot;sequence&quot;),
-  mapred   = list(
-    mapred.reduce.tasks = 10,
-    rhipe_reduce_buff_size = 500
-  ),
-  readback = FALSE
-)
-</code></pre>
-
-<p>In <code>rhwatch</code> this time, we add one more argument in <code>mapred</code> list. <code>rhipe_reduce_buff_size</code> is the 
-argument used to control how many intermediate values for one key we want to process at one time. It is
-where we specified that process 500 rows for one key at one time, as we mentioned in reduce expression.</p>
-
-<p>Let us examine if we got what we want. Recall that we have 2,883 counties in total, and each county has
-66 monthly observations. If we only create one subset for each month, there should be 66 subsets, each of
-which is a data frame with 2,883 rows.</p>
-
-<pre><code class="r">rst &lt;- rhread(&quot;/ln/tongx/housing/bydate&quot;)
-</code></pre>
-
-<pre><code>Read 396 objects(8.85 MB) in 2.76 seconds
-</code></pre>
-
-<p>But we got 396 subsets in <code>rst</code>, which is 66 times 6. And if you examine the <code>rst</code> more carefully, it is
-not hard to find that for each month, we created 6 subsets.</p>
-
-<pre><code class="r">rows &lt;- unlist(lapply(rst, function(r){dim(r[[2]])[1]}))
-rows
-</code></pre>
-
-<pre><code>  [1] 500 500 500 500 500 383 500 500 500 500 500 383 500 500 500 500 500 383 500 500 500 500
- [23] 500 383 500 500 500 500 500 383 500 500 500 500 500 383 500 500 500 500 500 383 500 500
-......
-</code></pre>
-
-<p>What we got above is the number of rows in each subset. We can see that we always have five <code>500</code> and one 
-<code>383</code> as one replicate, which together will be the total number of rows for one month. This means we ran 
-our <code>reduce</code> in reduce expression six times for each key.</p>
-
-</div>
-
-
-<div class='tab-pane' id='compute-total-sold-units'>
-<h3>Compute Total Sold Units</h3>
-
-<p>We then would like to calculate the total sold units for every month based on the month division.
-One thing we should keep in mind about the month division is that we have 6 subsets for each month.
-And this will be the main reason that we want to consider one of the optimization method in <code>RHIPE</code>.</p>
-
-<h4>Combiner as an Optimization</h4>
-
-<p>Between the map phase and reduce phase of a MapReduce job, Hadoop sends all the intermediate values
-for a given key to the reducer. The intermediate values for a given key are located on several compute 
-nodes and need to be shuffled (sent across the network) to the node assigned the processing of that
-intermediate key. This involves a lot of network transfer.</p>
-
-<p>Some operations do not need access to all of the data (intermediate values), i.e they can compute on 
-subsets and order does not matter, i.e associative and commutative operations. For example, the minimum, 
-or the sum, of some numbers. In these cases, a combiner can be useful.</p>
-
-<p>The idea of the combiner is that the reduce is first run locally on mapper outputs before they are sent 
-for the final reduce. When the combiner is enabled, the reduction occurs just after the map phase on a 
-subset of intermediate values for a given intermediate keys. The output of this is then sent to the 
-reducer. This greatly reduces network transfer and accelerates the job speed, especially if the output 
-from a map contains a lot of data.</p>
-
-<h4>Enabling Combiner in RHIPE</h4>
-
-<p>Combiner can be enabled in <code>RHIPE</code> by specifying <code>combiner = TRUE</code> when calling function <code>rhwatch()</code>.</p>
-
-<p>To be able to use a combiner, our reduce expression needs to pass the same data type as it receives,
-i.e the two arguments in the function rhcollect() in your map expression need to be of the same type as 
-those in the function rhcollect() in your reduce expression. For example, if you pass a string as the key
-and a numeric vector as the value in the map expression, you need to pass a string as key and a numeric 
-vector as the value in the reduce expression as well.</p>
-
-<p>We will demonstrate the usage of combiners through the following examples. First, let us look at how to 
-achieve this task without using a combiner.</p>
-
-<h4>Without Combiner</h4>
-
-<pre><code class="r">map6 &lt;- expression({
-  lapply(seq_along(map.keys), function(r) {
-    key &lt;- map.keys[[r]]
-    value &lt;- sum(as.numeric(map.values[[r]]$units), na.rm = TRUE)
-    rhcollect(key, value)
-  })
-})
-</code></pre>
-
-<p>In the map expression, we calculated the sum of the sold units for each subset. Since month index is the
-input key, and we have 6 subsets for each key, there will be 6 key-value pairs for each month. The value
-of each key-value pair is the summation of number of sold units in corresponding subset. So totally there
-will be 396 intermediate key-value pairs as output of map expression.</p>
-
-<pre><code class="r">reduce6 &lt;- expression(
-  pre = {
-    count &lt;- 0
-  },
-  reduce = {
-    count &lt;- count + sum(unlist(reduce.values), na.rm = TRUE)
-  },
-  post = {
-    rhcollect(reduce.key, count)
-  }
-)
-</code></pre>
-
-<p>Then in the reduce expression, we grouped all 6 summation for each unique key(month index), and calculated
-the overall summation for each month</p>
-
-<pre><code class="r">mr6 &lt;- rhwatch(
-  map       = map6,
-  reduce    = reduce6,
-  input     = rhfmt(&quot;/ln/tongx/housing/bydate&quot;, type = &quot;sequence&quot;),
-  output    = rhfmt(&quot;/ln/tongx/housing/soldbydate&quot;, type = &quot;sequence&quot;),
-  mapred    = list(
-    mapred.reduce.tasks = 10
-  ),
-  jobname   = &quot;total sold unit for each month&quot;,
-  mon.sec   = 10,
-  combiner  = FALSE,
-  readback  = FALSE
-)
-</code></pre>
-
-<p>The default for combiner is <code>FALSE</code>, which is what we have used before. We also specified two more
-arguments in <code>rhwatch</code> which are <code>mon.sec</code> and <code>jobname</code>. Both of them are easy to understand. <code>mon.sec</code>
-is a numeric integer which specifies how often in terms of second the job status will be reported in R after
-the job is submitted. As we seen in &quot;Division by State&quot; session, after job is submitted, we would see job
-status every 5 seconds which is the default value of <code>mon.sec</code>. <code>jobname</code> is a string that we can used to 
-name our job. The default job name is the date and time when job is submitted.</p>
-
-<h4>With Combiner</h4>
-
-<p>Now let us see how to do the same task with combiner.</p>
-
-<pre><code class="r">mr7 &lt;- rhwatch(
-  map       = map6,
-  reduce    = reduce6,
-  input     = rhfmt(&quot;/ln/tongx/housing/bydate&quot;, type = &quot;sequence&quot;),
-  output    = rhfmt(&quot;/ln/tongx/housing/soldbydate.combiner&quot;, type = &quot;sequence&quot;),
-  mapred    = list(
-    mapred.reduce.tasks = 10
-  ),
-  jobname   = &quot;total sold unit for each month with combiner&quot;,
-  mon.sec   = 10,
-  combiner  = TRUE,
-  readback  = FALSE
-)
-</code></pre>
-
-<p>The map and reduce expression for combiner situation will be exactly same as the situation without combiner.
-The only difference is that we changed the <code>combiner</code> argument in <code>rhwatch</code> to be <code>TRUE</code> to active the 
-combiner. So what happened when combiner was active was nothing but each mapper(server or node that ran map
-expression) run the reduce expression before it generated intermediate key-value pairs.</p>
-
-<p>For this example,
-one of the mapper may generated two out of six summation for one month. Without combiner, these two 
-summation will be transferred with other four summation which calculated on another mapper to one reducer
-(server or node that ran reduce expression). With combiner, however, these two summation will be first 
-summed up together then only one key-value pairs will be transferred to the reducer instead of two. This
-will be a huge difference with respect to transferring time when we have very many or very large size of 
-values related to one key.</p>
-
-<p>Finally, we can double check if combiner active or not will effect the final result.</p>
-
-<pre><code class="r">rst.comb &lt;- rhread(&quot;/ln/tongx/housing/soldbydate.combiner&quot;)
-rst &lt;- rhread(&quot;/ln/tongx/housing/soldbydate&quot;)
-identical(rst, rst.comb)
-</code></pre>
-
-<pre><code>[1] TRUE
-</code></pre>
-
-<p>We can see that the final results from these two jobs are identical. We also can convert the results
-to be a data frame with following code:</p>
-
-<pre><code class="r">df &lt;- data.frame(  
-  date  = sapply(rst, &quot;[[&quot;, 1),
-  total = sapply(rst, &quot;[[&quot;, 2)
-)
-df &lt;- df[order(df$date, decreasing = FALSE), ]  
-df.comb &lt;- data.frame(  
-  date  = sapply(rst.comb, &quot;[[&quot;, 1),
-  total = sapply(rst.comb, &quot;[[&quot;, 2)
-)
-df.comb &lt;- df.comb[order(df.comb$date, decreasing = FALSE), ]
-head(df.comb)
-head(df)
-</code></pre>
-
-<pre><code>   date  total
-45    1 272879
-50    2 201648
-59    3 229829
-51    4 180674
-60    5 187276
-1     6 219149
-</code></pre>
-
-</div>
-
-
-<div class='tab-pane' id='division-by-state-from-county-division'>
-<h3>Division by State from County Division</h3>
-
-<p>In the previous two divisions, we started from raw text data, where input key-value pairs were each row
-of the text file. In some cases it might be more efficient to go from one subset division method to
-another.  Either way, it&#39;s a good thing to know how to do.  In this section we&#39;ll recreate the 
-division by state from the division by county.</p>
-
-<p>Let&#39;s start by removing our existing state subsets from the HDFS so there aren&#39;t too many copies
-floating around.  We can delete files from the HDFS using the <code>rhdel</code> function.  It only requires
-one argument - the directory to be deleted - and it recursively deletes any subdirectories or files.</p>
-
-<p>We can use <code>rhls</code> to see that the division by state is on the HDFS, right where we put it:</p>
-
-<pre><code class="r">rhls(&quot;/ln/tongx/housing&quot;)
-</code></pre>
-
-<pre><code>  permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29            /ln/tongx/housing/byCounty
-2 drwxrwxrwt tongx supergroup        0 2014-09-30 14:27             /ln/tongx/housing/byState
-3 drwxrwxrwt tongx supergroup        0 2014-10-28 14:07              /ln/tongx/housing/bydate
-4 drwxrwxrwt tongx supergroup        0 2014-09-18 23:56         /ln/tongx/housing/meanByState
-5 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
-6 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
-7 drwxrwxrwt tongx supergroup        0 2014-10-28 14:28          /ln/tongx/housing/soldbydate
-8 drwxrwxrwt tongx supergroup        0 2014-10-20 16:00 /ln/tongx/housing/soldbydate.combiner
-</code></pre>
-
-<p>We can delete it with the <code>rhdel</code> function:</p>
-
-<pre><code class="r">rhdel(&quot;/ln/tongx/housing/byState&quot;)
-</code></pre>
-
-<p>And we can use <code>rhls</code> again to see that we were successful:</p>
-
-<pre><code class="r">rhls(&quot;/ln/tongx/housing&quot;)
-</code></pre>
-
-<pre><code>  permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29            /ln/tongx/housing/byCounty
-2 drwxrwxrwt tongx supergroup        0 2014-10-28 14:07              /ln/tongx/housing/bydate
-3 drwxrwxrwt tongx supergroup        0 2014-09-18 23:56         /ln/tongx/housing/meanByState
-4 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
-5 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
-6 drwxrwxrwt tongx supergroup        0 2014-10-28 14:28          /ln/tongx/housing/soldbydate
-7 drwxrwxrwt tongx supergroup        0 2014-10-20 16:00 /ln/tongx/housing/soldbydate.combiner
-</code></pre>
-
-<p>As long as we&#39;re talking about HDFS file management, let&#39;s try out a few more functions.  Suppose
-we want to make a copy of the original text file on the HDFS.  We can use the
-<code>rhcp</code> function.  It takes two arguments.  The first is the source, or the directory on HDFS we 
-want to copy.  The second is the target, or location for the new copy.</p>
-
-<pre><code class="r">rhcp(&quot;/ln/tongx/housing/housing.txt&quot;, &quot;/ln/tongx/housing/tmp/housing.txt&quot;)
-rhls(&quot;/ln/tongx/housing/tmp&quot;)
-</code></pre>
-
-<pre><code>  permission owner      group     size          modtime                              file
-1 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-30 15:25 /ln/tongx/housing/tmp/housing.txt
-</code></pre>
-
-<p>We can use <code>rhmv</code> to move the text file to a different folder.  This
-function also takes two arguments, just like <code>rhcp</code>.</p>
-
-<pre><code class="r">rhmv(&quot;/ln/tongx/housing/tmp/housing.txt&quot;, &quot;/ln/tongx/housing/tmp2/housing.txt&quot;)
-rhls(&quot;/ln/tongx/housing/&quot;)
-</code></pre>
-
-<pre><code>  permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29            /ln/tongx/housing/byCounty
-2 drwxrwxrwt tongx supergroup        0 2014-10-28 14:07              /ln/tongx/housing/bydate
-3 drwxrwxrwt tongx supergroup        0 2014-09-18 23:56         /ln/tongx/housing/meanByState
-4 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
-5 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
-6 drwxrwxrwt tongx supergroup        0 2014-10-28 14:28          /ln/tongx/housing/soldbydate
-7 drwxrwxrwt tongx supergroup        0 2014-10-20 16:00 /ln/tongx/housing/soldbydate.combiner
-8 drwxrwxrwt tongx supergroup        0 2014-09-30 15:25                 /ln/tongx/housing/tmp
-9 drwxrwxrwt tongx supergroup        0 2014-09-30 15:28                /ln/tongx/housing/tmp2
-</code></pre>
-
-<p>That&#39;s enough file management.  Now let&#39;s recreate the division by state from the division by 
-county, which is still on the HDFS.</p>
-
-<h4>Map</h4>
-
-<pre><code class="r">map9 &lt;- expression({
-  lapply(seq_along(map.keys), function(r) {
-    key &lt;- attr(map.values[[r]], &quot;state&quot;)
-    value &lt;- map.values[[r]]
-    value$FIPS &lt;- attr(map.values[[r]], &quot;FIPS&quot;)
-    value$county &lt;- attr(map.values[[r]], &quot;county&quot;)
-    rhcollect(key, value)
-  })
-})
-</code></pre>
-
-<p>The most important part of this map expression is the key we assigned.  Our input key was the length 3
-character vector containing FIPS code, county name, and state name.  Our output key is the state
-name only.  This ensures that the data frames of all the counties belonging to a single state go to
-a single reduce task, so that we can combine them into a single data frame for that state.  Meanwhile,
-we also want to make the FIPS code and county name columns of our data frame again.</p>
-
-<h4>Reduce</h4>
-
-<pre><code class="r">reduce9 &lt;- expression(
-  pre = {
-    combine &lt;- data.frame()
-  },
-  reduce = {
-    combine &lt;- rbind(combine, do.call(rbind, reduce.values))
-  },
-  post = {
-    rhcollect(reduce.key, combine)
-  }
-)
-</code></pre>
-
-<p>We can use the same reduce expression that we used in the first division by state.  But keep in mind
-that this time, the intermediate key-value pairs are different.  Before there was one key-value pair
-for each line of the text file, but now there is one for each county.</p>
-
-<h4>Execution Function</h4>
-
-<pre><code class="r">mr9 &lt;- rhwatch(
-  map      = map9,
-  reduce   = reduce9,
-  input    = rhfmt(&quot;/ln/tongx/housing/byCounty&quot;, type = &quot;sequence&quot;),
-  output   = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
-  mapred   = list( 
-    mapred.reduce.tasks = 10
-  ),
-  readback = FALSE,
-  noeval = TRUE
-)
-</code></pre>
-
-<p>Here we did something new in the <code>rhwatch</code> function.  We set the <code>noeval</code> argument to indicate
-that we don&#39;t want to run this job, we just want to package it to be run later.</p>
-
-<p>You won&#39;t see any output, because no commands have been sent to Hadoop.  Instead, the packaged
-job has been stored in the <code>mr5</code> object.  When we&#39;re ready to run the job, we call <code>rhex()</code>.</p>
-
-<pre><code class="r">byState &lt;- rhex(mr9, async = FALSE)
-</code></pre>
-
-<p>The first argument to <code>rhex</code> is the packaged job we just created.  The second argument <code>async</code> 
-specifies whether the job should be run asynchronously.  If we set <code>async = FALSE</code> then we&#39;ll see
-continuously updated job status information, and we won&#39;t be able to issue any further R commands
-until the job completes.  If we set it to <code>TRUE</code>, which is the default, the job will run in the 
-background while we continue to interact with our R session.  It&#39;s similar to the <code>\&amp;</code> command in
-a Linux shell.</p>
-
-<p>After the job successfully completes, we&#39;ll have state subsets in the specified output folder
-on the HDFS, just as before, but created in a different way.</p>
-
-</div>
-
-
-<div class='tab-pane' id='access-subset-by-state'>
-<h3>Access Subset by State</h3>
-
-<p>As we have already
-seen in previous examples, our R objects from a mapreduce job have been saved as a sequence file on HDFS.
-We also have seen that how to control the number of key-value pairs we want to read by specifying the <code>max</code>
-argument in <code>rhread</code>. However, this can only guarantee we read fixed number of key-value pairs. The order
-of the key-value pairs or those R objects saved on HDFS is random. What if we would like to only access 
-specific key-value pairs by the key without reading all key-value pairs back into the R global environment?
-In other words, can we treat our dataset as a queryable database through <code>RHIPE</code> functions? The answer is
-absolutely YES!</p>
-
-<p>In order to achieve this purpose, we have to save our output as a map file instead of sequence file on HDFS.
-Map file is another type of file can be saved on HDFS besides text and sequence file. For example, we are 
-still trying to get subsets for each state based on the subsets for each county. This time we would like to 
-be able to access the subset of data for Indiana state only. The code is showed as following:</p>
-
-<pre><code class="r">map10 &lt;- expression({
-  lapply(seq_along(map.keys), function(r) {
-    key &lt;- attr(map.values[[r]], &quot;state&quot;)
-    county &lt;- attr(map.values[[r]], &quot;county&quot;)
-    value &lt;- map.values[[r]]
-    value$fips &lt;- rep(map.keys[[r]], nrow(value))
-    value$county &lt;- rep(county, nrow(value))
-    rhcollect(key, value)
-  })
-})
-reduce10 &lt;- expression(
-  pre = {
-    combine &lt;- data.frame()
-  },
-  reduce = {
-    combine &lt;- rbind(combine, do.call(rbind, reduce.values))
-  },
-  post = {
-    rhcollect(reduce.key, combine)
-  }
-)
-mr10 &lt;- rhwatch(
-  map      = map10,
-  reduce   = reduce10,
-  input    = rhfmt(&quot;/ln/tongx/housing/byCounty&quot;, type = &quot;sequence&quot;),
-  output   = rhfmt(&quot;/ln/tongx/housing/countytostate.map&quot;, type = &quot;map&quot;),
-  mapred   = list( 
-    mapred.reduce.tasks = 10
-  ),
-  readback = FALSE
-)
-</code></pre>
-
-<p>It is not hard to notice that the only difference between the code above with the code in the previous
-session is that the <code>type</code> in <code>output</code> argument in <code>rhwatch</code> function is changed to be <code>map</code>, which means
-we are creating a map file output in this mapreduce job. In this mapreduce job, we are doing exactly same
-division of the dataset as we did in sequence file, except that we would like to add indexing by key 
-property in the output file. And this is the main difference between map file and sequence file. After
-the job is finished, we can access a map file with <code>rhmapfile</code> function.</p>
-
-<pre><code class="r">rst &lt;- rhmapfile(&quot;/ln/tongx/housing/countytostate.map&quot;)
-rst
-</code></pre>
-
-<pre><code>/ln/tmp/housing/countytostate.map is a MapFile with 10 index files
-</code></pre>
-
-<pre><code class="r">class(rst)
-</code></pre>
-
-<pre><code>[1] &quot;mapfile&quot;
-</code></pre>
-
-<pre><code class="r">object.size(rst)
-</code></pre>
-
-<pre><code>264 bytes
-</code></pre>
-
-<p>We can see that <code>rst</code> is a MapFile with 10 index files because we specified the reduce tasks number 
-to be 10. Its class is <code>mapfile</code>, and size is only 264 bytes, which means we did not read the whole R
-object back from HDFS.</p>
-
-<p>Now let us have a deeper look at the output files on HDFS. Recall that &quot;/user/tongx/housing/countytostate&quot;
-is the sequence output files, and &quot;/user/tongx/housing/countytostate.map&quot; is the map output files.</p>
-
-<pre><code class="r">rhls(&quot;/ln/tongx/housing/countytostate&quot;)
-</code></pre>
-
-<pre><code>   permission owner      group     size          modtime                                         file
-1  -rw-r--r-- tongx supergroup        0 2014-09-20 18:02     /ln/tongx/housing/countytostate/_SUCCESS
-2  drwxrwxrwx tongx supergroup        0 2014-09-20 18:02        /ln/tongx/housing/countytostate/_logs
-3  -rw-r--r-- tongx supergroup 235.1 kb 2014-09-20 18:02 /ln/tongx/housing/countytostate/part-r-00000
-4  -rw-r--r-- tongx supergroup   969 kb 2014-09-20 18:02 /ln/tongx/housing/countytostate/part-r-00001
-5  -rw-r--r-- tongx supergroup 1.698 mb 2014-09-20 18:02 /ln/tongx/housing/countytostate/part-r-00002
-......
-</code></pre>
-
-<pre><code class="r">rhls(&quot;/ln/tongx/housing/countytostate.map&quot;)
-</code></pre>
-
-<pre><code>   permission owner      group size          modtime                                             file
-1  -rw-r--r-- tongx supergroup    0 2014-09-28 13:52     /ln/tongx/housing/countytostate.map/_SUCCESS
-2  drwxrwxrwx tongx supergroup    0 2014-09-28 13:51        /ln/tongx/housing/countytostate.map/_logs
-3  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00000
-4  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00001
-5  drwxr-xr-x tongx supergroup    0 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00002
-......
-</code></pre>
-
-<p>We found out that all <code>part-r-</code> files now becomes directory instead of data files. When we go inside of each
-<code>part-r-</code> files, we notice that we have two files which are <code>data</code> and <code>index</code>. <code>data</code> file is similar with 
-the output in <code>part-r-</code> files we got in sequence output files. We can actually read it by using <code>rhread</code> 
-function. The extra <code>index</code> file with size around 200 bytes records all indexing information by key of this 
-part file.</p>
-
-<pre><code class="r">rhls(&quot;/ln/tongx/housing/countytostate.map/part-r-00000&quot;)
-</code></pre>
-
-<pre><code>  permission owner      group        size          modtime                                                   file
-1 -rw-r--r-- tongx supergroup    235.1 kb 2014-09-28 13:52  /ln/tongx/housing/countytostate.map/part-r-00000/data
-2 -rw-r--r-- tongx supergroup   209 bytes 2014-09-28 13:52 /ln/tongx/housing/countytostate.map/part-r-00000/index
-</code></pre>
-
-<p>Finally, we can access the subset of data frame of Indiana state by:</p>
-
-<pre><code class="r">head(rst[[&quot;IN&quot;]])
-</code></pre>
-
-<pre><code>  date units     list selling  fips county
-1    8    NA 78.22178      NA 18109 Morgan
-2    9    NA 77.73632      NA 18109 Morgan
-3   10    NA 76.91198      NA 18109 Morgan
-4   11    NA 76.73789      NA 18109 Morgan
-5   12    NA 77.32143      NA 18109 Morgan
-6   13    NA 77.59740      NA 18109 Morgan
-</code></pre>
-
-</div>
-
-
-<div class='tab-pane' id='plots-by-state'>
-<h3>Plots by State</h3>
-
-<p>After previous several sessions, we have seen how to do divide and recombine in <code>RHIPE</code>, how to 
-access the subset by key. Another useful and powerful aspect of <code>RHIPE</code> is that we can achieve
-parallel plotting on cluster. Visualizing each subset can help us to have a better understanding of
-the subsets as well as the whole dataset.</p>
-
-<p>For each subset by state, we would like to know what the number of sold units looks like over time
-conditional on county. So we will plot the sold units against time for each state. When we are 
-facing a relative small data set in base R, this plotting for each state has to be done either using
-a for loop or some other package like <code>plyr</code> package. But when we are facing a large data set that
-cannot be fit into the memory, previous visualization method will fail easily. </p>
-
-<p>In <code>RHIPE</code>, on the other hand, we can specify multiple tasks, and in each tasks we can plot one or
-multiple plots. Later on we will see, in our housing example, we will specify 12 tasks to conduct 
-total 49 plots, one plot for state. So each task will handle about 4 plots which will 
-dramatically decreasing the total time to finish these 49 plots comparing with doing this using for
-loop.</p>
-
-<h4>Time Series Plot of Sold Units</h4>
-
-<p>The first type of plot we are going to plot is the time series plot of number of sold units condition
-on county for each state. First of all, let us have a look at what the plot looks like.</p>
-
-<p><a href="./plots/time.vs.unit.NC.pdf">Time series plot of number of units sold for North Carolina State</a>.</p>
-
-<p><a href="./plots/time.vs.unit.TX.pdf">Time series plot of number of units sold for Texas State</a>.</p>
-
-<p>For each state we created the time series plot of the number of sold units conditional on county.
-The plotting function we are going to use is in a R package named <code>lattice</code> which is a very powerful
-visualization method in R. </p>
-
-<pre><code class="r">map11 &lt;- expression({
-  lapply(seq_along(map.keys), function(r) {
-    value &lt;- subset(map.values[[r]], !is.na(as.numeric(units)))
-    if(nrow(value) != 0) {
-      rhcollect(map.keys[[r]], value)
-    }
-  })
-})
-</code></pre>
-
-<p>In map expression, we read in each subset by state, and then we only collected subsets that is not all <code>NA</code>
-for <code>units</code> variable. This can help us illuminate the number of key-value pairs that are transferred to 
-reducer.</p>
-
-<pre><code class="r">ylab &lt;- &quot;Log of Number of Sold Units(log base 2)&quot;
-xlab &lt;- &quot;Month&quot;
-reduce11 &lt;- expression(
-  pre = {
-    onestate &lt;- data.frame()
-  },
-  reduce = {
-    onestate &lt;- do.call(rbind, reduce.values)
-  },
-  post = {
-    trellis.device(pdf, 
-      file  = paste(&quot;./tmp/time.vs.unit&quot;, reduce.key, &quot;pdf&quot;, sep=&quot;.&quot;), 
-      color = TRUE,
-      paper = &quot;legal&quot;
-    )
-    b &lt;- xyplot(
-      log2(as.numeric(units)) ~ as.numeric(date) | FIPS,
-      data   = onestate,
-      layout = c(4, 3),
-      cex    = 0.5,
-      pch    = 16,
-      scales = list(
-        x = list(tick.number = 5),
-        y = list(relation = &quot;sliced&quot;) 
-      ),
-      xlab   = xlab,
-      ylab   = ylab,
-      main   = reduce.key,
-    )
-    print(b)
-    dev.off()    
-  }
-)
-</code></pre>
-
-<p>In reduce expression, we did the actual plotting task. One thing should be noticed is that we defined two
-string variables <code>xlab</code> and <code>ylab</code> in our initiating R global environment. We will use this two string 
-variables as the labels for x axis and y axis respectively. Later on we will show how to let every
-task be aware of these two objects. In the <code>post</code>, we called the <code>xyplot</code> function in <code>lattice</code> package to 
-plot the <code>units</code> against <code>date</code>, and created a pdf plot file under the location or path of <code>./tmp/</code>. </p>
-
-<p>What is this <code>./tmp/</code> directory? It is a temporary working directory on each reducer. Recall that on the 
-initiating R server(front-end), we have a concept of R local working directory. This temporary working 
-directory is the same concept but on each sever of the Hadoop severs(back-end). Why we want to save the plots 
-to this specific directory on each hadoop sever? Because <code>RHIPE</code> can copy all files in this particular 
-directory to HDFS, then we can copy those files from HDFS to our R local working directory on initiating R 
-sever. Finally, you can choose to view those files either through the Internet or copy them to your laptop to 
-view them.</p>
-
-<pre><code class="r">mr11 &lt;- rhwatch(
-  map        = map11,
-  reduce     = reduce11,
-  input      = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
-  output     = rhfmt(&quot;/ln/tongx/housing/timeplotbystate&quot;, type = &quot;sequence&quot;),
-  setup      = expression(
-    map = {
-    },
-    reduce   = {
-      library(lattice)
-    }
-  ),
-  parameters = list(
-    xlab = xlab,
-    ylab = ylab
-  ),
-  mapred     = list( 
-    mapred.reduce.tasks = 12
-  ),
-  copyFiles  = TRUE,
-  readback   = FALSE
-)
-</code></pre>
-
-<p>In the execution function, we saw a group of new arguments shown up. Let&#39;s go through them one by one. First 
-is <code>setup</code> argument. It is an expression of R code to be run before map and reduce. Here the <code>map</code> in <code>setup</code>
-is empty, but we called <code>lattice</code> library in <code>reduce</code>, because we would like to use the <code>xyplot</code> function in
-reduce expression. <code>setup</code> is a very good place for us to set up for map and reduce respectively,like calling
-library.</p>
-
-<p>Second is <code>parameters</code> argument. This argument is how we distributed the <code>xlab</code> and <code>ylab</code> to every map and 
-reduce task. Basically we group all objects as a list which we would like to use in each task. Then in map
-or reduce expression, we can just use these objects in <code>parameters</code> as they have been already defined.</p>
-
-<p>The last one is <code>copyFiles</code>. As we discussed before, when <code>copyFiles</code> is <code>TRUE</code>, all files created in 
-<code>./tmp/</code> on each Hadoop severs will be copied to the output directory on HDFS.</p>
-
-<p>Once the job is finished, let&#39;s see what we have in the output directory on HDFS.</p>
-
-<pre><code class="r">rhls(&quot;/ln/tongx/housing/timeplotbystate&quot;)
-</code></pre>
-
-<pre><code>   permission owner      group        size          modtime                                           file
-1  -rw-r--r-- tongx supergroup           0 2014-10-02 21:20     /ln/tongx/housing/timeplotbystate/_SUCCESS
-2  drwxrwxrwx tongx supergroup           0 2014-10-02 21:20        /ln/tongx/housing/timeplotbystate/_logs
-3  drwxr-xr-x tongx supergroup           0 2014-10-02 21:20     /ln/tongx/housing/timeplotbystate/_outputs
-4  -rw-r--r-- tongx supergroup    94 bytes 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/part-r-00000
-5  -rw-r--r-- tongx supergroup    94 bytes 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/part-r-00001
-......
-</code></pre>
-
-<p>Different than all the results we had before, here we got an extra directory named <code>_outputs</code> in output directory.
-When we went into it, we found following information:</p>
-
-<pre><code class="r">rhls(&quot;/ln/tongx/housing/timeplotbystate/_outputs&quot;)
-</code></pre>
-
-<pre><code>   permission owner      group     size          modtime                                                           file
-1  -rw-r--r-- tongx supergroup 53.21 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AL.pdf
-2  -rw-r--r-- tongx supergroup 136.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AR.pdf
-3  -rw-r--r-- tongx supergroup 31.86 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.AZ.pdf
-4  -rw-r--r-- tongx supergroup 150.6 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CA.pdf
-5  -rw-r--r-- tongx supergroup 106.7 kb 2014-10-02 21:20 /ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.CO.pdf
-......
-</code></pre>
-
-<p>Yes, all the pdf plots are saved here, on HDFS! The last step would be copy those pdf files from HDFS to our R local
-working directory on initiating R server.</p>
-
-<pre><code class="r">rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.NC.pdf&quot;, &quot;./&quot;)
-rhget(&quot;/ln/tongx/housing/timeplotbystate/_outputs/time.vs.unit.TX.pdf&quot;, &quot;./&quot;)
-</code></pre>
-
-<p>The function that used to copy from HDFS to R local working directory is <code>rhget</code>, which is the opposite operation as 
-<code>rhput</code> we used in previous session. Here we only showed copying two of those pdf files.</p>
-
-<h4>Time Series Plot of List Price</h4>
-
-<p>The second type of plot we are going to plot is the time series plot of list price condition on county for each state.
-Again, let us have a look at what the plot looks like.</p>
-
-<p><a href="./plots/list.vs.time.CA.pdf">Time series plot of list price for California State</a>.</p>
-
-<p><a href="./plots/list.vs.time.VA.pdf">Time series plot of list price for Virginia State</a>.</p>
-
-<pre><code class="r">map12 &lt;- expression({
-  lapply(seq_along(map.keys), function(r) {
-    value &lt;- subset(
-      map.values[[r]], !is.na(as.numeric(list))
-    )
-    if(nrow(value) != 0) {
-      rhcollect(map.keys[[r]], value)
-    }
-  })
-})
-</code></pre>
-
-<p>Same as before, we read in each subset by state in map expression, and then we only collected subsets that is not all 
-<code>NA</code> for <code>list</code> variable.</p>
-
-<pre><code class="r">ylab &lt;- &quot;Log of List Price (log base 2 dollars per square foot)&quot;
-xlab &lt;- &quot;Month&quot;
-rhsave(
-    list = c(&quot;ylab&quot;, &quot;xlab&quot;), 
-    file = &quot;/ln/tongx/housing/shared/label.RData&quot;
-)
-</code></pre>
-
-<p>Before we start the reduce expression, we still defined <code>xlab</code> and <code>ylab</code> correspondingly. But this time we save these
-two objects as an <code>.RData</code> unto HDFS. The <code>rhsave</code> function writes an external representation of R objects to the 
-specified file as <code>.RData</code> unto HDFS. Later on we will explain with more details about the reason for this.</p>
-
-<pre><code class="r">reduce12 &lt;- expression(
-  pre = {
-    onestate &lt;- data.frame()
-  },
-  reduce = {
-    onestate &lt;- do.call(rbind, reduce.values)
-  },
-  post = {
-    trellis.device(pdf,
-      file  = paste(&quot;./tmp/list.vs.time&quot;, reduce.key, &quot;pdf&quot;, sep=&quot;.&quot;), 
-      color = TRUE,
-      paper = &quot;legal&quot;
-    )
-    b &lt;- xyplot(
-      log2(as.numeric(list)) ~ as.numeric(date) | FIPS,
-      data   = onestate,
-      layout = c(4,3),
-      cex    = 0.5,
-      pch    = 16,
-      scales = list(
-        x = list(tick.number = 7),
-        y = list(relation = &quot;sliced&quot;) 
-      ),
-      xlab   = xlab,
-      ylab   = ylab,
-      main   = reduce.key, 
-    )
-    print(b)
-    dev.off()    
-  }
-)
-</code></pre>
-
-<p>Very similar reduce expression, we did the actual plotting task. </p>
-
-<pre><code class="r">mr12 &lt;- rhwatch(
-  map       = map12,
-  reduce    = reduce12,
-  input     = rhfmt(&quot;/ln/tongx/housing/byState&quot;, type = &quot;sequence&quot;),
-  output    = rhfmt(&quot;/ln/tongx/housing/listplotbystate&quot;, type = &quot;sequence&quot;),
-  setup     = expression(
-    reduce = {
-      library(lattice)
-      load(&quot;label.RData&quot;)
-    }
-  ),
-  shared    = c(&quot;/ln/tongx/housing/shared/label.RData&quot;),
-  mapred    = list( 
-    mapred.reduce.tasks = 12
-  ),
-  copyFiles = TRUE,
-  readback  = FALSE
-)
-</code></pre>
-
-<p>In this execution function, we added two more things to <code>rhwatch</code> function. First we add <code>load</code> function to
-load <code>label.RData</code> to the R global environment of each reducer. And we put this loading step in the <code>setup</code>
-is because we would like to make <code>xlab</code> and <code>ylab</code> objects available in the reduce step. Second we add a new
-argument <code>shared</code>, which is a character vector of files located on the HDFS. At the beginning of the MapReduce 
-job, these files will be copied to the local hard disks of the mapper and reducer. This is a necessary step
-for loading the <code>label.RData</code> right before the reduce step on reducer.</p>
-
-<p>The difference between using <code>parameters</code> and <code>shared</code> argument to make specific objects available for every 
-mapper and reducer is that how large shared objects are. If they are relative small size of objects like two
-strings or a small vector, then <code>parameters</code> argument is prefered. On the other hand, if shared objects are
-some large size of objects like a data.frame or matrix, then <code>shared</code> argument should be considered becasue
-we put these shared objects on HDFS first and then grab them from HDFS to our map or reduce function.</p>
-
-<pre><code class="r">rhls(&quot;/ln/tongx/housing/listplotbystate/_outputs&quot;)
-</code></pre>
-
-<pre><code>   permission owner      group     size          modtime                                                           file
-1  -rw-r--r-- tongx supergroup 197.6 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AL.pdf
-2  -rw-r--r-- tongx supergroup 213.2 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AR.pdf
-3  -rw-r--r-- tongx supergroup 51.46 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.AZ.pdf
-4  -rw-r--r-- tongx supergroup 192.2 kb 2014-10-02 22:23 /ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf
-......
-</code></pre>
-
-<p>Still, all results of plotting will be located in <code>_outputs</code> of output directory.</p>
-
-<pre><code class="r">rhget(&quot;/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.VA.pdf&quot;, &quot;./&quot;)
-rhget(&quot;/ln/tongx/housing/listplotbystate/_outputs/list.vs.time.CA.pdf&quot;, &quot;./&quot;)
-</code></pre>
-
-</div>
-
-
-<div class='tab-pane' id='manage-rhipe-jobs'>
-<h3>Manage RHIPE Jobs</h3>
-
-<p>As you submit more <code>RHIPE</code> jobs, you&#39;ll need to check their status and manage them.  In this short
-section, we&#39;ll introduce two new functions to do just that. </p>
-
-<p>First, let&#39;s submit a simple job:</p>
-
-<pre><code class="r">map13 &lt;- expression(
-  while(TRUE) {}
-)
-mr13 &lt;- rhwatch(
-  map      = map13,
-  input    = rhfmt(&quot;/ln/tongx/housing/housing.txt&quot;, type = &quot;text&quot;),
-  output   = rhfmt(&quot;/ln/tongx/housing/tmp&quot;, type = &quot;sequence&quot;),
-  mapred   = list(
-    mapred.reduce.tasks = 0
-  ),
-  readback = FALSE,
-  noeval   = TRUE
-)
-badjob &lt;- rhex(mr13, async = TRUE) 
-</code></pre>
-
-<p>We&#39;ve set <code>mapred.reduce.tasks</code> to be 0, because this job omits the optional reduce expression.<br>
-The map contains an infinite loop, so this job will never complete. The only purpose for this meaningless
-map expression is we want the job is keeping running when we try to access its status. But since we&#39;ve run
-this job on the backgroup, we can check its status with <code>rhstatus</code>, which takes as an argument
-the object returned by <code>rhex</code>. When we said background, it means that the job is running on the 
-Hadoop, and we still have the control ability of R session at the same time. </p>
-
-<pre><code class="r">rhstatus(badjob)
-</code></pre>
-
-<pre><code>[Tue Sep 30 00:34:20 2014] Name:2014-09-30 00:34:05 Job: job_201405301308_4753  State: RUNNING Duration: 14.673
-URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4753
-             pct numtasks pending running complete killed failed_attempts
-map    0.0191228        1       0       1        0      0               0
-reduce 0.0000000        0       0       0        0      0               0
-       killed_attempts
-map                  0
-reduce               0
-Waiting 5 seconds
-</code></pre>
-
-<p>Type <code>ctrl+c</code> to stop the status updates.  Since we know this job won&#39;t ever complete, 
-we&#39;ll have to kill it.  Again, use the object returned by <code>rhex</code></p>
-
-<pre><code class="r">rhkill(badjob)
-</code></pre>
-
-<p>You can call <code>rhstatus</code> again to see that the job is now in state <code>KILLED</code></p>
 
 </div>
 
@@ -2794,6 +1466,133 @@ Recombine computation type. And the &#39;S&#39; stands for the Serial Computatio
 <p>As we can see from the plot, the Divid and Recombine Computation by RHIPE has much more prevailing 
 advantages than the Serial Computation in R in the aspect of computation speed as well as the 
 computation ablity. </p>
+
+</div>
+
+
+<div class='tab-pane' id='manage-rhipe-jobs'>
+<h3>Manage RHIPE Jobs</h3>
+
+<p>As you submit more <code>RHIPE</code> jobs, you&#39;ll need to check their status and manage them.  In this short
+section, we&#39;ll introduce two new functions to do just that. </p>
+
+<p>First, let&#39;s submit a simple job:</p>
+
+<pre><code class="r">map13 &lt;- expression(
+  while(TRUE) {}
+)
+mr13 &lt;- rhwatch(
+  map      = map13,
+  input    = rhfmt(&quot;/yourloginname/housing/housing.txt&quot;, type = &quot;text&quot;),
+  output   = rhfmt(&quot;/yourloginname/housing/tmp&quot;, type = &quot;sequence&quot;),
+  mapred   = list(
+    mapred.reduce.tasks = 0
+  ),
+  readback = FALSE,
+  noeval   = TRUE
+)
+badjob &lt;- rhex(mr13, async = TRUE) 
+</code></pre>
+
+<p>We&#39;ve set <code>mapred.reduce.tasks</code> to be 0, because this job omits the optional reduce expression.<br>
+The map contains an infinite loop, so this job will never complete. The only purpose for this meaningless
+map expression is we want the job is keeping running when we try to access its status. But since we&#39;ve run
+this job on the backgroup, we can check its status with <code>rhstatus</code>, which takes as an argument
+the object returned by <code>rhex</code>. When we said background, it means that the job is running on the 
+Hadoop, and we still have the control ability of R session at the same time. </p>
+
+<pre><code class="r">rhstatus(badjob)
+</code></pre>
+
+<pre><code>[Tue Sep 30 00:34:20 2014] Name:2014-09-30 00:34:05 Job: job_201405301308_4753  State: RUNNING Duration: 14.673
+URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4753
+             pct numtasks pending running complete killed failed_attempts
+map    0.0191228        1       0       1        0      0               0
+reduce 0.0000000        0       0       0        0      0               0
+       killed_attempts
+map                  0
+reduce               0
+Waiting 5 seconds
+</code></pre>
+
+<p>Type <code>ctrl+c</code> to stop the status updates.  Since we know this job won&#39;t ever complete, 
+we&#39;ll have to kill it.  Again, use the object returned by <code>rhex</code></p>
+
+<pre><code class="r">rhkill(badjob)
+</code></pre>
+
+<p>You can call <code>rhstatus</code> again to see that the job is now in state <code>KILLED</code></p>
+
+</div>
+
+
+<div class='tab-pane' id='hdfs-file-mangement'>
+<h3>HDFS File Mangement</h3>
+
+<p>We can delete, move and copy files on HDFS by using diffferent <code>RHIPE</code> functions, and we 
+will illustrate how to do them in the following session.</p>
+
+<p>We can use <code>rhls()</code> to see that what we&#39;ve already had in the <code>/yourloginname/housing</code> direcotry:</p>
+
+<pre><code class="r">rhls(&quot;/yourloginname/housing&quot;)
+</code></pre>
+
+<pre><code>  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29       /yourloginname/housing/byCounty
+2 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16   /yourloginname/housing/meanByCounty
+3 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
+</code></pre>
+
+<p>We can delete a direcoty or a file with the <code>rhdel()</code> function:</p>
+
+<pre><code class="r">rhdel(&quot;/yourloginname/housing/byCounty&quot;)
+</code></pre>
+
+<p>And we can use <code>rhls</code> again to see that we were successful:</p>
+
+<pre><code class="r">rhls(&quot;/yourloginname/housing&quot;)
+</code></pre>
+
+<pre><code>  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16   /yourloginname/housing/meanByCounty
+2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
+</code></pre>
+
+<p>As long as we&#39;re talking about HDFS file management, let&#39;s try out a few more functions.  Suppose
+we want to make a copy of the original text file on the HDFS.  We can use the
+<code>rhcp</code> function.  It takes two arguments.  The first is the source, or the directory on HDFS we 
+want to copy.  The second is the target, or location for the new copy.</p>
+
+<pre><code class="r">rhcp(&quot;/yourloginname/housing/housing.txt&quot;, &quot;/yourloginname/housing/tmp/housing.txt&quot;)
+rhls(&quot;/yourloginname/housing/tmp&quot;)
+</code></pre>
+
+<pre><code>  permission owner      group     size          modtime                                   file
+1 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-30 15:25 /yourloginname/housing/tmp/housing.txt
+</code></pre>
+
+<p>We can use <code>rhmv</code> to move the text file to a different folder.  This
+function also takes two arguments, just like <code>rhcp</code>.</p>
+
+<pre><code class="r">rhmv(&quot;/yourloginname/housing/tmp/housing.txt&quot;, &quot;/yourloginname/housing/tmp2/housing.txt&quot;)
+rhls(&quot;/yourloginname/housing/&quot;)
+</code></pre>
+
+<pre><code>  permission owner      group     size          modtime                                  file
+1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
+2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
+3 drwxrwxrwt tongx supergroup        0 2014-09-30 15:25                 /ln/tongx/housing/tmp
+4 drwxrwxrwt tongx supergroup        0 2014-09-30 15:28                /ln/tongx/housing/tmp2
+</code></pre>
+
+<p>That&#39;s enough file management.  Now let&#39;s recreate the division by state from the division by 
+county, which is still on the HDFS.</p>
+
+</div>
+
+
+<div class='tab-pane' id='rule-for-subset-size'>
+<h3>Rule for Subset Size</h3>
 
 </div>
 
