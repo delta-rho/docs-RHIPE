@@ -115,7 +115,7 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#compute-county-means'>Compute County Means</a>
+         <a target='_self' class='nav-not-header' href='#compute-county-min-median-max'>Compute County Min, Median, Max</a>
       </li>
 
 
@@ -658,96 +658,122 @@ $class
 </div>
 
 
-<div class='tab-pane' id='compute-county-means'>
-<h3>Compute County Means</h3>
+<div class='tab-pane' id='compute-county-min-median-max'>
+<h3>Compute County Min, Median, Max</h3>
 
-<p>We calculate the mean list price and mean sale price by county exactly the same way we 
-calculated them by state. </p>
+<p>We calculate the min, median, and max of list price by county and them we collect all statistics 
+of list price of counties for every state, and create a <code>data.frame</code> for each state. </p>
 
-<h4>Map</h4>
+<h4>The Map R Code</h4>
 
 <pre><code class="r">map4 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
-    value &lt;- data.frame(
-      listMean = mean(map.values[[r]]$list, na.rm = TRUE),
-      saleMean = mean(map.values[[r]]$selling, na.rm = TRUE),
+    outputvalue &lt;- data.frame(
+      FIPS = map.keys[[r]],
+      county = attr(map.values[[r]], &quot;county&quot;),
+      min = min(map.values[[r]]$list, na.rm = TRUE),
+      median = median(map.values[[r]]$list, na.rm = TRUE),
+      max = max(map.values[[r]]$list, na.rm = TRUE),
       stringsAsFactors = FALSE
     )
-    value$state &lt;- attr(map.values[[r]], &quot;state&quot;)
-    value$county &lt;- attr(map.values[[r]], &quot;county&quot;)
-    value$FIPS &lt;- map.keys[[r]]
-    rhcollect(1, value)
+    outputkey &lt;- attr(map.values[[r]], &quot;state&quot;)
+    rhcollect(outputkey, outputvalue)
   })
 })
 </code></pre>
 
-<p>In the map expression, we create a single row data frame for each county. The data frame has five
-columns: FIPS, listMean, saleMean, state, and county name. FIPS code, state name, and county name 
-can be found in the attributes of each element of <code>map.values</code>. In order to combine all means by
-county into one data frame, we will assign 1 to be the key for all intermediate key-value pairs.</p>
+<p>In the map expression, we create a single row data frame <code>outputvalue</code> for each county. The data frame has five
+columns: FIPS code, county name, min of list price, median of list price, and max of list price. 
+FIPS code and county name can be found in the attributes of each element of <code>map.values</code>. Recall 
+that those attributes are created in last session when we created county divisions.
+In order to combine  by county into one data frame for each state, we will assign the state name
+which also can be found in the attributes named &quot;state&quot; in each element of <code>map.values</code> to be the 
+<code>outputkey</code> for all output key-value pairs.</p>
 
-<h4>Reduce</h4>
+<h4>The Reduce R Code</h4>
 
 <pre><code class="r">reduce4 &lt;- expression(
   pre = {
-    countyMeans &lt;- data.frame()
+    reduceoutputvalue &lt;- data.frame()
   },
   reduce = {
-    countyMeans &lt;- rbind(countyMeans, do.call(rbind, reduce.values))
+    reduceoutputvalue &lt;- rbind(reduceoutputvalue, do.call(rbind, reduce.values))
   },
   post = {
-    rhcollect(reduce.key, countyMeans)
+    rhcollect(reduce.key, reduceoutputvalue)
   }
 )
 </code></pre>
 
-<p>We can use the same reduce expression which we used to find the means by state. The final output
-consists of one key-value pair, where the key is 1, and value is the data frame with all county
-means.</p>
+<p>We can use almost the same reduce expression which we used previously. In the reduce expression 
+above, our goal is to combine all observations associated with one particular state into a single 
+<code>data.frame</code>.  In <code>pre</code>, we initialize an empty data frame, <code>reduceoutputvalue</code>. In <code>reduce</code>, we 
+use <code>rbind</code> to combine all counties with their min, median, and max associated with one particular 
+state.  In <code>post</code>, we just emit the final key-value pair.  The key is the state name, and the value 
+is the data frame with all counties belonging to that state. These final key-value pairs are written 
+to HDFS, and will persist for subsequent analyses.</p>
 
 <h4>Execution Function</h4>
 
-<pre><code class="r">meansByCounty &lt;- rhwatch(
+<pre><code class="r">CountyStats &lt;- rhwatch(
   map      = map4,
   reduce   = reduce4,
-  input    = rhfmt(&quot;/ln/tongx/housing/byCounty&quot;, type = &quot;sequence&quot;),
-  output   = rhfmt(&quot;/ln/tongx/housing/meansByCounty&quot;, type = &quot;sequence&quot;),
+  input    = rhfmt(&quot;/yourloginname/housing/byCounty&quot;, type = &quot;sequence&quot;),
+  output   = rhfmt(&quot;/yourloginname/housing/CountyStats&quot;, type = &quot;sequence&quot;),
   mapred   = list( 
-    mapred.reduce.tasks = 1
+    mapred.reduce.tasks = 10
   ),
   readback = TRUE
 )
 </code></pre>
 
-<p>This time we specify only one reduce task by setting <code>mapred.reduce.tasks</code> to be 1.
-Since we know there is only one
-key-value pair in the output, we only need one output file. Eliminating unnecessary output files 
-can speed up this job and future jobs which read its output.</p>
+<p>This time we specify the <code>readback</code> argument to be <code>TRUE</code> in <code>rhwatch()</code> function. By doing this,
+once the job is finished, the output of the job which is one <code>data.frame</code> for each state will be 
+read back and assigned to <code>countyStats</code> automatically. So we do not nead to use <code>rhread()</code> anymore.</p>
 
-<pre><code class="r">str(meansByCounty)
+<pre><code class="r">str(CountyStats)
 </code></pre>
 
-<pre><code>List of 1
+<pre><code>List of 49
  $ :List of 2
-  ..$ : num 1
-  ..$ :&#39;data.frame&#39;:  2883 obs. of  5 variables:
-  .. ..$ listMean: num [1:2883] 66.3 74.9 86.5 68.3 74.4 ...
-  .. ..$ saleMean: num [1:2883] NaN NaN 66.6 52.2 NaN ...
-  .. ..$ state   : chr [1:2883] &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; &quot;AL&quot; ...
-  .. ..$ county  : chr [1:2883] &quot;Chambers&quot; &quot;Colbert&quot; &quot;Cullman&quot; &quot;Lawrence&quot; ...
-  .. ..$ FIPS    : chr [1:2883] &quot;01017&quot; &quot;01033&quot; &quot;01043&quot; &quot;01079&quot; ...
+  ..$ : chr &quot;AL&quot;
+  ..$ :&#39;data.frame&#39;:  64 obs. of  5 variables:
+  .. ..$ min   : num [1:64] 34.9 94.7 83.9 92.9 60.3 ...
+  .. ..$ median: num [1:64] 51.9 99.2 88.6 97.5 72.5 ...
+  .. ..$ max   : num [1:64] 73.5 102.2 94.7 105.7 93.5 ...
+  .. ..$ FIPS  : chr [1:64] &quot;01093&quot; &quot;01051&quot; &quot;01031&quot; &quot;01125&quot; ...
+  .. ..$ county: chr [1:64] &quot;Marion&quot; &quot;Elmore&quot; &quot;Coffee&quot; &quot;Tuscaloosa&quot; ...
+ $ :List of 2
+  ..$ : chr &quot;AR&quot;
+  ..$ :&#39;data.frame&#39;:    71 obs. of  5 variables:
+  .. ..$ min   : num [1:71] 64.916 0.548 58.333 31.409 92.222 ...
+  .. ..$ median: num [1:71] 84.3 59.6 68.4 40 95.9 ...
+  .. ..$ max   : num [1:71] 97.9 222 75.9 46.2 105.2 ...
+  .. ..$ FIPS  : chr [1:71] &quot;05105&quot; &quot;05079&quot; &quot;05071&quot; &quot;05011&quot; ...
+  .. ..$ county: chr [1:71] &quot;Perry&quot; &quot;Lincoln&quot; &quot;Johnson&quot; &quot;Bradley&quot; ...
+......
 </code></pre>
 
-<pre><code class="r">head(meansByCounty[[1]][[2]])
+<p>We can access the key of the first key-value pair by</p>
+
+<pre><code class="r">CountyStats[[1]][[2]]
 </code></pre>
 
-<pre><code>   listMean saleMean state   county  FIPS
-1  66.26665      NaN    AL Chambers 01017
-2  74.91187      NaN    AL  Colbert 01033
-3  86.54870 66.56352    AL  Cullman 01043
-4  68.32503 52.17811    AL Lawrence 01079
-5  74.35722      NaN    AL    Macon 01087
-6 103.70687 94.27969    AZ   Mohave 04015
+<pre><code>[1] &quot;AL&quot;
+</code></pre>
+
+<p>And the <code>data.frame</code> for state &quot;AL&quot; is:</p>
+
+<pre><code class="r">head(CountyStats[[1]][[2]])
+</code></pre>
+
+<pre><code>        min    median       max  FIPS     county
+1  34.88372  51.88628  73.46257 01093     Marion
+2  94.66667  99.20582 102.23077 01051     Elmore
+3  83.93817  88.59977  94.67041 01031     Coffee
+4  92.87617  97.53306 105.71429 01125 Tuscaloosa
+5  60.34774  72.46377  93.53741 01027       Clay
+6 108.97167 119.66207 128.13390 01117     Shelby
 </code></pre>
 
 </div>
@@ -1539,7 +1565,7 @@ will illustrate how to do them in the following session.</p>
 
 <pre><code>  permission owner      group     size          modtime                                  file
 1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29       /yourloginname/housing/byCounty
-2 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16   /yourloginname/housing/meanByCounty
+2 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
 3 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
 </code></pre>
 
@@ -1554,7 +1580,7 @@ will illustrate how to do them in the following session.</p>
 </code></pre>
 
 <pre><code>  permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16   /yourloginname/housing/meanByCounty
+1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
 2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
 </code></pre>
 
@@ -1579,7 +1605,7 @@ rhls(&quot;/yourloginname/housing/&quot;)
 </code></pre>
 
 <pre><code>  permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16        /ln/tongx/housing/meanByCounty
+1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16         /ln/tongx/housing/CountyStats
 2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
 3 drwxrwxrwt tongx supergroup        0 2014-09-30 15:25                 /ln/tongx/housing/tmp
 4 drwxrwxrwt tongx supergroup        0 2014-09-30 15:28                /ln/tongx/housing/tmp2
