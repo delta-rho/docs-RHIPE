@@ -66,8 +66,8 @@ library(Rhipe)
 rhinit()
 ```
 
-Next, you push to the cluster HDFS the software you have installed on the R
-session server, choosing from among  R, `RHIPE` , and other R packages.
+Next, you push all the R packages you have installed on the R session 
+server, including <code>RHIPE</code> onto the cluster HDFS.
 First, you need the system administrator to configure the HDFS so
 you can do both this and other analysis tasks where you need to write to the
 HDFS. You need to have a directory on the HDFS where you have write permission.
@@ -86,7 +86,7 @@ bashRhipeArchive("R.Pkg")
 `rhmkdir()` creates your directory `bin` in the directory `yourloginname`.
 `hdfs.setwd()` declares `/yourloginname/bin` to be the directory with your
 choice of installations.  `bashRhipeArchive()` creates the actual archive of
-your installations and names it as `MyBin`.
+your installations and names it as `R.Pkg`.
 
 Each time your R code will require the installations on the HDFS, you
 must in your R session run
