@@ -1,15 +1,111 @@
 ### Read and Divide by County ###
+We will now divide the housing data into subsets by county, so
+there will 2883 subsets. Each subset will be a `data.frame` object with 4
+column variables: `date`, `units`, `listing`, and `selling`.
+`FIPS`, `state`, `county` are not column variables because each has only one
+value for each county; their values are added on the `data.frame` as
+attributes.
 
-As we showed previously, we divided the whole data set to subsets by state, and then calculated the mean list
-and selling price for each state. According to different purpose of the data analysis, we sometime would
-like to divide the data set by different variables. So we are going to show that what if we divide our housing
-data by county from the text file as well.
+The first step is to read each line of the file 'house.txt' into R. By
+convention, `RHIPE` takes each line of a text file to be a key-value pair.
+The line number is the key. The value is the data for the line: the 7
+observations of the 7 variables of the data for one month and one county.
+Also, when a line is read into R, each observation becomes of type character.
 
-The input keys are line numbers in the housing data text file.  They are the elements of the list
-object `map.keys`.  The input values are the lines of text, which are the elements of the list object `map.values`.
-This is the default when the input is a raw text file.  For each input key-value pair, `rhcollect` emits an
-intermediate key-value pair, where the key is the state name (the third field in the comma-separated
-line) and the value is all other fields in the line, stored as a data frame with a single row.
+Each line is read as part of Map R code written by the user.
+The output of Map is a key-value pair for each line.
+The Map output key identifies the county; it is specified as values
+of `FIPS`, `state`, `county` so all three value are present,
+but either `FIPS` or `county` would have been enough to identify the county.
+The Map output value for each
+line is the observations of `date`, `units`, `listing`, and `selling` from the
+line.
+
+The Map outputs are the inputs for the Reduce R code written by the user.
+Reduce assembles the line outputs into groups by count, and creates the
+subset `data.frame' object for each state, and then writes every object to a
+directory in the HDFS specfied by the user. They are written as key-value
+pairs. Each pair consists of a key that identifies the county and a
+`data.frame`, subset object for the county.
+
+#### Master and Commander: rhwatch() ####
+
+We begin with the `RHIPE` R function `rhwatch()` that runs your R code
+specifying Map and Reduce operations, allows you to certain specify input and
+output files, and as we will see, manages key-value pairs for you.
+
+The code for the county division is
+```{r eval=FALSE, tidy=FALSE}
+mr3 <- rhwatch(
+  map      = map3,
+  reduce   = reduce3,
+  input    = rhfmt("/myloginnamehousing/housing.txt", type = "text"),
+  output   = rhfmt("/myloginname/housing/housing/byCounty", type = "sequence"),
+  readback = FALSE,
+  mapred   = list(
+    mapred.reduce.tasks = 10
+  )
+)
+```
+
+Arguments `map` and `reduce` take your Map and Reduce R code.
+`input` specifies the input text file in the HDFS that we put there earlier
+using `rhput()`. `output` specifies the directory where the final outputs of
+the Reduce operation are written. In our division by county here,
+the Reduce outputs are the 49 county `data.frame` R objects.
+They are placed
+there as key-value pairs, each pair consisting of a county key it
+`data.frame`. `readback = FALSE` tells `RHIPE` not to write the Reduce output
+to the global environment of your R session on the R session server.
+Please see the detailed R documentation about `mapred.reduce.tasks`,
+and about other arguments for `rhwatch` not used above.
+
+After the job completes successfully, we'll read the results from HDFS into our interactive R 
+session as we did before.  This time, let's use the `max` argument to `rhread`, which specifies 
+how many key-value pairs to read. The default value is -1, which means read in all key-value pairs.
+
+```{r eval=FALSE, tidy=FALSE}
+countySubsets <- rhread("/ln/tongx/housing/byCounty", max = 10)
+```
+
+Read 10 objects(31.39 KB) in 0.04 seconds
+```
+Suppose we want to see all 10 keys that we read.  Recall that key-value pairs are stored as a nested
+list.  So what we want is the first element of each element in the list.  We can use `lapply` to get
+them:
+
+```{r eval=FALSE, tidy=FALSE}
+keys <- unlist(lapply(countySubsets, "[[", 1))
+keys
+```
+```
+ [1] "01013" "01031" "01059" "01077" "01095" "01103" "01121" "04001" "05019" "05037"
+```
+
+Finally, let's check that we have the FIPS code, state name, and county name information saved as 
+attributes of the data frame.
+
+```{r eval=FALSE, tidy=FALSE}
+attributes(countySubsets[[1]][[2]])
+```
+```
+$names
+[1] "date"             "units"            "list"             "selling"
+
+$row.names
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32
+[33] 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 
+[65] 65 66
+
+$state
+[1] "AL"
+
+$county
+[1] "Butler"
+
+$class
+[1] "data.frame"
+```
 
 #### Map ####
 
@@ -55,67 +151,4 @@ attributes, we've eliminated redundant information in each data frame. Working w
 data sets, we want our data to take up the least possible space on disk in order to save 
 read/write time. Also we only keep the first element in `reduce.key` which is the `FIPS`
 as the key in output key/value pairs.
-
-#### Execution Function ####
-
-```{r eval=FALSE, tidy=FALSE}
-mr3 <- rhwatch(
-  map      = map3,
-  reduce   = reduce3,
-  input    = rhfmt("/ln/tongx/housing/housing.txt", type = "text"),
-  output   = rhfmt("/ln/tongx/housing/byCounty", type = "sequence"),
-  mapred   = list(
-    mapred.reduce.tasks = 10
-  ),
-  readback = FALSE
-)
-```
-
-After the job completes successfully, we'll read the results from HDFS into our interactive R 
-session as we did before.  This time, let's use the `max` argument to `rhread`, which specifies 
-how many key-value pairs to read. The default value is -1, which means read in all key-value pairs.
-
-```{r eval=FALSE, tidy=FALSE}
-countySubsets <- rhread("/ln/tongx/housing/byCounty", max = 10)
-```
-```
-Read 10 objects(31.39 KB) in 0.04 seconds
-```
-Suppose we want to see all 10 keys that we read.  Recall that key-value pairs are stored as a nested
-list.  So what we want is the first element of each element in the list.  We can use `lapply` to get
-them:
-
-```{r eval=FALSE, tidy=FALSE}
-keys <- unlist(lapply(countySubsets, "[[", 1))
-keys
-```
-```
- [1] "01013" "01031" "01059" "01077" "01095" "01103" "01121" "04001" "05019" "05037"
-```
-
-Finally, let's check that we have the FIPS code, state name, and county name information saved as 
-attributes of the data frame.
-
-```{r eval=FALSE, tidy=FALSE}
-attributes(countySubsets[[1]][[2]])
-```
-```
-$names
-[1] "date"             "units"            "list"             "selling"
-
-$row.names
- [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32
-[33] 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 
-[65] 65 66
-
-$state
-[1] "AL"
-
-$county
-[1] "Butler"
-
-$class
-[1] "data.frame"
-```
-
 
