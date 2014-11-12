@@ -85,6 +85,11 @@
       </li>
 
 
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#a-few-basic-hadoop-features'>A Few Basic Hadoop Features</a>
+      </li>
+
+
 <li class='nav-header unselectable' data-edit-href='001.install.Rmd'>Installing Packages</li>
       
       <li class='active'>
@@ -119,7 +124,7 @@
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='999.issues.Rmd'>Various RHIPE Issues</li>
+<li class='nav-header unselectable' data-edit-href='999.issues.Rmd'>Various RHIPE Tasks</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#manage-rhipe-jobs'>Manage RHIPE Jobs</a>
@@ -132,7 +137,7 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#rule-for-subset-size'>Rule for Subset Size</a>
+         <a target='_self' class='nav-not-header' href='#rules-for-subset-size'>Rules for Subset Size</a>
       </li>
 
    </ul>
@@ -220,6 +225,40 @@ the R global environment of your R session. They become a dataset in .RData.
 While programming R and RHIPE is easy, it is not as easy as plain old serial R.
 The point is that a lot of data analysis can be carried out in just R even when
 the data are large and complex.</p>
+
+</div>
+
+
+<div class='tab-pane' id='a-few-basic-hadoop-features'>
+<h3>A Few Basic Hadoop Features</h3>
+
+<p>The two principal computational operations of Hadoop are Map and Reduce. The
+first runs parallel computations on subsets without communication among them.
+The second can compute across subset outputs. So Map carries out the
+analytic method computation. Reduce takes the outputs from Map
+and runs the recombination computation.
+A division is typically carried out both by Map and Reduce, sometimes each used
+several times,  and can occur as
+part of the reading of the data into R at the start of the analysis.</p>
+
+<p>Usage of Map and Reduce involves the critical Hadoop element of key-value
+pairs. We give one instance here. The Map operation, instructed by the
+analyst R code, puts a key on each subset
+output. This forms a key-value pair with the output as the value.
+Each output can have a unique key, or each key can be given to many
+outputs, or all outputs can have the same key. When Reduce is given the Map
+outputs, it assembles the key-value pairs by key, which forms groups,
+and then the R recombination code is applied to the values of each group
+independently; so the running of the code on the different groups is
+embarrassingly parallel. This framework provides substantial flexibility for
+the  recombination method.</p>
+
+<p>Hadoop attempts to optimize computation in a number of ways. One example is
+Map. Typically, there are vastly more subsets than cores on the cluster.
+When Map finishes the application of the analytic method to a subset on a core,
+Hadoop seeks to assign a subset on the same node as the core to avoid
+transmission of the subset across the network connecting the nodes, which is
+more time consuming.</p>
 
 </div>
 
@@ -883,8 +922,8 @@ county, which is still on the HDFS.</p>
 </div>
 
 
-<div class='tab-pane' id='rule-for-subset-size'>
-<h3>Rule for Subset Size</h3>
+<div class='tab-pane' id='rules-for-subset-size'>
+<h3>Rules for Subset Size</h3>
 
 </div>
 
