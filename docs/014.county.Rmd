@@ -16,20 +16,22 @@ Each line is read as part of Map R code written by the user. The Map input
 key-value pairs are the above line key-value pairs. Each line also has a Map
 output key-value pair. The key identifies the county. `FIPS` could have been
 enough to do this, but it is specified as a character vector with three
-elements: the values of `FIPS`, `state`, and `county`. This is done so that
+elements: the 3-vector values of `FIPS`, `state`, and `county`.
+This is done so that
 later all three can be added to the subset `data.frame`.
 The Map output value for each line is the observations of `date`, `units`,
 `listing`, and `selling` from the line.
 
 The Map outputs are the inputs for the Reduce R code written by the user.
 Reduce assembles these into groups by key, which means by  county. It then
-creates the subset `data.frame' object for each county. Each row is the value
+creates the subset `data.frame` object for each county. Each row is the value
 of one Reduce input key-value pair: observations of `date`, `units`, 
-`listing`, and `selling`. `FIPS`, `state`,
-and `county` are added to the data.frame as attributes. Finall, Reduce writes
+`listing`, and `selling`. `FIPS`, `state`, and `county` are added to the
+`data.frame` as attributes. Finally, Reduce writes
 each subset `data.frame` object to a directory in the HDFS specfied by the user.
-The subsets are written as key-value pairs where the keys are the observations
-of `FIPS` and the values are the county `data.frames`.
+The subsets are written as Reduce output key-value pairs.
+The output keys are the above 3-vectors. The output values are the county
+`data.frames`.
 
 #### Master and Commander: rhwatch() ####
 
