@@ -1,5 +1,5 @@
 ### Read and Divide by County ###
-Our division method for the data will be to divide by county,
+Our division method for the housing data will be to divide by county,
 so there will 2883 subsets. Each subset will be a `data.frame` object with 4
 column variables: `date`, `units`, `listing`, and `selling`.
 `FIPS`, `state`, and `county` are not column variables because each has only one
@@ -8,25 +8,28 @@ attributes.
 
 The first step is to read each line of the file 'house.txt' into R. By
 convention, `RHIPE` takes each line of a text file to be a key-value pair.
-The line number is the key. The value is the data for the line, our case the
-7 observations of the 7 variables of the data for one month and one county.
+The line number is the key. The value is the data for the line, in our case
+the 7 observations of the 7 variables of the data for one month and one county.
 Also, when a line is read into R, each observation becomes of type character.
 
-Each line is read as part of Map R code written by the user.
-The output of Map is a key-value pair for each line.
-The Map output key for each line identifies the county.
-`FIPS` would have been enough to do this, but the it is specified as a
-character vector with three elements: `FIPS`, `state`, `county`.
-This is done so that later all three can be added to the subset `data.frame`.
+Each line is read as part of Map R code written by the user. The Map input
+key-value pairs are the above line key-value pairs. Each line also has a Map
+output key-value pair. The key identifies the county. `FIPS` could have been
+enough to do this, but it is specified as a character vector with three
+elements: the values of `FIPS`, `state`, and `county`. This is done so that
+later all three can be added to the subset `data.frame`.
 The Map output value for each line is the observations of `date`, `units`,
 `listing`, and `selling` from the line.
 
 The Map outputs are the inputs for the Reduce R code written by the user.
-Reduce assembles the line outputs into groups by the key, which  county, and creates the
-subset `data.frame' object for each state, and then writes every object to a
-directory in the HDFS specfied by the user. They are written as key-value
-pairs. Each pair consists of a key that identifies the county and a
-`data.frame`, subset object for the county.
+Reduce assembles these into groups by key, which means by  county. It then
+creates the subset `data.frame' object for each county. Each row is the value
+of one Reduce input key-value pair: observations of `date`, `units`, 
+`listing`, and `selling`. `FIPS`, `state`,
+and `county` are added to the data.frame as attributes. Finall, Reduce writes
+each subset `data.frame` object to a directory in the HDFS specfied by the user.
+The subsets are written as key-value pairs where the keys are the observations
+of `FIPS` and the values are the county `data.frames`.
 
 #### Master and Commander: rhwatch() ####
 
