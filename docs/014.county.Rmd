@@ -36,8 +36,8 @@ The output keys are the above 3-vectors. The output values are the county
 #### Master and Commander: rhwatch() ####
 
 We begin with the `RHIPE` R function `rhwatch()` that runs your R code
-specifying Map and Reduce operations, allows you to certain specify input and
-output files, and as we will see, manages key-value pairs for you.
+specifying Map and Reduce operations, allows you to specify input and
+output files, and manages key-value pairs for you.
 
 The code for the county division is
 ```{r eval=FALSE, tidy=FALSE}
@@ -58,9 +58,8 @@ Arguments `map` and `reduce` take your Map and Reduce R code.
 using `rhput()`. `output` specifies the directory where the final outputs of
 the Reduce operation are written. In our division by county here,
 the Reduce outputs are the 49 county `data.frame` R objects.
-They are placed
-there as key-value pairs, each pair consisting of a county key it
-`data.frame`. `readback = FALSE` tells `RHIPE` not to write the Reduce output
+They are placed in the output directory as key-value pairs,
+each pair consisting of a county key it `data.frame`. `readback = FALSE` tells `RHIPE` not to write the Reduce output
 to the global environment of your R session on the R session server.
 Please see the detailed R documentation about `mapred.reduce.tasks`,
 and about other arguments for `rhwatch` not used above.
