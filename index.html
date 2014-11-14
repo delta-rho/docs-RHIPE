@@ -490,10 +490,10 @@ on HDFS.</p>
 <h3>Read and Divide by County</h3>
 
 <p>Our division method for the housing data will be to divide by county,
-so there will 2883 subsets. Each subset will be a <code>data.frame</code> object with 4
+so there will 2883 subsets. Each subset will be a data.frame object with 4
 column variables: <code>date</code>, <code>units</code>, <code>listing</code>, and <code>selling</code>.
 <code>FIPS</code>, <code>state</code>, and <code>county</code> are not column variables because each has only one
-value for each county; their values are added on the <code>data.frame</code> as
+value for each county; their values are added on the data.frame as
 attributes.</p>
 
 <p>The first step is to read each line of the file &#39;house.txt&#39; into R. By
@@ -514,14 +514,14 @@ The Map output value for each line is the observations of <code>date</code>, <co
 
 <p>The Map outputs are the inputs for the Reduce R code written by the user.
 Reduce assembles these into groups by key, which means by  county. It then
-creates the subset <code>data.frame</code> object for each county. Each row is the value
+creates the subset data.frame object for each county. Each row is the value
 of one Reduce input key-value pair: observations of <code>date</code>, <code>units</code>, 
 <code>listing</code>, and <code>selling</code>. <code>FIPS</code>, <code>state</code>, and <code>county</code> are added to the
-<code>data.frame</code> as attributes. Finally, Reduce writes
-each subset <code>data.frame</code> object to a directory in the HDFS specified by the user.
+data.frame as attributes. Finally, Reduce writes
+each subset data.frame object to a directory in the HDFS specified by the user.
 The subsets are written as Reduce output key-value pairs.
 The output keys are the above 3-vectors. The output values are the county
-<code>data.frames</code>.</p>
+data.frames.</p>
 
 <h4>Master and Commander: rhwatch()</h4>
 
