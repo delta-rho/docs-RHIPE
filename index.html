@@ -672,12 +672,11 @@ and 6 columns of the values of variables for the text line that omits the state.
 </code></pre>
 
 <p><code>reduce.key</code> is a character vector with length three in this example, which is the 
-input key of the reduce step. <code>reduce.values</code> is a <code>list</code> object which is the input 
-values corresponding to the <code>reduce.key</code>. Each element is the Reduce input values 
-for one Reduce input key. Same as in the Map, <code>reduce.key</code> and <code>reduce.values</code> are
-created by <code>rhwatch()</code> when the job is processing.</p>
+input key of the reduce step. <code>reduce.values</code> is a <code>list</code> object. Each element is 
+the Reduce input values for one Reduce input key. Same as in the Map, <code>reduce.key</code> 
+and <code>reduce.values</code> are created by <code>rhwatch()</code> when the job is processing.</p>
 
-<p>Reduce groups the Map output key-value pairs by Map output key, the vector of FIPS, 
+<p>Reduce groups the Map output key-value pairs by Map output key, the vector with FIPS, 
 county, and state.  The current group&#39;s key is available in the object <code>reduce.key</code>, and 
 values associated with that key are elements of the list object named <code>reduce.values</code>. Recall 
 that the <code>reduce.key</code> will be a character vector with length three, and they are FIPS, 

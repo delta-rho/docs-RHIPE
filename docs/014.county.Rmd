@@ -183,12 +183,11 @@ reduce3 <- expression(
 ```
 
 `reduce.key` is a character vector with length three in this example, which is the 
-input key of the reduce step. `reduce.values` is a `list` object which is the input 
-values corresponding to the `reduce.key`. Each element is the Reduce input values 
-for one Reduce input key. Same as in the Map, `reduce.key` and `reduce.values` are
-created by `rhwatch()` when the job is processing.
+input key of the reduce step. `reduce.values` is a `list` object. Each element is 
+the Reduce input values for one Reduce input key. Same as in the Map, `reduce.key` 
+and `reduce.values` are created by `rhwatch()` when the job is processing.
 
-Reduce groups the Map output key-value pairs by Map output key, the vector of FIPS, 
+Reduce groups the Map output key-value pairs by Map output key, the vector with FIPS, 
 county, and state.  The current group's key is available in the object `reduce.key`, and 
 values associated with that key are elements of the list object named `reduce.values`. Recall 
 that the `reduce.key` will be a character vector with length three, and they are FIPS, 
