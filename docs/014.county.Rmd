@@ -138,7 +138,6 @@ map3 <- expression({
       selling = as.numeric(line[7]),
       stringsAsFactors = FALSE
     )
-  )
   rhcollect(outputkey, outputvalue)
   })
 })
@@ -169,39 +168,48 @@ The RHIPE function `rhcollect()` forms a key-value pair for each line.
 ```{r eval=FALSE, tidy=FALSE}
 reduce3 <- expression(
   pre = {
-    oneCounty <- data.frame()
+    reduceoutputvalue <- data.frame()
   },
   reduce = {
-    oneCounty <- rbind(oneCounty, do.call(rbind, reduce.values))
+    reduceoutputvalue <- rbind(reduceoutputvalue, do.call(rbind, reduce.values))
   },
   post = {
-    attr(oneCounty, "location") <- reduce.key[1:3]
-    names(attr(oneCounty, "location")) <- c("FIPS","county","state")
-    rhcollect(reduce.key[1], oneCounty)
+    reduceoutputkey <- reduce.key[1]
+    attr(reduceoutputvalue, "location") <- reduce.key[1:3]
+    names(attr(reduceoutputvalue, "location")) <- c("FIPS","county","state")
+    rhcollect(reduceoutputkey, reduceoutputvalue)
   }
 )
 ```
 
-`reduce.values` is a `list` object. Each element is the Reduce input values for
-one Reduce input key.
+`reduce.key` is a character vector with length three in this example, which is the 
+input key of the reduce step. `reduce.values` is a `list` object which is the input 
+values corresponding to the `reduce.key`. Each element is the Reduce input values 
+for one Reduce input key. Same as in the Map, `reduce.key` and `reduce.values` are
+created by `rhwatch()` when the job is processing.
 
-Reduce groups the Map output key-value pairs are grouped by output key,
-the FIPS.  The current group's key is available in the object `reduce.key`, and all values associated with that key
-are elements of the list object `reduce.values`. Recall that the `reduce.key` will be a character vector 
-with length three, and they are FIPS, county name, and state name in this order. The reduce expression 
-has three parts: `pre`, which is executed once first; `reduce`, which is executed repeatedly until all 
-intermediate values associated with the current key have been processed; and `post`, which is executed
-once at the end.  
+Reduce groups the Map output key-value pairs by Map output key, the vector of FIPS, 
+county, and state.  The current group's key is available in the object `reduce.key`, and 
+values associated with that key are elements of the list object named `reduce.values`. Recall 
+that the `reduce.key` will be a character vector with length three, and they are FIPS, 
+county name, and state name in this order. And each element of `reduce.values` list 
+is a one-row `data.frame`. The reduce expression has three parts: `pre`, 
+which is executed once first; `reduce`, which is executed repeatedly until all 
+values associated with the current key have been processed; and `post`, 
+which is executed once at the end.  
 
 In the reduce expression above, our goal is to combine all observations
 associated with one particular county into a single `data.frame`.  In `pre`,
-we initialize an empty `data frame`, `oneCounty`.  In `reduce`,
-we use `rbind`
-to combine all observations associated with one particular county.  In `post`, we add three attribute to the
-`data.frame` containing the FIPS information, county name, and state name and emit the final key-value
-pair.  The key is the first element of `reduce.key`, which is the FIPS, and the
-value is the `data.frame` 
-with all observations belonging to that county with three attributes we created.
+we initialize an empty `data.frame` named `reduceoutputvalue`.  In `reduce`,
+we first use `do.call` with `rbind` to combine observations associated with one
+particular county. Recall that `reduce` will be executed repeatedly. That means
+`reduce.values` does not include all observations associated with one county at one
+time. So we need another `rbind` to recursively combined the results from `do.call` with 
+`reduceoutputvalue` to make sure we collect all values associated with one county.
+In `post`, we add three attribute to the `data.frame` containing the FIPS information, 
+county name, and state name and emit the final key-value pair. The output key is the first 
+element of `reduce.key`, which is the FIPS, and the value is the `data.frame` with all 
+observations belonging to that county with three attributes we created.
 These final key-value pairs are written to HDFS, and will persist for subsequent analyses.
 
 By removing the FIPS, county, and state columns from the `data.frame` and
