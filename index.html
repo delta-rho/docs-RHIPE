@@ -652,7 +652,7 @@ $class
 [1] &quot;data.frame&quot;
 </code></pre>
 
-<h4>Map</h4>
+<h4>Map R Code</h4>
 
 <p>The Map R code written for the county division is</p>
 
@@ -693,7 +693,7 @@ and 6 columns of the values of variables for the text line that omits the state.
 
 <p>The RHIPE function <code>rhcollect()</code> forms a key-value pair for each line.</p>
 
-<h4>Reduce</h4>
+<h4>Reduce R Code</h4>
 
 <pre><code class="r">reduce3 &lt;- expression(
   pre = {
@@ -703,9 +703,8 @@ and 6 columns of the values of variables for the text line that omits the state.
     oneCounty &lt;- rbind(oneCounty, do.call(rbind, reduce.values))
   },
   post = {
-    attr(oneCounty, &quot;FIPS&quot;) &lt;- reduce.key[1]
-    attr(oneCounty, &quot;county&quot;) &lt;- reduce.key[2]
-    attr(oneCounty, &quot;state&quot;) &lt;- reduce.key[3]
+    attr(oneCounty, &quot;location&quot;) &lt;- reduce.key[1:3]
+    names(attr(oneCounty, &quot;location&quot;)) &lt;- c(&quot;FIPS&quot;,&quot;county&quot;,&quot;state&quot;)
     rhcollect(reduce.key[1], oneCounty)
   }
 )
