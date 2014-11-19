@@ -85,6 +85,11 @@
       </li>
 
 
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#a-few-basic-hadoop-features'>A Few Basic Hadoop Features</a>
+      </li>
+
+
 <li class='nav-header unselectable' data-edit-href='001.install.Rmd'>Installing Packages</li>
       
       <li class='active'>
@@ -119,7 +124,7 @@
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='999.issues.Rmd'>Various RHIPE Issues</li>
+<li class='nav-header unselectable' data-edit-href='999.issues.Rmd'>Various RHIPE Tasks</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#manage-rhipe-jobs'>Manage RHIPE Jobs</a>
@@ -132,7 +137,7 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#rule-for-subset-size'>Rule for Subset Size</a>
+         <a target='_self' class='nav-not-header' href='#rules-for-subset-size'>Rules for Subset Size</a>
       </li>
 
    </ul>
@@ -220,6 +225,40 @@ the R global environment of your R session. They become a dataset in .RData.
 While programming R and RHIPE is easy, it is not as easy as plain old serial R.
 The point is that a lot of data analysis can be carried out in just R even when
 the data are large and complex.</p>
+
+</div>
+
+
+<div class='tab-pane' id='a-few-basic-hadoop-features'>
+<h3>A Few Basic Hadoop Features</h3>
+
+<p>The two principal computational operations of Hadoop are Map and Reduce. The
+first runs parallel computations on subsets without communication among them.
+The second can compute across subset outputs. So Map carries out the
+analytic method computation. Reduce takes the outputs from Map
+and runs the recombination computation.
+A division is typically carried out both by Map and Reduce, sometimes each used
+several times,  and can occur as
+part of the reading of the data into R at the start of the analysis.</p>
+
+<p>Usage of Map and Reduce involves the critical Hadoop element of key-value
+pairs. We give one instance here. The Map operation, instructed by the
+analyst R code, puts a key on each subset
+output. This forms a key-value pair with the output as the value.
+Each output can have a unique key, or each key can be given to many
+outputs, or all outputs can have the same key. When Reduce is given the Map
+outputs, it assembles the key-value pairs by key, which forms groups,
+and then the R recombination code is applied to the values of each group
+independently; so the running of the code on the different groups is
+embarrassingly parallel. This framework provides substantial flexibility for
+the  recombination method.</p>
+
+<p>Hadoop attempts to optimize computation in a number of ways. One example is
+Map. Typically, there are vastly more subsets than cores on the cluster.
+When Map finishes the application of the analytic method to a subset on a core,
+Hadoop seeks to assign a subset on the same node as the core to avoid
+transmission of the subset across the network connecting the nodes, which is
+more time consuming.</p>
 
 </div>
 
@@ -490,10 +529,10 @@ on HDFS.</p>
 <h3>Read and Divide by County</h3>
 
 <p>Our division method for the housing data will be to divide by county,
-so there will 2883 subsets. Each subset will be a data.frame object with 4
+so there will 2883 subsets. Each subset will be a <code>data.frame</code> object with 4
 column variables: <code>date</code>, <code>units</code>, <code>listing</code>, and <code>selling</code>.
 <code>FIPS</code>, <code>state</code>, and <code>county</code> are not column variables because each has only one
-value for each county; their values are added on the data.frame as
+value for each county; their values are added on the <code>data.frame</code> as
 attributes.</p>
 
 <p>The first step is to read each line of the file &#39;house.txt&#39; into R. By
@@ -514,19 +553,20 @@ The Map output value for each line is the observations of <code>date</code>, <co
 
 <p>The Map outputs are the inputs for the Reduce R code written by the user.
 Reduce assembles these into groups by key, which means by  county. It then
-creates the subset data.frame object for each county. Each row is the value
+creates the subset <code>data.frame</code> object for each county. Each row is the value
 of one Reduce input key-value pair: observations of <code>date</code>, <code>units</code>, 
 <code>listing</code>, and <code>selling</code>. <code>FIPS</code>, <code>state</code>, and <code>county</code> are added to the
-data.frame as attributes. Finally, Reduce writes
-each subset data.frame object to a directory in the HDFS specified by the user.
-The subsets are written as Reduce output key-value pairs.
-The output keys are the above 3-vectors. The output values are the county
-data.frames.</p>
+<code>data.frame</code> as attributes. Finally, Reduce writes
+each subset <code>data.frame</code> object to a directory in the HDFS specified by the
+user.  The subsets are written as Reduce output key-value pairs.
+The output keys are the the values of <code>FIPS</code>. The output values are the county
+<code>data.frame</code> objects.</p>
 
 <h4>Master and Commander: rhwatch()</h4>
 
-<p>We begin with the <code>RHIPE</code> R function <code>rhwatch()</code> that runs your R code
-specifying Map and Reduce operations, allows you to specify input and
+<p>We begin with the <code>RHIPE</code> R function <code>rhwatch()</code>. It
+runs the R code you write to specify
+Map and Reduce operations, takes your specification of input and
 output files, and manages key-value pairs for you.</p>
 
 <p>The code for the county division is</p>
@@ -539,31 +579,37 @@ output files, and manages key-value pairs for you.</p>
   readback = FALSE,
   mapred   = list(
     mapred.reduce.tasks = 10
-  )
+  ),
 )
 </code></pre>
 
 <p>Arguments <code>map</code> and <code>reduce</code> take your Map and Reduce R code.
 <code>input</code> specifies the input text file in the HDFS that we put there earlier
-using <code>rhput()</code>. <code>output</code> specifies the directory where the final outputs of
-the Reduce operation are written. In our division by county here,
-the Reduce outputs are the 2,883 county data.frame R objects.
-They are placed in the output directory as key-value pairs,
-each pair consisting of a county key it data.frame. <code>readback = FALSE</code> 
-tells <code>RHIPE</code> not to write the Reduce output
-to the global environment of your R session on the R session server.
-Please see the detailed R documentation about <code>mapred.reduce.tasks</code>,
-and about other arguments for <code>rhwatch()</code> not used above.</p>
+using <code>rhput()</code>. <code>output</code> specifies the file name into which final outputs of
+the Reduce operation are written. Note that <code>rhwatch</code> creates this file.</p>
 
-<p>After the job completes successfully, the subsets by county has been saved on
-HDFS. If we want to read all subsets back to R global environment of R session,
-we could specify the <code>readback</code> to be <code>TRUE</code> in <code>rhwatch()</code>. However sometimes
-we just want to read back very small amount of subsets from HDFS into our 
-interactive R session just to check if everything is OK for the division we did.
-Then we should use <code>rhread()</code> to read back subsets from HDFS. Also we should use 
-the <code>max</code> argument to <code>rhread</code>, which specifies how many key-value pairs to read. 
-The default value is -1, which means read in all key-value pairs. Here we only
-read back 10 subsets.</p>
+<p>In our division by county here, the Reduce outputs are the 2,883 county
+<code>data.frame</code> R objects. They are written as key-value pairs
+to the output directory housing created earlier.
+The keys and values are just those of the Reduce output:
+<code>FIPS</code> and the
+county <code>dataframe</code> objects. The key-value pair object is a list with one
+element per key-value pair. The element is a list too, with two elements; the
+first is the <code>FIPS</code> key, and the second is the county <code>data.frame</code>.</p>
+
+<p>A very important point here is that these key-value pairs are an R object.
+So they can be written to the  R global environment of the R session.
+This can be done by the argument <code>readback</code>. If <code>TRUE</code>, the list is also
+written to the R global environment of the R
+session. If <code>FALSE</code>, it is not.
+If later, this is wanted, then it can be done
+using the RHIPE R function <code>rhread</code>.</p>
+
+<pre><code class="r">countySubsets &lt;- rhread(&quot;/myloginname/housing/byCounty&quot;)
+</code></pre>
+
+<p>Suppose, however, that you just want to look over the first 10 elements of
+<code>byCounty</code> to make sure all is well. This can be done by</p>
 
 <pre><code class="r">countySubsets &lt;- rhread(&quot;/myloginname/housing/byCounty&quot;, max = 10)
 </code></pre>
@@ -571,11 +617,9 @@ read back 10 subsets.</p>
 <pre><code>Read 10 objects(31.39 KB) in 0.04 seconds
 </code></pre>
 
-<p>Suppose we want to see all 10 keys that we read.  Recall that key-value pairs are stored as a nested
-list. In other words, <code>countySubsets</code> is a list with length 10. Each element of <code>countySubsets</code> is 
-also a list with two elements. The first element is the key, which we know is the FIPS information for 
-the corresponding county subset. The second element is the value, which is the data.frame for the county.
-If we want to see all the keys of these 10 key-value pairs, we can use <code>lapply</code> to get them:</p>
+<p>Just the first 10 elements are read</p>
+
+<p>Then you can look at the list of length 10 in various was such as</p>
 
 <pre><code class="r">keys &lt;- unlist(lapply(countySubsets, &quot;[[&quot;, 1))
 keys
@@ -583,12 +627,6 @@ keys
 
 <pre><code> [1] &quot;01013&quot; &quot;01031&quot; &quot;01059&quot; &quot;01077&quot; &quot;01095&quot; &quot;01103&quot; &quot;01121&quot; &quot;04001&quot; &quot;05019&quot; &quot;05037&quot;
 </code></pre>
-
-<p><code>lapply</code> here can grab all the first elements of each element of <code>countySubsets</code> and save as a list.</p>
-
-<p>Finally, let&#39;s check that we have the FIPS code, state name, and county name information saved as 
-attributes of the data.frame. Recall that the second element of each element of <code>countySubsets</code> is
-the data.frame for the corresponding county. Here let&#39;s look at the data.frame for the first subset.</p>
 
 <pre><code class="r">attributes(countySubsets[[1]][[2]])
 </code></pre>
@@ -615,6 +653,8 @@ $class
 </code></pre>
 
 <h4>Map</h4>
+
+<p>The Map R code written for the county division is</p>
 
 <pre><code class="r">map3 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
@@ -644,13 +684,14 @@ argument <code>r</code>, an index for the Map keys that goes from 1 to <code>len
 <p><code>map.values</code> is also a <code>list</code> object created by <code>rhwatch()</code>.
 <code>map.values[[r]]</code> is the value for key <code>map.keys[[r]]</code>.
 The result of <code>line</code> in the <code>lapply</code> function is the input values, a
-string.  The function <code>strsplit()</code> takes those values into the individual
-observations of the text line, and creates a <code>list</code> of length one whose
-element is a vector of length 7 that becomes <code>line</code>. <code>outputkey</code> is the FIPS
-observation for the file line. <code>outputvalue</code> is a data.frame with one row and 6
-columns of the values of variables for the text line that omits the state.</p>
+text string.  The function <code>strsplit()</code> splits the string data
+into the individual observations of the text line,
+and creates a <code>list</code> of length one whose element is a vector of length 7 that
+becomes <code>line</code>. <code>outputkey</code> is the FIPS
+observation for the file line. <code>outputvalue</code> is a <code>data.frame</code> with one row
+and 6 columns of the values of variables for the text line that omits the state.</p>
 
-<p>The RHIPE function <code>rhcollect()</code> forms a key-value for each line.</p>
+<p>The RHIPE function <code>rhcollect()</code> forms a key-value pair for each line.</p>
 
 <h4>Reduce</h4>
 
@@ -681,20 +722,23 @@ has three parts: <code>pre</code>, which is executed once first; <code>reduce</c
 intermediate values associated with the current key have been processed; and <code>post</code>, which is executed
 once at the end.  </p>
 
-<p>In the reduce expression above, our goal is to combine all observations associated with one particular
-county into a single data.frame.  In <code>pre</code>, we initialize an empty data frame, <code>oneCounty</code>.  In <code>reduce</code>, 
+<p>In the reduce expression above, our goal is to combine all observations
+associated with one particular county into a single <code>data.frame</code>.  In <code>pre</code>,
+we initialize an empty <code>data frame</code>, <code>oneCounty</code>.  In <code>reduce</code>,
 we use <code>rbind</code>
 to combine all observations associated with one particular county.  In <code>post</code>, we add three attribute to the
-data.frame containing the FIPS information, county name, and state name and emit the final key-value
-pair.  The key is the first element of <code>reduce.key</code>, which is the FIPS, and the value is the data.frame 
+<code>data.frame</code> containing the FIPS information, county name, and state name and emit the final key-value
+pair.  The key is the first element of <code>reduce.key</code>, which is the FIPS, and the
+value is the <code>data.frame</code> 
 with all observations belonging to that county with three attributes we created.
 These final key-value pairs are written to HDFS, and will persist for subsequent analyses.</p>
 
-<p>By removing the FIPS, county, and state columns from the data.frame and storing them as
-attributes, we&#39;ve eliminated redundant information in each data frame. Working with massive 
-data sets, we want our data to take up the least possible space on disk in order to save 
-read/write time. Also we only keep the first element in <code>reduce.key</code> which is the <code>FIPS</code>
-as the key in output key/value pairs.</p>
+<p>By removing the FIPS, county, and state columns from the <code>data.frame</code> and
+storing them as attributes, we&#39;ve eliminated redundant information in each
+<code>data frame</code>. Working with massive data sets, we want our data to take up the
+least possible space on disk in order to save read/write time. Also we only
+keep the first element in <code>reduce.key</code> which is the <code>FIPS</code> as the key in output
+key/value pairs.</p>
 
 </div>
 
@@ -941,8 +985,8 @@ county, which is still on the HDFS.</p>
 </div>
 
 
-<div class='tab-pane' id='rule-for-subset-size'>
-<h3>Rule for Subset Size</h3>
+<div class='tab-pane' id='rules-for-subset-size'>
+<h3>Rules for Subset Size</h3>
 
 </div>
 
