@@ -85,6 +85,11 @@
       </li>
 
 
+      <li class='active'>
+         <a target='_self' class='nav-not-header' href='#a-few-basic-hadoop-features'>A Few Basic Hadoop Features</a>
+      </li>
+
+
 <li class='nav-header unselectable' data-edit-href='001.install.Rmd'>Installing Packages</li>
       
       <li class='active'>
@@ -119,7 +124,7 @@
       </li>
 
 
-<li class='nav-header unselectable' data-edit-href='999.issues.Rmd'>Various RHIPE Issues</li>
+<li class='nav-header unselectable' data-edit-href='999.issues.Rmd'>Various RHIPE Tasks</li>
       
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#manage-rhipe-jobs'>Manage RHIPE Jobs</a>
@@ -132,7 +137,7 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#rule-for-subset-size'>Rule for Subset Size</a>
+         <a target='_self' class='nav-not-header' href='#rules-for-subset-size'>Rules for Subset Size</a>
       </li>
 
    </ul>
@@ -220,6 +225,40 @@ the R global environment of your R session. They become a dataset in .RData.
 While programming R and RHIPE is easy, it is not as easy as plain old serial R.
 The point is that a lot of data analysis can be carried out in just R even when
 the data are large and complex.</p>
+
+</div>
+
+
+<div class='tab-pane' id='a-few-basic-hadoop-features'>
+<h3>A Few Basic Hadoop Features</h3>
+
+<p>The two principal computational operations of Hadoop are Map and Reduce. The
+first runs parallel computations on subsets without communication among them.
+The second can compute across subset outputs. So Map carries out the
+analytic method computation. Reduce takes the outputs from Map
+and runs the recombination computation.
+A division is typically carried out both by Map and Reduce, sometimes each used
+several times,  and can occur as
+part of the reading of the data into R at the start of the analysis.</p>
+
+<p>Usage of Map and Reduce involves the critical Hadoop element of key-value
+pairs. We give one instance here. The Map operation, instructed by the
+analyst R code, puts a key on each subset
+output. This forms a key-value pair with the output as the value.
+Each output can have a unique key, or each key can be given to many
+outputs, or all outputs can have the same key. When Reduce is given the Map
+outputs, it assembles the key-value pairs by key, which forms groups,
+and then the R recombination code is applied to the values of each group
+independently; so the running of the code on the different groups is
+embarrassingly parallel. This framework provides substantial flexibility for
+the  recombination method.</p>
+
+<p>Hadoop attempts to optimize computation in a number of ways. One example is
+Map. Typically, there are vastly more subsets than cores on the cluster.
+When Map finishes the application of the analytic method to a subset on a core,
+Hadoop seeks to assign a subset on the same node as the core to avoid
+transmission of the subset across the network connecting the nodes, which is
+more time consuming.</p>
 
 </div>
 
@@ -532,9 +571,9 @@ output files, and manages key-value pairs for you.</p>
 
 <p>The code for the county division is</p>
 
-<pre><code class="r">mr3 &lt;- rhwatch(
-  map      = map3,
-  reduce   = reduce3,
+<pre><code class="r">mr1 &lt;- rhwatch(
+  map      = map1,
+  reduce   = reduce1,
   input    = rhfmt(&quot;/myloginname/housing/housing.txt&quot;, type = &quot;text&quot;),
   output   = rhfmt(&quot;/myloginname/housing/byCounty&quot;, type = &quot;sequence&quot;),
   readback = FALSE,
@@ -561,10 +600,9 @@ first is the <code>FIPS</code> key, and the second is the county <code>data.fram
 <p>A very important point here is that these key-value pairs are an R object.
 So they can be written to the  R global environment of the R session.
 This can be done by the argument <code>readback</code>. If <code>TRUE</code>, the list is also
-written to the R global environment of the R
-session. If <code>FALSE</code>, it is not.
+written to the R global environment of the R session. If <code>FALSE</code>, it is not.
 If later, this is wanted, then it can be done
-using the RHIPE R function <code>rhread</code>.</p>
+using the RHIPE R function <code>rhread()</code>.</p>
 
 <pre><code class="r">countySubsets &lt;- rhread(&quot;/myloginname/housing/byCounty&quot;)
 </code></pre>
@@ -617,7 +655,7 @@ $class
 
 <p>The Map R code written for the county division is</p>
 
-<pre><code class="r">map3 &lt;- expression({
+<pre><code class="r">map1 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
     line = strsplit(map.values[[r]], &quot;,&quot;)[[1]]
     outputkey &lt;- line[1:3]
@@ -633,29 +671,37 @@ $class
 })
 </code></pre>
 
-<p>This code is really a <code>for loop</code>, but is done by <code>lapply()</code> because it is in
+<p><code>rhwatch()</code> creates two list objects <code>map.keys</code> and <code>map.values</code>.
+The first is the Map input keys, which in our case are the text file line
+numbers; each element of the list is one line number. The second is the
+input values; each element is the observations of the 7 county variables for
+one line and consists of one text string. Let <code>r</code> be an integer in
+ <code>1:length(map.keys)</code> then <code>map.values[[r]]</code> is the value for key
+<code>map.keys[[r]]</code>.</p>
+
+<p>This Map code is really a <code>for loop</code>, but is done by <code>lapply()</code> because it is in
 general faster. But we could have used <code>for r in 1:length(map.keys)</code>.
-The loop proceeds through the input keys, which are the line numbers, as
-specified by the first argument of <code>lapply</code>. The R <code>list</code> object <code>map.keys</code>
-contains them; it is created by <code>rhwatch()</code>.  The
-second argument of the above <code>lapply</code> defines the Map function with the
-argument <code>r</code>, an index for the Map keys that goes from 1 to <code>length(map.keys)</code>.</p>
+The loop proceeds through the input keys, specified by the first argument of
+<code>lapply</code>.  The second argument of the above <code>lapply</code> defines the Map function
+with the argument <code>r</code>, an index for the Map keys.</p>
 
-<p><code>map.values</code> is also a <code>list</code> object created by <code>rhwatch()</code>.
-<code>map.values[[r]]</code> is the value for key <code>map.keys[[r]]</code>.
-The result of <code>line</code> in the <code>lapply</code> function is the input values, a
-text string.  The function <code>strsplit()</code> splits the string data
-into the individual observations of the text line,
-and creates a <code>list</code> of length one whose element is a vector of length 7 that
-becomes <code>line</code>. <code>outputkey</code> is the FIPS
-observation for the file line. <code>outputvalue</code> is a <code>data.frame</code> with one row
-and 6 columns of the values of variables for the text line that omits the state.</p>
+<p>The function <code>strsplit()</code> splits each line character string of variable
+observations into the individual observations of the text line, but each
+observation is expressed as a <code>character</code> object. <code>line</code> is assigned
+a <code>list</code> of length one whose element is a character vector of length 7.</p>
 
-<p>The RHIPE function <code>rhcollect()</code> forms a key-value pair for each line.</p>
+<p>Next we turn to the Map output key-value pairs.
+<code>outputkey</code> for eact text line is a character vector of length 3 with <code>FIPS</code>,
+<code>county</code>, and <code>state</code>. <code>outputvalue</code> is a <code>data.frame</code> with one row
+and 4 columns, the observations of <code>date</code>, <code>units</code>, <code>list</code>, and <code>selling</code>, now
+each as a numeric object.</p>
+
+<p>The RHIPE function <code>rhcollect()</code> forms a Map output key-value pair for each
+line.</p>
 
 <h4>Reduce R Code</h4>
 
-<pre><code class="r">reduce3 &lt;- expression(
+<pre><code class="r">reduce1 &lt;- expression(
   pre = {
     reduceoutputvalue &lt;- data.frame()
   },
@@ -670,6 +716,14 @@ and 6 columns of the values of variables for the text line that omits the state.
   }
 )
 </code></pre>
+
+<p><code>rhwatch()</code> creates two list objects <code>reduce.key</code> and <code>reduce.value</code>.
+The first is the Map input keys, which in our case are the text file line
+numbers; each element of the list is one line number. The second is the
+input values; each element is the observations of the 7 county variables for
+one line and consists of one text string. Let <code>r</code> be an integer in
+ <code>1:length(map.keys)</code> then <code>map.values[[r]]</code> is the value for key
+<code>map.keys[[r]]</code>.</p>
 
 <p><code>reduce.key</code> is a character vector with length three in this example, which is the 
 input key of the reduce step. <code>reduce.values</code> is a <code>list</code> object. Each element is 
@@ -952,8 +1006,8 @@ county, which is still on the HDFS.</p>
 </div>
 
 
-<div class='tab-pane' id='rule-for-subset-size'>
-<h3>Rule for Subset Size</h3>
+<div class='tab-pane' id='rules-for-subset-size'>
+<h3>Rules for Subset Size</h3>
 
 </div>
 

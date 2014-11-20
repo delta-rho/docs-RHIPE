@@ -42,9 +42,9 @@ output files, and manages key-value pairs for you.
 
 The code for the county division is
 ```{r eval=FALSE, tidy=FALSE}
-mr3 <- rhwatch(
-  map      = map3,
-  reduce   = reduce3,
+mr1 <- rhwatch(
+  map      = map1,
+  reduce   = reduce1,
   input    = rhfmt("/myloginname/housing/housing.txt", type = "text"),
   output   = rhfmt("/myloginname/housing/byCounty", type = "sequence"),
   readback = FALSE,
@@ -71,10 +71,9 @@ first is the `FIPS` key, and the second is the county `data.frame`.
 A very important point here is that these key-value pairs are an R object.
 So they can be written to the  R global environment of the R session.
 This can be done by the argument `readback`. If `TRUE`, the list is also
-written to the R global environment of the R
-session. If `FALSE`, it is not.
+written to the R global environment of the R session. If `FALSE`, it is not.
 If later, this is wanted, then it can be done
-using the RHIPE R function `rhread`.
+using the RHIPE R function `rhread()`.
 ```{r eval=FALSE, tidy=FALSE}
 countySubsets <- rhread("/myloginname/housing/byCounty")
 ```
@@ -127,7 +126,7 @@ $class
 The Map R code written for the county division is
 
 ```{r eval =FALSE, tidy=FALSE}
-map3 <- expression({
+map1 <- expression({
   lapply(seq_along(map.keys), function(r) {
     line = strsplit(map.values[[r]], ",")[[1]]
     outputkey <- line[1:3]
@@ -142,31 +141,38 @@ map3 <- expression({
   })
 })
 ```
+`rhwatch()` creates two list objects `map.keys` and `map.values`.
+The first is the Map input keys, which in our case are the text file line
+numbers; each element of the list is one line number. The second is the
+input values; each element is the observations of the 7 county variables for
+one line and consists of one text string. Let `r` be an integer in
+ `1:length(map.keys)` then `map.values[[r]]` is the value for key
+`map.keys[[r]]`.
 
-This code is really a `for loop`, but is done by `lapply()` because it is in
+This Map code is really a `for loop`, but is done by `lapply()` because it is in
 general faster. But we could have used `for r in 1:length(map.keys)`.
-The loop proceeds through the input keys, which are the line numbers, as
-specified by the first argument of `lapply`. The R `list` object `map.keys`
-contains them; it is created by `rhwatch()`.  The
-second argument of the above `lapply` defines the Map function with the
-argument `r`, an index for the Map keys that goes from 1 to `length(map.keys)`.
+The loop proceeds through the input keys, specified by the first argument of
+`lapply`.  The second argument of the above `lapply` defines the Map function
+with the argument `r`, an index for the Map keys.
 
-`map.values` is also a `list` object created by `rhwatch()`.
-`map.values[[r]]` is the value for key `map.keys[[r]]`.
-The result of `line` in the `lapply` function is the input values, a
-text string.  The function `strsplit()` splits the string data
-into the individual observations of the text line,
-and creates a `list` of length one whose element is a vector of length 7 that
-becomes `line`. `outputkey` is the FIPS
-observation for the file line. `outputvalue` is a `data.frame` with one row
-and 6 columns of the values of variables for the text line that omits the state.
+The function `strsplit()` splits each line character string of variable
+observations into the individual observations of the text line, but each
+observation is expressed as a `character` object. `line` is assigned
+a `list` of length one whose element is a character vector of length 7.
 
-The RHIPE function `rhcollect()` forms a key-value pair for each line.
+Next we turn to the Map output key-value pairs.
+`outputkey` for eact text line is a character vector of length 3 with `FIPS`,
+`county`, and `state`. `outputvalue` is a `data.frame` with one row
+and 4 columns, the observations of `date`, `units`, `list`, and `selling`, now
+each as a numeric object.
+
+The RHIPE function `rhcollect()` forms a Map output key-value pair for each
+line.
 
 #### Reduce R Code ####
 
 ```{r eval=FALSE, tidy=FALSE}
-reduce3 <- expression(
+reduce1 <- expression(
   pre = {
     reduceoutputvalue <- data.frame()
   },
@@ -181,6 +187,14 @@ reduce3 <- expression(
   }
 )
 ```
+`rhwatch()` creates two list objects `reduce.key` and `reduce.value`.
+The first is the Map input keys, which in our case are the text file line
+numbers; each element of the list is one line number. The second is the
+input values; each element is the observations of the 7 county variables for
+one line and consists of one text string. Let `r` be an integer in
+ `1:length(map.keys)` then `map.values[[r]]` is the value for key
+`map.keys[[r]]`.
+
 
 `reduce.key` is a character vector with length three in this example, which is the 
 input key of the reduce step. `reduce.values` is a `list` object. Each element is 
