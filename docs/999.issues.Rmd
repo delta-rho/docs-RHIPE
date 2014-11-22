@@ -1,4 +1,4 @@
-## Various RHIPE Issues ##
+## Various RHIPE Tasks ##
 
 ### Manage RHIPE Jobs ###
 
@@ -121,4 +121,4 @@ rhls("/yourloginname/housing/")
 That's enough file management.  Now let's recreate the division by state from the division by 
 county, which is still on the HDFS.
 
-### Rule for Subset Size ###
+### Rules for Subset Size ###

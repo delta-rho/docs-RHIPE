@@ -18,11 +18,11 @@ The variables are
 - **state**: state abbreviation
 - **date**: time of sale measured in months, from 1 to 66
 - **units**: number of units sold
-- **list**: monthly median list price (dollars per square foot)
+- **listing**: monthly median listing price (dollars per square foot)
 - **selling**: monthly median selling price (dollars per square foot)
 
-Many observations of the last three variables are missing: units 68%, list 7%,
-and selling 68%.
+Many observations of the last three variables are missing: units 68%, listing
+7%, and selling 68%.
  
 The number of measurements (including missing), is 7 x 66 x 2883 = 1,331,946.
 So this is in fact a small dataset that could be analyzed in the standard
