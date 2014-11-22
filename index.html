@@ -361,7 +361,7 @@ your installations and names it as <code>R.Pkg</code>.</p>
 must in your R session run</p>
 
 <pre><code class="r">library(Rhipe) rhinit()
-rhoptions(zips = &quot;/myloginname/bin/R.Pkg.tar.gz&quot;)
+rhoptions(zips = &quot;/yourloginname/bin/R.Pkg.tar.gz&quot;)
 rhoptions(runner = &quot;sh ./R.Pkg/library/Rhipe/bin/RhipeMapReduce.sh&quot;)
 </code></pre>
 
@@ -435,7 +435,7 @@ directory of the R session.</p>
 directory on the R-session server where your R session is running.
 Suppose the path name of this directory is</p>
 
-<pre><code class="r">[1] &quot;/home/myusername/myRdirectory/&quot;
+<pre><code class="r">[1] &quot;/home/yourusername/myRdirectory/&quot;
 </code></pre>
 
 <p>The next step is to get <code>housing.txt</code> onto the
@@ -444,7 +444,7 @@ There are Hadoop commands that could be used directly to copy the file, but
 our promise to you is that you never need to use Hadoop commands. There is a
 a RHIPE function, <code>rhput()</code> that will do it for you.</p>
 
-<pre><code class="r">rhput(&quot;/home/myusername/mydirectory/housing.txt&quot;, &quot;/yourloginname/housing/housing.txt&quot;)
+<pre><code class="r">rhput(&quot;/home/yourusername/myRdirectory/housing.txt&quot;, &quot;/yourloginname/housing/housing.txt&quot;)
 </code></pre>
 
 <p>The first argument specifies the full linux path of the text file on the R
@@ -486,7 +486,7 @@ Replace `tongx` with an appropriate HDFS directory, such as your user name.
 
 
 ```r
-rhput("./housing.txt", "/ln/tongx/housing/housing.txt")
+rhput("./housing.txt", "/yourloginname/housing/housing.txt")
 ```
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -->
@@ -501,7 +501,7 @@ We can also copy files onto HDFS via Hadoop&#39;s command line interface, but
 <p>We can confirm that the housing data text file has been written to HDFS with the <code>rhexists</code> function.
 Make sure you specify the same directory as you used in the last step.</p>
 
-<pre><code class="r">rhexists(&quot;/ln/tongx/housing/housing.txt&quot;)
+<pre><code class="r">rhexists(&quot;/yourloginname/housing/housing.txt&quot;)
 </code></pre>
 
 <pre><code>[1] TRUE
@@ -509,11 +509,11 @@ Make sure you specify the same directory as you used in the last step.</p>
 
 <p>If we want to see more details about a file or directory on HDFS, we can use <code>rhls()</code>.</p>
 
-<pre><code class="r">rhls(&quot;/ln/tongx/housing&quot;)
+<pre><code class="r">rhls(&quot;/yourloginname/housing&quot;)
 </code></pre>
 
-<pre><code>  permission owner      group     size          modtime                            file
-1 -rw-rw-rw- tongx supergroup 7.683 mb 2014-09-17 11:11   /ln/tongx/housing/housing.txt
+<pre><code>  permission         owner      group     size          modtime                               file
+1 -rw-rw-rw- yourloginname supergroup 7.683 mb 2014-09-17 11:11 /yourloginname/housing/housing.txt
 </code></pre>
 
 <p><code>rhls()</code> is very similar to the bash command <code>ls</code>.  It will list all content under a given address. 
@@ -574,8 +574,8 @@ output files, and manages key-value pairs for you.</p>
 <pre><code class="r">mr1 &lt;- rhwatch(
   map      = map1,
   reduce   = reduce1,
-  input    = rhfmt(&quot;/myloginname/housing/housing.txt&quot;, type = &quot;text&quot;),
-  output   = rhfmt(&quot;/myloginname/housing/byCounty&quot;, type = &quot;sequence&quot;),
+  input    = rhfmt(&quot;/yourloginname/housing/housing.txt&quot;, type = &quot;text&quot;),
+  output   = rhfmt(&quot;/yourloginname/housing/byCounty&quot;, type = &quot;sequence&quot;),
   readback = FALSE,
   mapred   = list(
     mapred.reduce.tasks = 10
@@ -603,13 +603,13 @@ written to the R global environment of the R session. If <code>FALSE</code>, it 
 If later, this is wanted, then it can be done
 using the RHIPE R function <code>rhread()</code>.</p>
 
-<pre><code class="r">countySubsets &lt;- rhread(&quot;/myloginname/housing/byCounty&quot;)
+<pre><code class="r">countySubsets &lt;- rhread(&quot;/yourloginname/housing/byCounty&quot;)
 </code></pre>
 
 <p>Suppose, however, that you just want to look over the first 10 elements of
 <code>byCounty</code> to make sure all is well. This can be done by</p>
 
-<pre><code class="r">countySubsets &lt;- rhread(&quot;/myloginname/housing/byCounty&quot;, max = 10)
+<pre><code class="r">countySubsets &lt;- rhread(&quot;/yourloginname/housing/byCounty&quot;, max = 10)
 </code></pre>
 
 <pre><code>Read 10 objects(31.39 KB) in 0.04 seconds
@@ -748,7 +748,7 @@ Now in our case, the key is county and the values are the observations of<br>
 county.</p>
 
 <p>Note the Reduce code has a certain structure: expressions <code>pre</code>, <code>reduce</code>,
-and <code>post</code>. In our case <code>pre</code> initializes reduceoutputvalue to a
+and <code>post</code>. In our case <code>pre</code> initializes <code>reduceoutputvalue</code> to a
 <code>data.frame()</code>. <code>reduce</code> creates assembles the county <code>data.frame</code> as the
 reducer receives the values through <code>rbind(reduceoutputvalue, do.call(rbind,
 reduce.values))</code>, using <code>rbind()</code> to add rows to the <code>data.frame</code> object.
@@ -763,8 +763,8 @@ It adds <code>FIPS</code>,<code>county</code>, and <code>state</code> as <code>a
 <div class='tab-pane' id='compute-county-min-median-max'>
 <h3>Compute County Min, Median, Max</h3>
 
-<p>We calculate the min, median, and max of list price by county and them we collect all statistics 
-of list price of counties for every state, and create a <code>data.frame</code> for each state. </p>
+<p>We calculate the min, median, and max of listing price by county and them we collect all statistics 
+of listing price of counties for every state, and create a <code>data.frame</code> for each state. </p>
 
 <h4>The Map R Code</h4>
 
@@ -773,9 +773,9 @@ of list price of counties for every state, and create a <code>data.frame</code> 
     outputvalue &lt;- data.frame(
       FIPS = map.keys[[r]],
       county = attr(map.values[[r]], &quot;county&quot;),
-      min = min(map.values[[r]]$list, na.rm = TRUE),
-      median = median(map.values[[r]]$list, na.rm = TRUE),
-      max = max(map.values[[r]]$list, na.rm = TRUE),
+      min = min(map.values[[r]]$listing, na.rm = TRUE),
+      median = median(map.values[[r]]$listing, na.rm = TRUE),
+      max = max(map.values[[r]]$listing, na.rm = TRUE),
       stringsAsFactors = FALSE
     )
     outputkey &lt;- attr(map.values[[r]], &quot;state&quot;)
@@ -785,7 +785,7 @@ of list price of counties for every state, and create a <code>data.frame</code> 
 </code></pre>
 
 <p>In the map expression, we create a single row data frame <code>outputvalue</code> for each county. The data frame has five
-columns: FIPS code, county name, min of list price, median of list price, and max of list price. 
+columns: FIPS code, county name, min of listing price, median of listing price, and max of listing price. 
 FIPS code and county name can be found in the attributes of each element of <code>map.values</code>. Recall 
 that those attributes are created in last session when we created county divisions.
 In order to combine  by county into one data frame for each state, we will assign the state name
@@ -948,10 +948,10 @@ will illustrate how to do them in the following session.</p>
 <pre><code class="r">rhls(&quot;/yourloginname/housing&quot;)
 </code></pre>
 
-<pre><code>  permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29       /yourloginname/housing/byCounty
-2 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
-3 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
+<pre><code>  permission         owner      group     size          modtime                                  file
+1 drwxrwxrwt yourloginname supergroup        0 2014-10-02 14:29       /yourloginname/housing/byCounty
+2 drwxrwxrwt yourloginname supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
+3 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
 </code></pre>
 
 <p>We can delete a direcoty or a file with the <code>rhdel()</code> function:</p>
@@ -964,9 +964,9 @@ will illustrate how to do them in the following session.</p>
 <pre><code class="r">rhls(&quot;/yourloginname/housing&quot;)
 </code></pre>
 
-<pre><code>  permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
-2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
+<pre><code>  permission         owner      group     size          modtime                                  file
+1 drwxrwxrwt yourloginname supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
+2 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
 </code></pre>
 
 <p>As long as we&#39;re talking about HDFS file management, let&#39;s try out a few more functions.  Suppose
@@ -978,8 +978,8 @@ want to copy.  The second is the target, or location for the new copy.</p>
 rhls(&quot;/yourloginname/housing/tmp&quot;)
 </code></pre>
 
-<pre><code>  permission owner      group     size          modtime                                   file
-1 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-30 15:25 /yourloginname/housing/tmp/housing.txt
+<pre><code>  permission         owner      group     size          modtime                                   file
+1 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-30 15:25 /yourloginname/housing/tmp/housing.txt
 </code></pre>
 
 <p>We can use <code>rhmv</code> to move the text file to a different folder.  This
@@ -989,11 +989,11 @@ function also takes two arguments, just like <code>rhcp</code>.</p>
 rhls(&quot;/yourloginname/housing/&quot;)
 </code></pre>
 
-<pre><code>  permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16         /ln/tongx/housing/CountyStats
-2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
-3 drwxrwxrwt tongx supergroup        0 2014-09-30 15:25                 /ln/tongx/housing/tmp
-4 drwxrwxrwt tongx supergroup        0 2014-09-30 15:28                /ln/tongx/housing/tmp2
+<pre><code>  permission         owner      group     size          modtime                               file
+1 drwxrwxrwt yourloginname supergroup        0 2014-09-20 11:16 /yourloginname/housing/CountyStats
+2 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-17 11:11 /yourloginname/housing/housing.txt
+3 drwxrwxrwt yourloginname supergroup        0 2014-09-30 15:25         /yourloginname/housing/tmp
+4 drwxrwxrwt yourloginname supergroup        0 2014-09-30 15:28        /yourloginname/housing/tmp2
 </code></pre>
 
 <p>That&#39;s enough file management.  Now let&#39;s recreate the division by state from the division by 

@@ -12,7 +12,7 @@ directory on the R-session server where your R session is running.
 Suppose the path name of this directory is
 
 ```{r eval=FALSE, tidy=FALSE}
-[1] "/home/myusername/myRdirectory/"
+[1] "/home/yourusername/myRdirectory/"
 ```
 
 The next step is to get `housing.txt` onto the
@@ -22,7 +22,7 @@ our promise to you is that you never need to use Hadoop commands. There is a
 a RHIPE function, `rhput()` that will do it for you.
 
 ```{r eval=FALSE, tidy=FALSE}
-rhput("/home/myusername/mydirectory/housing.txt", "/yourloginname/housing/housing.txt")
+rhput("/home/yourusername/myRdirectory/housing.txt", "/yourloginname/housing/housing.txt")
 ```
 
 The first argument specifies the full linux path of the text file on the R
@@ -60,7 +60,7 @@ Now we want to copy the raw text file to the HDFS.  The function that writes fil
 Replace `tongx` with an appropriate HDFS directory, such as your user name.
 
 ```{r eval=FALSE, tidy=FALSE}
-rhput("./housing.txt", "/ln/tongx/housing/housing.txt")
+rhput("./housing.txt", "/yourloginname/housing/housing.txt")
 ```
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -->
@@ -76,7 +76,7 @@ We can confirm that the housing data text file has been written to HDFS with the
 Make sure you specify the same directory as you used in the last step.
 
 ```{r eval=FALSE, tidy=FALSE}
-rhexists("/ln/tongx/housing/housing.txt")
+rhexists("/yourloginname/housing/housing.txt")
 ```
 ```
 [1] TRUE
@@ -84,11 +84,11 @@ rhexists("/ln/tongx/housing/housing.txt")
 
 If we want to see more details about a file or directory on HDFS, we can use `rhls()`.
 ```{r eval=FALSE, tidy=FALSE}
-rhls("/ln/tongx/housing")
+rhls("/yourloginname/housing")
 ```
 ```
-  permission owner      group     size          modtime                            file
-1 -rw-rw-rw- tongx supergroup 7.683 mb 2014-09-17 11:11   /ln/tongx/housing/housing.txt
+  permission         owner      group     size          modtime                               file
+1 -rw-rw-rw- yourloginname supergroup 7.683 mb 2014-09-17 11:11 /yourloginname/housing/housing.txt
 ```
 `rhls()` is very similar to the bash command `ls`.  It will list all content under a given address. 
 We can see that the "housing.txt" file with size 11.82Mb is located under "/ln/tongx/housing/" 

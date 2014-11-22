@@ -45,8 +45,8 @@ The code for the county division is
 mr1 <- rhwatch(
   map      = map1,
   reduce   = reduce1,
-  input    = rhfmt("/myloginname/housing/housing.txt", type = "text"),
-  output   = rhfmt("/myloginname/housing/byCounty", type = "sequence"),
+  input    = rhfmt("/yourloginname/housing/housing.txt", type = "text"),
+  output   = rhfmt("/yourloginname/housing/byCounty", type = "sequence"),
   readback = FALSE,
   mapred   = list(
     mapred.reduce.tasks = 10
@@ -74,12 +74,12 @@ written to the R global environment of the R session. If `FALSE`, it is not.
 If later, this is wanted, then it can be done
 using the RHIPE R function `rhread()`.
 ```{r eval=FALSE, tidy=FALSE}
-countySubsets <- rhread("/myloginname/housing/byCounty")
+countySubsets <- rhread("/yourloginname/housing/byCounty")
 ```
 Suppose, however, that you just want to look over the first 10 elements of
 `byCounty` to make sure all is well. This can be done by
 ```{r eval=FALSE, tidy=FALSE}
-countySubsets <- rhread("/myloginname/housing/byCounty", max = 10)
+countySubsets <- rhread("/yourloginname/housing/byCounty", max = 10)
 ```
 ```
 Read 10 objects(31.39 KB) in 0.04 seconds
@@ -219,7 +219,7 @@ Now in our case, the key is county and the values are the observations of
 county.
 
 Note the Reduce code has a certain structure: expressions `pre`, `reduce`,
-and `post`. In our case `pre` initializes reduceoutputvalue to a
+and `post`. In our case `pre` initializes `reduceoutputvalue` to a
 `data.frame()`. `reduce` creates assembles the county `data.frame` as the
 reducer receives the values through `rbind(reduceoutputvalue, do.call(rbind,
 reduce.values))`, using `rbind()` to add rows to the `data.frame` object.

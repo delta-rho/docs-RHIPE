@@ -1,7 +1,7 @@
 ### Compute County Min, Median, Max ###
 
-We calculate the min, median, and max of list price by county and them we collect all statistics 
-of list price of counties for every state, and create a `data.frame` for each state. 
+We calculate the min, median, and max of listing price by county and them we collect all statistics 
+of listing price of counties for every state, and create a `data.frame` for each state. 
 
 #### The Map R Code ####
 
@@ -11,9 +11,9 @@ map4 <- expression({
     outputvalue <- data.frame(
       FIPS = map.keys[[r]],
       county = attr(map.values[[r]], "county"),
-      min = min(map.values[[r]]$list, na.rm = TRUE),
-      median = median(map.values[[r]]$list, na.rm = TRUE),
-      max = max(map.values[[r]]$list, na.rm = TRUE),
+      min = min(map.values[[r]]$listing, na.rm = TRUE),
+      median = median(map.values[[r]]$listing, na.rm = TRUE),
+      max = max(map.values[[r]]$listing, na.rm = TRUE),
       stringsAsFactors = FALSE
     )
     outputkey <- attr(map.values[[r]], "state")
@@ -23,7 +23,7 @@ map4 <- expression({
 ```
 
 In the map expression, we create a single row data frame `outputvalue` for each county. The data frame has five
-columns: FIPS code, county name, min of list price, median of list price, and max of list price. 
+columns: FIPS code, county name, min of listing price, median of listing price, and max of listing price. 
 FIPS code and county name can be found in the attributes of each element of `map.values`. Recall 
 that those attributes are created in last session when we created county divisions.
 In order to combine  by county into one data frame for each state, we will assign the state name

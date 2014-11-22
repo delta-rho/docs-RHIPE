@@ -66,10 +66,10 @@ We can use `rhls()` to see that what we've already had in the `/yourloginname/ho
 rhls("/yourloginname/housing")
 ```
 ```
-  permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-10-02 14:29       /yourloginname/housing/byCounty
-2 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
-3 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
+  permission         owner      group     size          modtime                                  file
+1 drwxrwxrwt yourloginname supergroup        0 2014-10-02 14:29       /yourloginname/housing/byCounty
+2 drwxrwxrwt yourloginname supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
+3 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
 ```
 
 We can delete a direcoty or a file with the `rhdel()` function:
@@ -84,9 +84,9 @@ And we can use `rhls` again to see that we were successful:
 rhls("/yourloginname/housing")
 ```
 ```
-  permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
-2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
+  permission         owner      group     size          modtime                                  file
+1 drwxrwxrwt yourloginname supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
+2 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
 ```
 
 As long as we're talking about HDFS file management, let's try out a few more functions.  Suppose
@@ -99,8 +99,8 @@ rhcp("/yourloginname/housing/housing.txt", "/yourloginname/housing/tmp/housing.t
 rhls("/yourloginname/housing/tmp")
 ```
 ```
-  permission owner      group     size          modtime                                   file
-1 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-30 15:25 /yourloginname/housing/tmp/housing.txt
+  permission         owner      group     size          modtime                                   file
+1 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-30 15:25 /yourloginname/housing/tmp/housing.txt
 ```
 
 We can use `rhmv` to move the text file to a different folder.  This
@@ -111,11 +111,11 @@ rhmv("/yourloginname/housing/tmp/housing.txt", "/yourloginname/housing/tmp2/hous
 rhls("/yourloginname/housing/")
 ```
 ```
-  permission owner      group     size          modtime                                  file
-1 drwxrwxrwt tongx supergroup        0 2014-09-20 11:16         /ln/tongx/housing/CountyStats
-2 -rw-r--r-- tongx supergroup 7.683 mb 2014-09-17 11:11         /ln/tongx/housing/housing.txt
-3 drwxrwxrwt tongx supergroup        0 2014-09-30 15:25                 /ln/tongx/housing/tmp
-4 drwxrwxrwt tongx supergroup        0 2014-09-30 15:28                /ln/tongx/housing/tmp2
+  permission         owner      group     size          modtime                               file
+1 drwxrwxrwt yourloginname supergroup        0 2014-09-20 11:16 /yourloginname/housing/CountyStats
+2 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-17 11:11 /yourloginname/housing/housing.txt
+3 drwxrwxrwt yourloginname supergroup        0 2014-09-30 15:25         /yourloginname/housing/tmp
+4 drwxrwxrwt yourloginname supergroup        0 2014-09-30 15:28        /yourloginname/housing/tmp2
 ```
 
 That's enough file management.  Now let's recreate the division by state from the division by 

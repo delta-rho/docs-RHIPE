@@ -92,6 +92,6 @@ Each time your R code will require the installations on the HDFS, you
 must in your R session run
 ```{r eval=FALSE, tidy=FALSE}
 library(Rhipe) rhinit()
-rhoptions(zips = "/myloginname/bin/R.Pkg.tar.gz")
+rhoptions(zips = "/yourloginname/bin/R.Pkg.tar.gz")
 rhoptions(runner = "sh ./R.Pkg/library/Rhipe/bin/RhipeMapReduce.sh")
 ```
