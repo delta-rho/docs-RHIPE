@@ -1,37 +1,27 @@
 ### Compute County Min, Median, Max ###
 
 With the county division subsets now in the HDFS we will illustate using them
-to carry out D&amp;R with a very simple recombination procedure for a summary
-statistic of the variable `listing` for each county, but one that suffices to
-illustrate
-`RHIPE`.  However, we emphasize that in practice initial analysis would
-actually involve comprehensive analysis of both the detailed data for all
+to carry out D&amp;R with a very simple recombination procedure based on a
+summary statistic for each county of the variable `listing`.
+We do this for simplicity of explanation of how `RHIPE` works.
+However, we emphasize that in practice initial analysis would
+almost always involve comprehensive analysis of both the detailed data for all
 subset variables and summary statistics based on the detailed data.
 
-The summary statistics consists of the minimum, median, and maximum of
-`listing` one for each county. Map R code computes the statistic.
-The output key of Map, and the therefore the input key for Reduce is `state`.
+Our summary statistic consists of the minimum, median, and maximum of
+`listing`, one summary for each county. Map R code computes the statistic.
+The output key of Map, and therefore the input key for Reduce is `state`.
 The Reduce R code creates a `data.frame` for each state
-where the columns are `min`, `median`, `max`, and `county`.
+where the columns are `FIPS`, `county`, `min`, `median`, and `max`.
 
-We suppose that we in a situation in which while the dataset is large and
-complex, requiring RHIPE, but that the summary statistic data is small enought
-to analyze further in R. This is an example of an analytic recombintion.
+The next step is to analyze the county summary statistic, so ths
+is an example of an analytic recombination. In addition, we suppose that the
+summary statistic dataset is small enough to analyze in R. This is not uncommon
+in practice even when the raw data are very large and complex.
 
 ### The RHIPE Manager: rhwatch() ####
 
-Here is the code for `rhwatch()`. Our Map and Reduce code,
-`map2` and `reduce2` will be discussed later.
-
-The initial input key-value pairs for Map, given to the argument `input`,
-are our county subsets which were written to the HDFS directory
-/yourloginname/housing  as the key-value pairs `list` object `byCounty`. 
-The final output key-value pairs for Reduce, specified by the argument
-`output`, will be in the same directory in the file CountyStats.
-This will be a key-value pair `list` object. The keys are the states, and the
-values will be a `data.frame` object for each observation of `state`. The
-variabls are the county `listing` summary statistic variables,
-the observations of `FIPS`, and the observation of `county`.
+Here is the code for `rhwatch()`.
 
 ```{r eval=FALSE, tidy=FALSE}
 CountyStats <- rhwatch(
@@ -45,16 +35,30 @@ CountyStats <- rhwatch(
   ),
 )
 ```
+Our Map and Reduce code, `map2` and `reduce2`, is given to the arguments
+`map` and `reduce`. The code will be will be discussed later.
+
+The initial input key-value pairs for Map, given to the argument `input`,
+are our county subsets which were written to the HDFS directory
+/yourloginname/housing  as the key-value pairs `list` object `byCounty`. 
+The final output key-value pairs for Reduce, specified by the argument
+`output`, will be written to the file `CountyStats` in the same directory as
+the subsets.
+The output will be a key-value pair `list` object.
+The keys are the states, and the values will be a `data.frame` object for each
+observation of `state`. The variables of the `data.frame` are given above.
+
 The argument `readback` is given the value TRUE, which means `CountyStats` is
 also written to the R global environment of the R session. We do this since we
-are thinking of the housing data as an example where the outputs are a dataset
-small enough to be analyzed further by an analytic recombination in R without
-`RHIPE`. The argument `mapred.reduce.tasks` is given the value 10, as in
-our last use of it.
+are have supposed the Reduce outputs small enough to be analyzed in R.
+
+The argument `mapred.reduce.tasks` is given the value 10, as in
+our use of it to create the county subsets.
 
 
 #### The Map R Code ####
 
+The Map R code is
 ```{r eval=FALSE, tidy=FALSE}
 map2 <- expression({
   lapply(seq_along(map.keys), function(r) {
@@ -72,24 +76,17 @@ map2 <- expression({
 })
 ```
 
-`map.keys` are the county identiers `FIPS`, and map.values are the county
-subset `data.frame` objects.  The `lapply()` loop goes through all
-observations of `FIPS`. `RHIPE` gets these from 
-Each stage of the loop creates `outputvalue`,
-a `data.frame` with one row that has as variables `min`, `median`, and `max`
-for `listing`, together with the `FIPS` county observation. 
-For this value, `outputkey` is the value of `state` for the county.
-
-
-In the map expression, we create a single row data frame `outputvalue` for each county. The data frame has five
-columns: FIPS code, county name, min of listing price, median of listing price, and max of listing price. 
-FIPS code and county name can be found in the attributes of each element of `map.values`. Recall 
-that those attributes are created in last session when we created county divisions.
-In order to combine  by county into one data frame for each state, we will assign the state name
-which also can be found in the attributes named "state" in each element of `map.values` to be the 
-`outputkey` for all output key-value pairs.
+`map.keys` are the Map input keys, the county subset identiers `FIPS`, and
+`map.values` are the Map input values,  the county subset `data.frame`
+objects.  The `lapply()` loop goes through all subsets.
+Each stage of the loop creates the Map output vales, `outputvalue`,
+a `data.frame` with one row that has the variables
+`FIPS`, `county`, `min`, `median`, and `max`.
+`outputkey` is the Map output key, the value of `state` for the county.
 
 #### The Reduce R Code ####
+The Reduce R code for the `listing` summary statistic is
+
 
 ```{r eval=FALSE, tidy=FALSE}
 reduce2 <- expression(

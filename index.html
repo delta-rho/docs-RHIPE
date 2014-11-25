@@ -768,37 +768,27 @@ writes the Reduce output key-value pairs to the HDFS.</p>
 <h3>Compute County Min, Median, Max</h3>
 
 <p>With the county division subsets now in the HDFS we will illustate using them
-to carry out D&amp;R with a very simple recombination procedure for a summary
-statistic of the variable <code>listing</code> for each county, but one that suffices to
-illustrate
-<code>RHIPE</code>.  However, we emphasize that in practice initial analysis would
-actually involve comprehensive analysis of both the detailed data for all
+to carry out D&amp;R with a very simple recombination procedure based on a
+summary statistic for each county of the variable <code>listing</code>.
+We do this for simplicity of explanation of how <code>RHIPE</code> works.
+However, we emphasize that in practice initial analysis would
+almost always involve comprehensive analysis of both the detailed data for all
 subset variables and summary statistics based on the detailed data.</p>
 
-<p>The summary statistics consists of the minimum, median, and maximum of
-<code>listing</code> one for each county. Map R code computes the statistic.
-The output key of Map, and the therefore the input key for Reduce is <code>state</code>.
+<p>Our summary statistic consists of the minimum, median, and maximum of
+<code>listing</code>, one summary for each county. Map R code computes the statistic.
+The output key of Map, and therefore the input key for Reduce is <code>state</code>.
 The Reduce R code creates a <code>data.frame</code> for each state
-where the columns are <code>min</code>, <code>median</code>, <code>max</code>, and <code>county</code>.</p>
+where the columns are <code>FIPS</code>, <code>county</code>, <code>min</code>, <code>median</code>, and <code>max</code>.</p>
 
-<p>We suppose that we in a situation in which while the dataset is large and
-complex, requiring RHIPE, but that the summary statistic data is small enought
-to analyze further in R. This is an example of an analytic recombintion.</p>
+<p>The next step is to analyze the county summary statistic, so ths
+is an example of an analytic recombination. In addition, we suppose that the
+summary statistic dataset is small enough to analyze in R. This is not uncommon
+in practice even when the raw data are very large and complex.</p>
 
 <h3>The RHIPE Manager: rhwatch()</h3>
 
-<p>Here is the code for <code>rhwatch()</code>. Our Map and Reduce code,
-<code>map2</code> and <code>reduce2</code> will be discussed later.</p>
-
-<p>The initial input key-value pairs for Map, given to the argument <code>input</code>,
-are our county subsets which were written to the HDFS directory
-/yourloginname/housing  as the key-value pairs <code>list</code> object <code>byCounty</code>. 
-The final output key-value pairs for Reduce, specified by the argument
-<code>output</code>, will be in the same directory in the file CountyStats.
-This will be a key-value pair <code>list</code> object. The keys are the states, and the
-values will be a <code>data.frame</code> object for each observation of <code>state</code>. The
-variabls are the county <code>listing</code> summary statistic variables,
-the observations of <code>FIPS</code>, and the observation of <code>county</code>.</p>
+<p>Here is the code for <code>rhwatch()</code>.</p>
 
 <pre><code class="r">CountyStats &lt;- rhwatch(
   map      = map2,
@@ -812,14 +802,29 @@ the observations of <code>FIPS</code>, and the observation of <code>county</code
 )
 </code></pre>
 
+<p>Our Map and Reduce code, <code>map2</code> and <code>reduce2</code>, is given to the arguments
+<code>map</code> and <code>reduce</code>. The code will be will be discussed later.</p>
+
+<p>The initial input key-value pairs for Map, given to the argument <code>input</code>,
+are our county subsets which were written to the HDFS directory
+/yourloginname/housing  as the key-value pairs <code>list</code> object <code>byCounty</code>. 
+The final output key-value pairs for Reduce, specified by the argument
+<code>output</code>, will be written to the file <code>CountyStats</code> in the same directory as
+the subsets.
+The output will be a key-value pair <code>list</code> object.
+The keys are the states, and the values will be a <code>data.frame</code> object for each
+observation of <code>state</code>. The variables of the <code>data.frame</code> are given above.</p>
+
 <p>The argument <code>readback</code> is given the value TRUE, which means <code>CountyStats</code> is
 also written to the R global environment of the R session. We do this since we
-are thinking of the housing data as an example where the outputs are a dataset
-small enough to be analyzed further by an analytic recombination in R without
-<code>RHIPE</code>. The argument <code>mapred.reduce.tasks</code> is given the value 10, as in
-our last use of it.</p>
+are have supposed the Reduce outputs small enough to be analyzed in R.</p>
+
+<p>The argument <code>mapred.reduce.tasks</code> is given the value 10, as in
+our use of it to create the county subsets.</p>
 
 <h4>The Map R Code</h4>
+
+<p>The Map R code is</p>
 
 <pre><code class="r">map2 &lt;- expression({
   lapply(seq_along(map.keys), function(r) {
@@ -837,23 +842,17 @@ our last use of it.</p>
 })
 </code></pre>
 
-<p><code>map.keys</code> are the county identiers <code>FIPS</code>, and map.values are the county
-subset <code>data.frame</code> objects.  The <code>lapply()</code> loop goes through all
-observations of <code>FIPS</code>. <code>RHIPE</code> gets these from 
-Each stage of the loop creates <code>outputvalue</code>,
-a <code>data.frame</code> with one row that has as variables <code>min</code>, <code>median</code>, and <code>max</code>
-for <code>listing</code>, together with the <code>FIPS</code> county observation. 
-For this value, <code>outputkey</code> is the value of <code>state</code> for the county.</p>
-
-<p>In the map expression, we create a single row data frame <code>outputvalue</code> for each county. The data frame has five
-columns: FIPS code, county name, min of listing price, median of listing price, and max of listing price. 
-FIPS code and county name can be found in the attributes of each element of <code>map.values</code>. Recall 
-that those attributes are created in last session when we created county divisions.
-In order to combine  by county into one data frame for each state, we will assign the state name
-which also can be found in the attributes named &quot;state&quot; in each element of <code>map.values</code> to be the 
-<code>outputkey</code> for all output key-value pairs.</p>
+<p><code>map.keys</code> are the Map input keys, the county subset identiers <code>FIPS</code>, and
+<code>map.values</code> are the Map input values,  the county subset <code>data.frame</code>
+objects.  The <code>lapply()</code> loop goes through all subsets.
+Each stage of the loop creates the Map output vales, <code>outputvalue</code>,
+a <code>data.frame</code> with one row that has the variables
+<code>FIPS</code>, <code>county</code>, <code>min</code>, <code>median</code>, and <code>max</code>.
+<code>outputkey</code> is the Map output key, the value of <code>state</code> for the county.</p>
 
 <h4>The Reduce R Code</h4>
+
+<p>The Reduce R code for the <code>listing</code> summary statistic is</p>
 
 <pre><code class="r">reduce2 &lt;- expression(
   pre = {
