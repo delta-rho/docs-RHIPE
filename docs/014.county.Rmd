@@ -3,37 +3,37 @@ Our division method for the housing data will be to divide by county,
 so there will 2883 subsets. Each subset will be a `data.frame` object with 4
 column variables: `date`, `units`, `listing`, and `selling`.
 `FIPS`, `state`, and `county` are not column variables because each has only one
-value for each county; their values are added on the `data.frame` as
+value for each county; their values are added to the `data.frame` as
 attributes.
 
 The first step is to read each line of the file 'house.txt' into R. By
 convention, `RHIPE` takes each line of a text file to be a key-value pair.
 The line number is the key. The value is the data for the line, in our case
 the 7 observations of the 7 variables of the data for one month and one county.
-Also, when a line is read into R, each observation becomes of type character.
 
 Each line is read as part of Map R code written by the user. The Map input
 key-value pairs are the above line key-value pairs. Each line also has a Map
 output key-value pair. The key identifies the county. `FIPS` could have been
 enough to do this, but it is specified as a character vector with three
 elements: the 3-vector values of `FIPS`, `state`, and `county`.
-This is done so that
-later all three can be added to the subset `data.frame`.
-The Map output value for each line is the observations of `date`, `units`,
-`listing`, and `selling` from the line.
+This is done so that later all three can be added to the subset `data.frame`.
+The output value for each output key is the  observations of `date`, `units`,
+`listing`, and `selling` from the line for that key.
 
-The Map outputs are the inputs for the Reduce R code written by the user.
-Reduce assembles these into groups by key, which means by  county. It then
-creates the subset `data.frame` object for each county. Each row is the value
-of one Reduce input key-value pair: observations of `date`, `units`, 
-`listing`, and `selling`. `FIPS`, `state`, and `county` are added to the
-`data.frame` as attributes. Finally, Reduce writes
+The Map output key-value pairs are the input key-value pairs for the Reduce R
+code written by the user. Reduce assembles these into groups by key,
+that is, the county. Then the Reduce R code is applied to the output
+values of  each group collectively to create the subset `data.frame` object
+for each county. Each row is the value of one Reduce input key-value pair:
+observations of `date`, `units`, `listing`, and `selling` for one housing unit.
+`FIPS`, `state`, and `county` are added to the `data.frame` as attributes.
+Finally, Reduce writes
 each subset `data.frame` object to a directory in the HDFS specified by the
 user.  The subsets are written as Reduce output key-value pairs.
 The output keys are the the values of `FIPS`. The output values are the county
 `data.frame` objects.
 
-#### Master and Commander: rhwatch() ####
+#### The RHIPE Manager: rhwatch() ####
 
 We begin with the `RHIPE` R function `rhwatch()`. It
 runs the R code you write to specify
@@ -55,9 +55,10 @@ mr1 <- rhwatch(
 ```
 
 Arguments `map` and `reduce` take your Map and Reduce R code.
-`input` specifies the input text file in the HDFS that we put there earlier
-using `rhput()`. `output` specifies the file name into which final outputs of
-the Reduce operation are written. Note that `rhwatch` creates this file.
+`input` specifies the input to be the text file in the HDFS that we put there
+earlier using `rhput()`. `output` specifies the file name into which final
+outputs of the Reduce operation are written. Note that `rhwatch()` creates
+this file.
 
 In our division by county here, the Reduce recombination outputs are the
 2,883 county `data.frame` R objects. They are written as key-value pairs
@@ -68,11 +69,12 @@ element per key-value pair. The element is a list too, with two elements; the
 first is the `FIPS` key, and the second is the county `data.frame`.
 
 A very important point here is that these key-value pairs are an R object.
-So they can be written to the  R global environment of the R session.
-This can be done by the argument `readback`. If `TRUE`, the list is also
+So they can be written to the  R global environment of the R session for
+analysis there if that is feasible.
+You can do this by the argument `readback`. If `TRUE`, the list is also
 written to the R global environment of the R session. If `FALSE`, it is not.
-If later, this is wanted, then it can be done
-using the RHIPE R function `rhread()`.
+If later, this is wanted, then it can be done using the RHIPE R function
+`rhread()`.
 ```{r eval=FALSE, tidy=FALSE}
 countySubsets <- rhread("/yourloginname/housing/byCounty")
 ```
@@ -84,8 +86,6 @@ countySubsets <- rhread("/yourloginname/housing/byCounty", max = 10)
 ```
 Read 10 objects(31.39 KB) in 0.04 seconds
 ```
-Just the first 10 elements are read
-
 Then you can look at the list of length 10 in various was such as
 
 ```{r eval=FALSE, tidy=FALSE}
@@ -142,49 +142,51 @@ map1 <- expression({
 ```
 Map has input key-value pairs, and output key-value pairs. Each pair has an
 identifier, the key, and numeric-categorical information, the value. 
-The Map R code is applied to each input key-value pair. The result is one
+The Map R code is applied to each input key-value pair, producing one
 output key-value pair. Each application of the Map code to a
 key-value pair is carried out by a mapper, and there are many mappers running
 in parallel without communication (embarrassingly parallel) until the Map job
 completes.
 
-`RHIPE` creates key-value pair input `list` objects, `map.keys` and
+`RHIPE` creates input key-value pair `list` objects, `map.keys` and
 `map.values`, based on information that it has.
-Let `r` be an integer from 1 to the number of key-value pairs.
+Let `r` be an integer from 1 to the number of input key-value pairs.
 `map.values[[r]]` is the value for key `map.keys[[r]]`.
 The housing data inputs come from a text file in the HDFS, housing.txt,
 By RHIPE convention, for a text file, each Map input key is a text file line
-number, and each  Map input value is the observations in a line, read into R
-as a single text string. In our case each line value is the observations of
-the 7 county variables for the line.
+number, and the corresponding  Map input value is the observations in the line,
+read into R as a single text string.
+In our case each line value is the observations of the 7 county variables for the line.
 
 This Map code is really a `for loop`, but is done by `lapply()` because it is
 in general faster than `for r in 1:length(map.keys)`.
 The loop proceeds through the input keys, specified by the first argument of
-`lapply`.  The second argument of the above `lapply` defines the Map function
-with the argument `r`, an index for the Map keys.
+`lapply`.  The second argument of the above `lapply` defines the Map expression
+with the argument `r`, an index for the Map keys and values.
 
 The function `strsplit()` splits each character-string line input value
 into the individual observations of the text line. The result, `line`,
 is a `list` of length one whose element is a `character vector` whose elements
-are the line observations, each a `character` object. In our case, the
+are the line observations. In our case, the
 observations are a `character vector` of length 7, in order:
 `FIPS`, `county`, `state`, `date`, `units`, `listing`, `selling`.
+Each one has type `character`.
 
 Next we turn to the Map output key-value pairs.
-`outputkey` for eact text line is a character vector of length 3 with `FIPS`,
+`outputkey` for react text line is a character vector of length 3 with `FIPS`,
 `county`, and `state`. `outputvalue` is a `data.frame` with one row
 and 4 columns, the observations of `date`, `units`, `listing`, and `selling`, 
 each a `numeric` object.
 
-The argument of `data.frame`, `stringsAsFactors`, is an
+The argument of `data.frame`, `stringsAsFactors`, is
 is given the value `FALSE`. This leaves character vectors in the `data.frame`
-as is and does on convert to a `factor`.
+as is, and does on convert to a `factor`.
 
 The RHIPE function `rhcollect()` forms a Map output key-value pair for each
-line.
+line, and writes the results to the HDFS.
 
 #### Reduce R Code ####
+The Reduce R code for the county division is
 
 ```{r eval=FALSE, tidy=FALSE}
 reduce1 <- expression(
@@ -203,27 +205,28 @@ reduce1 <- expression(
 )
 ```
 
-The output key-value pairs of Map are the inputs to Reduce. The first task of
-Reduce is to group its input key-value pairs by unique key.
-Your Reduce R code is applied to the key-value pairs of each group by a
-reducer. The number of groups
-varies in applications from just one, with a single Reduce output, to many.
-For multiple groups, the reducers run in parallel without communication
+The output key-value pairs of Map are the input key-value pairs to Reduce.
+The first task of Reduce is to group its input key-value pairs by unique key.
+The Reduce R code is applied to the key-value pairs of each group by a
+reducer. The number of groups varies in applications from just one, with a
+single Reduce output, to many.
+For multiple groups, the reducers run in parallel, without communication,
 until the Reduce job completes.
 
 `RHIPE` creates two list objects `reduce.key` and `reduce.values`.
-Each element of `reduce.key` is the unique of each group, and the corresponding
-element of `reduce.values` has the values for the group.
-Now in our case, the key is county and the values are the observations of  
-`date`, `units`, `listing`, and `selling` for the all housing units in the
-county.
+Each element of `reduce.key` is the key for one group, and the corresponding
+element of `reduce.values` has the values for the group to which the Reduce
+code is applied..  Now in our case, the key is county and the values are the
+observations of  `date`, `units`, `listing`, and `selling` for the all housing
+units in the county.
 
 Note the Reduce code has a certain structure: expressions `pre`, `reduce`,
 and `post`. In our case `pre` initializes `reduceoutputvalue` to a
-`data.frame()`. `reduce` creates assembles the county `data.frame` as the
+`data.frame()`. `reduce` assembles the county `data.frame` as the
 reducer receives the values through `rbind(reduceoutputvalue, do.call(rbind,
-reduce.values))`, using `rbind()` to add rows to the `data.frame` object.
-`post` operates further on the result of `reduce`. It assigns the observation
-of `FIPS` as the 
-It adds `FIPS`,`county`, and `state` as `attributes`. Then the RHIPE function
-`rhcollect()` forms a Reduce output key-value pair for each county.
+reduce.values))`; this uses `rbind()` to add rows to the `data.frame` object.
+`post` operates further on the result of `reduce`. In our case it first assigns
+the observation of `FIPS` as the key. Then it adds `FIPS`,`county`, and
+`state` as `attributes`. Finally the RHIPE function
+`rhcollect()` forms a Reduce output key-value pair for each county. RHIPE then
+writes the Reduce output key-value pairs to the HDFS.

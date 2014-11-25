@@ -1,12 +1,62 @@
 ### Compute County Min, Median, Max ###
 
-We calculate the min, median, and max of listing price by county and them we collect all statistics 
-of listing price of counties for every state, and create a `data.frame` for each state. 
+With the county division subsets now in the HDFS we will illustate using them
+to carry out D&amp;R with a very simple recombination procedure for a summary
+statistic of the variable `listing` for each county, but one that suffices to
+illustrate
+`RHIPE`.  However, we emphasize that in practice initial analysis would
+actually involve comprehensive analysis of both the detailed data for all
+subset variables and summary statistics based on the detailed data.
+
+The summary statistics consists of the minimum, median, and maximum of
+`listing` one for each county. Map R code computes the statistic.
+The output key of Map, and the therefore the input key for Reduce is `state`.
+The Reduce R code creates a `data.frame` for each state
+where the columns are `min`, `median`, `max`, and `county`.
+
+We suppose that we in a situation in which while the dataset is large and
+complex, requiring RHIPE, but that the summary statistic data is small enought
+to analyze further in R. This is an example of an analytic recombintion.
+
+### The RHIPE Manager: rhwatch() ####
+
+Here is the code for `rhwatch()`. Our Map and Reduce code,
+`map2` and `reduce2` will be discussed later.
+
+The initial input key-value pairs for Map, given to the argument `input`,
+are our county subsets which were written to the HDFS directory
+/yourloginname/housing  as the key-value pairs `list` object `byCounty`. 
+The final output key-value pairs for Reduce, specified by the argument
+`output`, will be in the same directory in the file CountyStats.
+This will be a key-value pair `list` object. The keys are the states, and the
+values will be a `data.frame` object for each observation of `state`. The
+variabls are the county `listing` summary statistic variables,
+the observations of `FIPS`, and the observation of `county`.
+
+```{r eval=FALSE, tidy=FALSE}
+CountyStats <- rhwatch(
+  map      = map2,
+  reduce   = reduce2,
+  input    = rhfmt("/yourloginname/housing/byCounty", type = "sequence"),
+  output   = rhfmt("/yourloginname/housing/CountyStats", type = "sequence"),
+  readback = TRUE
+  mapred   = list( 
+    mapred.reduce.tasks = 10
+  ),
+)
+```
+The argument `readback` is given the value TRUE, which means `CountyStats` is
+also written to the R global environment of the R session. We do this since we
+are thinking of the housing data as an example where the outputs are a dataset
+small enough to be analyzed further by an analytic recombination in R without
+`RHIPE`. The argument `mapred.reduce.tasks` is given the value 10, as in
+our last use of it.
+
 
 #### The Map R Code ####
 
 ```{r eval=FALSE, tidy=FALSE}
-map4 <- expression({
+map2 <- expression({
   lapply(seq_along(map.keys), function(r) {
     outputvalue <- data.frame(
       FIPS = map.keys[[r]],
@@ -22,6 +72,15 @@ map4 <- expression({
 })
 ```
 
+`map.keys` are the county identiers `FIPS`, and map.values are the county
+subset `data.frame` objects.  The `lapply()` loop goes through all
+observations of `FIPS`. `RHIPE` gets these from 
+Each stage of the loop creates `outputvalue`,
+a `data.frame` with one row that has as variables `min`, `median`, and `max`
+for `listing`, together with the `FIPS` county observation. 
+For this value, `outputkey` is the value of `state` for the county.
+
+
 In the map expression, we create a single row data frame `outputvalue` for each county. The data frame has five
 columns: FIPS code, county name, min of listing price, median of listing price, and max of listing price. 
 FIPS code and county name can be found in the attributes of each element of `map.values`. Recall 
@@ -33,7 +92,7 @@ which also can be found in the attributes named "state" in each element of `map.
 #### The Reduce R Code ####
 
 ```{r eval=FALSE, tidy=FALSE}
-reduce4 <- expression(
+reduce2 <- expression(
   pre = {
     reduceoutputvalue <- data.frame()
   },
@@ -54,21 +113,6 @@ state.  In `post`, we just emit the final key-value pair.  The key is the state 
 is the data frame with all counties belonging to that state. These final key-value pairs are written 
 to HDFS, and will persist for subsequent analyses.
 
-
-#### Execution Function ####
-
-```{r eval=FALSE, tidy=FALSE}
-CountyStats <- rhwatch(
-  map      = map4,
-  reduce   = reduce4,
-  input    = rhfmt("/yourloginname/housing/byCounty", type = "sequence"),
-  output   = rhfmt("/yourloginname/housing/CountyStats", type = "sequence"),
-  mapred   = list( 
-    mapred.reduce.tasks = 10
-  ),
-  readback = TRUE
-)
-```
 
 This time we specify the `readback` argument to be `TRUE` in `rhwatch()` function. By doing this,
 once the job is finished, the output of the job which is one `data.frame` for each state will be 
