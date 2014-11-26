@@ -158,7 +158,8 @@ number, and the corresponding  Map input value is the observations in the line,
 read into R as a single text string.
 In our case each line value is the observations of the 7 county variables for the line.
 
-This Map code is really a `for loop`, but is done by `lapply()` because it is
+This Map code is really a `for loop` with `r` as the looping variable,
+but is done by `lapply()` because it is
 in general faster than `for r in 1:length(map.keys)`.
 The loop proceeds through the input keys, specified by the first argument of
 `lapply`.  The second argument of the above `lapply` defines the Map expression

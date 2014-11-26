@@ -132,7 +132,7 @@
 
 
       <li class='active'>
-         <a target='_self' class='nav-not-header' href='#hdfs-file-mangement'>HDFS File Mangement</a>
+         <a target='_self' class='nav-not-header' href='#hdfs-file-management'>HDFS File Management</a>
       </li>
 
 
@@ -153,7 +153,7 @@ R-session servers, and a Unix Hadoop cluster. The second two components are
 running R and RHIPE.  You work on the remote
 computer, say your laptop, and login to an R-session server.
 This is home base, where you do all of your programming
-of R and RHIPE R commands. The R commands you write for division, anpplication
+of R and RHIPE R commands. The R commands you write for division, application
 of analytic methods, and recombination that are destined for Hadoop on the
 cluster are passed along by RHIPE R commands.</p>
 
@@ -185,7 +185,7 @@ written by R.</p>
 
 <p>There is a vast segment of the R community that uses RStudio, for good reason.
 RStudio can join the setting. You have RStudio server  installed on the
-R-session servers by system administators. A web browser on the R server runs
+R-session servers by system administrators. A web browser on the R server runs
 the RStudio interface which is accessed by you on your remote device via the
 remote login.</p>
 
@@ -398,7 +398,7 @@ separate living quarter.</p>
 
 <p>The number of measurements (including missing), is 7 x 66 x 2883 = 1,331,946.
 So this is in fact a small dataset that could be analyzed in the standard
-serial R. However, we can use them to illustate how RHIPE R commands implement
+serial R. However, we can use them to illustrate how RHIPE R commands implement
 Divide and Recombine. We simply pretend the data are large and complex, break
 into subsets, and continuing on with D&amp;R. The small size let&#39;s you easily
 pick up the data, follow along using the R commands in the tutorial, and
@@ -688,7 +688,8 @@ number, and the corresponding  Map input value is the observations in the line,
 read into R as a single text string.
 In our case each line value is the observations of the 7 county variables for the line.</p>
 
-<p>This Map code is really a <code>for loop</code>, but is done by <code>lapply()</code> because it is
+<p>This Map code is really a <code>for loop</code> with <code>r</code> as the looping variable,
+but is done by <code>lapply()</code> because it is
 in general faster than <code>for r in 1:length(map.keys)</code>.
 The loop proceeds through the input keys, specified by the first argument of
 <code>lapply</code>.  The second argument of the above <code>lapply</code> defines the Map expression
@@ -767,7 +768,7 @@ writes the Reduce output key-value pairs to the HDFS.</p>
 <div class='tab-pane' id='compute-county-min-median-max'>
 <h3>Compute County Min, Median, Max</h3>
 
-<p>With the county division subsets now in the HDFS we will illustate using them
+<p>With the county division subsets now in the HDFS we will illustrate using them
 to carry out D&amp;R with a very simple recombination procedure based on a
 summary statistic for each county of the variable <code>listing</code>.
 We do this for simplicity of explanation of how <code>RHIPE</code> works.
@@ -805,19 +806,19 @@ in practice even when the raw data are very large and complex.</p>
 <p>Our Map and Reduce code, <code>map2</code> and <code>reduce2</code>, is given to the arguments
 <code>map</code> and <code>reduce</code>. The code will be will be discussed later.</p>
 
-<p>The initial input key-value pairs for Map, given to the argument <code>input</code>,
+<p>The input key-value pairs for Map, given to the argument <code>input</code>,
 are our county subsets which were written to the HDFS directory
 /yourloginname/housing  as the key-value pairs <code>list</code> object <code>byCounty</code>. 
 The final output key-value pairs for Reduce, specified by the argument
-<code>output</code>, will be written to the file <code>CountyStats</code> in the same directory as
-the subsets.
-The output will be a key-value pair <code>list</code> object.
-The keys are the states, and the values will be a <code>data.frame</code> object for each
-observation of <code>state</code>. The variables of the <code>data.frame</code> are given above.</p>
+<code>output</code>, will be written to the <code>list</code> object <code>CountyStats</code> in the same
+directory as the subsets. The keys are the states, and the values will be
+<code>data.frame</code> objects, for each observation of state. The variables of the
+<code>data.frame</code> are given above.</p>
 
 <p>The argument <code>readback</code> is given the value TRUE, which means <code>CountyStats</code> is
 also written to the R global environment of the R session. We do this since we
-are have supposed the Reduce outputs small enough to be analyzed in R.</p>
+consider this example to be illustrated cases where the Reduce outputs are
+small enough to be analyzed in R.</p>
 
 <p>The argument <code>mapred.reduce.tasks</code> is given the value 10, as in
 our use of it to create the county subsets.</p>
@@ -842,13 +843,13 @@ our use of it to create the county subsets.</p>
 })
 </code></pre>
 
-<p><code>map.keys</code> are the Map input keys, the county subset identiers <code>FIPS</code>, and
+<p><code>map.keys</code> are the Map input keys, the county subset identifiers <code>FIPS</code>, and
 <code>map.values</code> are the Map input values,  the county subset <code>data.frame</code>
-objects.  The <code>lapply()</code> loop goes through all subsets.
-Each stage of the loop creates the Map output vales, <code>outputvalue</code>,
-a <code>data.frame</code> with one row that has the variables
-<code>FIPS</code>, <code>county</code>, <code>min</code>, <code>median</code>, and <code>max</code>.
-<code>outputkey</code> is the Map output key, the value of <code>state</code> for the county.</p>
+objects.  The <code>lapply()</code> loop goes through all subsets. The looping variable is
+<code>r</code>.  Each stage of the loop creates a Map output key-value pair.
+<code>outputkey</code> is the Map output key, the value of <code>state</code> for the county.
+<code>outputvalue</code> is a <code>data.frame</code> with one row that has the variables
+<code>FIPS</code>, <code>county</code>, <code>min</code>, <code>median</code>, and <code>max</code>.</p>
 
 <h4>The Reduce R Code</h4>
 
@@ -867,17 +868,22 @@ a <code>data.frame</code> with one row that has the variables
 )
 </code></pre>
 
-<p>We can use almost the same reduce expression which we used previously. In the reduce expression 
-above, our goal is to combine all observations associated with one particular state into a single 
-<code>data.frame</code>.  In <code>pre</code>, we initialize an empty data frame, <code>reduceoutputvalue</code>. In <code>reduce</code>, we 
-use <code>rbind</code> to combine all counties with their min, median, and max associated with one particular 
-state.  In <code>post</code>, we just emit the final key-value pair.  The key is the state name, and the value 
-is the data frame with all counties belonging to that state. These final key-value pairs are written 
-to HDFS, and will persist for subsequent analyses.</p>
+<p>The output key-value pairs of Map are the input key-value pairs to Reduce.
+The first task of Reduce is to group its input key-value pairs by unique key,
+in this case by <code>state</code>.
+The Reduce R code is applied to the key-value pairs of each group by a
+reducer.</p>
 
-<p>This time we specify the <code>readback</code> argument to be <code>TRUE</code> in <code>rhwatch()</code> function. By doing this,
-once the job is finished, the output of the job which is one <code>data.frame</code> for each state will be 
-read back and assigned to <code>countyStats</code> automatically. So we do not nead to use <code>rhread()</code> anymore.</p>
+<p>Expression <code>pre</code>, initializes <code>reduceoutputvalue</code> to a
+<code>data.frame()</code>. <code>reduce</code> assembles the state <code>data.frame</code> as the
+reducer receives the values through <code>rbind(reduceoutputvalue, do.call(rbind,
+reduce.values))</code>; this uses <code>rbind()</code> to add rows to the <code>data.frame</code> object.
+<code>post</code> operates further on the result of <code>reduce</code>; <code>rhcollect()</code> forms a Reduce
+output key-value pair for each stat. RHIPE then writes the Reduce output
+key-value pairs to the HDFS.</p>
+
+<p>Recall that we told <code>rhwatch()</code> to write the Reduce output <code>CountyStats</code>
+to the global environment of the R session. So we can look at the output in R.</p>
 
 <pre><code class="r">str(CountyStats)
 </code></pre>
@@ -983,13 +989,13 @@ we&#39;ll have to kill it.  Again, use the object returned by <code>rhex</code><
 </div>
 
 
-<div class='tab-pane' id='hdfs-file-mangement'>
-<h3>HDFS File Mangement</h3>
+<div class='tab-pane' id='hdfs-file-management'>
+<h3>HDFS File Management</h3>
 
-<p>We can delete, move and copy files on HDFS by using diffferent <code>RHIPE</code> functions, and we 
+<p>We can delete, move and copy files on HDFS by using different <code>RHIPE</code> functions, and we 
 will illustrate how to do them in the following session.</p>
 
-<p>We can use <code>rhls()</code> to see that what we&#39;ve already had in the <code>/yourloginname/housing</code> direcotry:</p>
+<p>We can use <code>rhls()</code> to see that what we&#39;ve already had in the <code>/yourloginname/housing</code> directory:</p>
 
 <pre><code class="r">rhls(&quot;/yourloginname/housing&quot;)
 </code></pre>
@@ -1000,7 +1006,7 @@ will illustrate how to do them in the following session.</p>
 3 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
 </code></pre>
 
-<p>We can delete a direcoty or a file with the <code>rhdel()</code> function:</p>
+<p>We can delete a directory or a file with the <code>rhdel()</code> function:</p>
 
 <pre><code class="r">rhdel(&quot;/yourloginname/housing/byCounty&quot;)
 </code></pre>

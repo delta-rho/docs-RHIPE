@@ -55,12 +55,12 @@ rhkill(badjob)
 
 You can call `rhstatus` again to see that the job is now in state `KILLED`
 
-### HDFS File Mangement ###
+### HDFS File Management ###
 
-We can delete, move and copy files on HDFS by using diffferent `RHIPE` functions, and we 
+We can delete, move and copy files on HDFS by using different `RHIPE` functions, and we 
 will illustrate how to do them in the following session.
 
-We can use `rhls()` to see that what we've already had in the `/yourloginname/housing` direcotry:
+We can use `rhls()` to see that what we've already had in the `/yourloginname/housing` directory:
 
 ```{r eval=FALSE, tidy=FALSE}
 rhls("/yourloginname/housing")
@@ -72,7 +72,7 @@ rhls("/yourloginname/housing")
 3 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
 ```
 
-We can delete a direcoty or a file with the `rhdel()` function:
+We can delete a directory or a file with the `rhdel()` function:
 
 ```{r eval=FALSE, tidy=FALSE}
 rhdel("/yourloginname/housing/byCounty")

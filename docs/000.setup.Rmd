@@ -9,7 +9,7 @@ R-session servers, and a Unix Hadoop cluster. The second two components are
 running R and RHIPE.  You work on the remote
 computer, say your laptop, and login to an R-session server.
 This is home base, where you do all of your programming
-of R and RHIPE R commands. The R commands you write for division, anpplication
+of R and RHIPE R commands. The R commands you write for division, application
 of analytic methods, and recombination that are destined for Hadoop on the
 cluster are passed along by RHIPE R commands.
 
@@ -37,7 +37,7 @@ written by R.
 
 There is a vast segment of the R community that uses RStudio, for good reason.
 RStudio can join the setting. You have RStudio server  installed on the
-R-session servers by system administators. A web browser on the R server runs
+R-session servers by system administrators. A web browser on the R server runs
 the RStudio interface which is accessed by you on your remote device via the
 remote login.
 

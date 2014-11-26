@@ -26,7 +26,7 @@ Many observations of the last three variables are missing: units 68%, listing
  
 The number of measurements (including missing), is 7 x 66 x 2883 = 1,331,946.
 So this is in fact a small dataset that could be analyzed in the standard
-serial R. However, we can use them to illustate how RHIPE R commands implement
+serial R. However, we can use them to illustrate how RHIPE R commands implement
 Divide and Recombine. We simply pretend the data are large and complex, break
 into subsets, and continuing on with D&amp;R. The small size let's you easily
 pick up the data, follow along using the R commands in the tutorial, and
