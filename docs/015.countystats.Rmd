@@ -4,7 +4,7 @@ With the county division subsets now in the HDFS we will illustrate using them
 to carry out D&amp;R with a very simple recombination procedure based on a
 summary statistic for each county of the variable `listing`.
 We do this for simplicity of explanation of how `RHIPE` works.
-However, we emphasize that in practice initial analysis would
+However, we emphasize that in practice, initial analysis would
 almost always involve comprehensive analysis of both the detailed data for all
 subset variables and summary statistics based on the detailed data.
 
@@ -13,11 +13,11 @@ Our summary statistic consists of the minimum, median, and maximum of
 The output key of Map, and therefore the input key for Reduce is `state`.
 The Reduce R code creates a `data.frame` for each state
 where the columns are `FIPS`, `county`, `min`, `median`, and `max`.
-
-The next step is to analyze the county summary statistic, so ths
-is an example of an analytic recombination. In addition, we suppose that the
-summary statistic dataset is small enough to analyze in R. This is not uncommon
-in practice even when the raw data are very large and complex.
+So our example illustrates a scenario where we create summary statistics, and
+then analyze the results. This is an analytic recombination. In addition, we
+suppose that in this scenario the summary statistic dataset is small enough to
+analyze in the standard serial R.  This is not uncommon in practice even when
+the raw data are very large and complex.
 
 ### The RHIPE Manager: rhwatch() ####
 
@@ -40,20 +40,18 @@ Our Map and Reduce code, `map2` and `reduce2`, is given to the arguments
 
 The input key-value pairs for Map, given to the argument `input`,
 are our county subsets which were written to the HDFS directory
-/yourloginname/housing  as the key-value pairs `list` object `byCounty`. 
+`/yourloginname/housing`  as the key-value pairs `list` object `byCounty`. 
 The final output key-value pairs for Reduce, specified by the argument
 `output`, will be written to the `list` object `CountyStats` in the same
-directory as the subsets. The keys are the states, and the values will be
-`data.frame` objects, for each observation of state. The variables of the
-`data.frame` are given above.
+directory as the subsets. The keys are the states, and the values are the
+`data.frame` objects for the states.
 
 The argument `readback` is given the value TRUE, which means `CountyStats` is
-also written to the R global environment of the R session. We do this since we
-consider this example to be illustrated cases where the Reduce outputs are
-small enough to be analyzed in R.
+also written to the R global environment of the R session. We do this because
+our scenario is that analytic recombination is done in R.
 
-The argument `mapred.reduce.tasks` is given the value 10, as in
-our use of it to create the county subsets.
+The argument `mapred.reduce.tasks` is given the value 10, as in our use of it
+to create the county subsets.
 
 
 #### The Map R Code ####
@@ -76,13 +74,15 @@ map2 <- expression({
 })
 ```
 
-`map.keys` are the Map input keys, the county subset identifiers `FIPS`, and
-`map.values` are the Map input values,  the county subset `data.frame`
-objects.  The `lapply()` loop goes through all subsets. The looping variable is
-`r`.  Each stage of the loop creates a Map output key-value pair.
-`outputkey` is the Map output key, the value of `state` for the county.
-`outputvalue` is a `data.frame` with one row that has the variables
-`FIPS`, `county`, `min`, `median`, and `max`.
+`map.keys` is the Map input keys, the county subset identifiers `FIPS`.
+`map.values` is the Map input values, the county subset `data.frame`
+objects. The `lapply()` loop goes through all subsets, and the looping
+variable is `r`. Each stage of the loop creates one output key-value pair,
+`outputkey` and `outputvalue`.
+`outputkey` is the observation of `state`. `outputvalue` is a `data.frame`
+with one row that has the variables `FIPS`, `county`, `min`, `median`, and
+`max` for county `FIPS`. `rhcollect(outputkey, outputvalue)` emits the pairs
+to reducers, becoming the Reduce input key-value pairs.
 
 #### The Reduce R Code ####
 The Reduce R code for the `listing` summary statistic is
@@ -102,22 +102,21 @@ reduce2 <- expression(
 )
 ```
 
-The output key-value pairs of Map are the input key-value pairs to Reduce.
 The first task of Reduce is to group its input key-value pairs by unique key,
-in this case by `state`.
-The Reduce R code is applied to the key-value pairs of each group by a
-reducer.
+in this case by `state`. The Reduce R code is applied to the key-value pairs
+of each group by a reducer.
 
 Expression `pre`, initializes `reduceoutputvalue` to a
 `data.frame()`. `reduce` assembles the state `data.frame` as the
 reducer receives the values through `rbind(reduceoutputvalue, do.call(rbind,
 reduce.values))`; this uses `rbind()` to add rows to the `data.frame` object.
 `post` operates further on the result of `reduce`; `rhcollect()` forms a Reduce
-output key-value pair for each stat. RHIPE then writes the Reduce output
+output key-value pair for each state. RHIPE then writes the Reduce output
 key-value pairs to the HDFS.
 
-Recall that we told `rhwatch()` to write the Reduce output `CountyStats`
-to the global environment of the R session. So we can look at the output in R.
+Recall that we told RHIPE in `rhwatch()` to also write the Reduce output
+to `CountyStats` in both the R server global environment. There, we can have a
+look at the results to make sure all is well. We can look at a summary
 
 ```{r eval=FALSE, tidy=FALSE}
 str(CountyStats)
@@ -143,7 +142,8 @@ List of 49
 ......
 ```
 
-We can access the key of the first key-value pair by
+We can look at the first key-value pair
+
 
 ```{r eval=FALSE, tidy=FALSE}
 CountyStats[[1]][[2]]
@@ -151,7 +151,8 @@ CountyStats[[1]][[2]]
 ```
 [1] "AL"
 ```
-And the `data.frame` for state "AL" is:
+
+We can look at the `data.frame` for state "AL"
 
 ```{r eval=FALSE, tidy=FALSE}
 head(CountyStats[[1]][[2]])
