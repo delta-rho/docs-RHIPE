@@ -123,23 +123,6 @@
          <a target='_self' class='nav-not-header' href='#compute-county-min-median-max'>Compute County Min, Median, Max</a>
       </li>
 
-
-<li class='nav-header unselectable' data-edit-href='999.issues.Rmd'>Various RHIPE Tasks</li>
-      
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#manage-rhipe-jobs'>Manage RHIPE Jobs</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#hdfs-file-management'>HDFS File Management</a>
-      </li>
-
-
-      <li class='active'>
-         <a target='_self' class='nav-not-header' href='#rules-for-subset-size'>Rules for Subset Size</a>
-      </li>
-
    </ul>
    </div>
 
@@ -149,22 +132,30 @@
 <h3>Overview</h3>
 
 <p>The setting has three components: remote computer, one or more Unix
-R-session servers, and a Unix Hadoop cluster. The second two components are
-running R and RHIPE.  You work on the remote
-computer, say your laptop, and login to an R-session server.
-This is home base, where you do all of your programming
+R-session servers, and a Unix Hadoop cluster.
+The remote computer is a personal device, for example, a laptop or office
+desktop. The second two components are running R and RHIPE.
+You work on the remote computer, and login to an R-session server.
+The R server is home base, where you do all of your programming
 of R and RHIPE R commands. The R commands you write for division, application
 of analytic methods, and recombination that are destined for Hadoop on the
-cluster are passed along by RHIPE R commands.</p>
+cluster are passed along to the Hadoop cluster by RHIPE R commands.</p>
 
-<p>The remote computer is typically for you to maintain. The R-session
-servers  require IT staff to help install software, configure, and maintain. 
-However you install packages too on the R-session servers, just you do when you
-want to use an R CRAN package in R. There is an extra task though; you want
-packages you install to be pushed up the Hadoop cluster so they can be used
-there too.  Except for this push by you, the Hadoop cluster is the
-domain of the systems administrators who must, among other tasks, install
-Hadoop.</p>
+<p>The R-session servers  require IT staff to help install software, configure,
+and maintain. Among other things, they can install R and RHIPE.
+However, you can install your own copies of R and RHIPE on the R-session
+servers to override the system administrator installations, just as you do
+when you use the standard serial R. You can also install other R packages, for
+example, anything from R CRAN.</p>
+
+<p>There is an extra installation task beyond installation on the R server.
+You want what you install on the R server to be pushed up to the Hadoop
+cluster so they can be used there too. Except for this push by you, the Hadoop
+cluster is the domain of the systems administrators. For example, they
+install Hadoop. There are a number of Hadoop configuration
+parameters that they set which can have an impact on the performance on your
+cluster. We will mention briefly just a few here, but the material is beyond
+the scope of this documentation.</p>
 
 </div>
 
@@ -172,19 +163,20 @@ Hadoop.</p>
 <div class='tab-pane' id='the-r-session-server-and-rstudio'>
 <h3>The R-Session Server and RStudio</h3>
 
-<p>Now the R-session server can be separate from the Hadoop cluster, handling
-only R sessions, or it can be one of the servers on the Hadoop cluster. If it
-is on the Hadoop cluster, there must be some precautions taken in the Hadoop
-configuration to protect the programming of the R session. This is needed
-because the RHIPE Hadoop jobs compete with the R sessions. There are never full
-guarantees though, so &quot;safe mode&quot; is separate R session servers. The last thing
-you want is for R sessions to get bogged down. If the cluster option is chosen,
-then you want to mount a file server on the cluster that contains the files
-associated with the R session such as .RData and files read into to R or
-written by R.</p>
+<p>The R-session server can be separate from the Hadoop cluster, handling
+only R sessions. Or, the R-session server can be one of the servers on the
+Hadoop cluster. In this case there must be some precautions taken in the Hadoop
+configuration to protect the programming of the R session from the competing
+Hadoop computations. Hadoop configuration parameters can be set, for example,
+limiting the number of processors used by Hadoop, but this is not a full
+guarantee. The only guaranteed &quot;safe mode&quot; is separate R session
+servers. The last thing you want is for R sessions to get bogged down.
+If the cluster option is chosen, then you need to mount a file server on the
+cluster that contains the files associated with the R session such as .RData
+and files read into R or written by R.</p>
 
 <p>There is a vast segment of the R community that uses RStudio, for good reason.
-RStudio can join the setting. You have RStudio server  installed on the
+RStudio can join the setting. RStudio Server is installed on the
 R-session servers by system administrators. A web browser on the R server runs
 the RStudio interface which is accessed by you on your remote device via the
 remote login.</p>
@@ -195,15 +187,16 @@ remote login.</p>
 <div class='tab-pane' id='the-remote-computer'>
 <h3>The Remote Computer</h3>
 
-<p>The remote computer is just a communication device, and does not carry out data
-analysis, so it can run any operating system, such as Windows. This is
-especially important for teaching, since Windows labs are typically very
+<p>The remote computer is a communication device, and in most cases would not be
+used to carry out part of the data analysis, so it can run any operating
+system, such as Windows.
+This is especially important for teaching, since Windows labs are typically very
 plentiful at academic institutions, but Unix labs much less so.
 Whatever the operating system, a common communication protocol that  is used
 is the SSH protocol. SSH is typically used to log into a remote machine and
 execute commands or to transfer files. But a critical capability of it for our
 purposes here is that it supports both your R session command-line window,
-showing both input and output, and a separate window to show graphics.</p>
+showing both input and output, but can open separate windows to show graphics.</p>
 
 </div>
 
@@ -220,11 +213,13 @@ are written by Hadoop to the HDFS.</p>
 dataset, and (2) the outputs are further analyzed as part of the overall
 analysis. If they are small enough to be readily analyzed in your R session,
 then for sure that is where you want to be.
-RHIPE commands allow you to write the recombination outputs from the HDFS to
+RHIPE commands allow you to write the recombination outputs to
 the R global environment of your R session. They become a dataset in .RData.
-While programming R and RHIPE is easy, it is not as easy as plain old serial R.
-The point is that a lot of data analysis can be carried out in just R even when
-the data are large and complex.</p>
+While programming R and RHIPE is easy, it is not as easy as plain old serial R
+when it is feasible. The point is that while D&amp;R is used for large
+complex data, leading to a lot of parallel distributed computation using RHIPE,
+it is typically accompanied by a lot of data analysis carried out in the
+standard serial R.</p>
 
 </div>
 
@@ -251,14 +246,14 @@ outputs, it assembles the key-value pairs by key, which forms groups,
 and then the R recombination code is applied to the values of each group
 independently; so the running of the code on the different groups is
 embarrassingly parallel. This framework provides substantial flexibility for
-the  recombination method.</p>
+the implementing statistical recombination methods.</p>
 
 <p>Hadoop attempts to optimize computation in a number of ways. One example is
 Map. Typically, there are vastly more subsets than cores on the cluster.
-When Map finishes the application of the analytic method to a subset on a core,
-Hadoop seeks to assign a subset on the same node as the core to avoid
-transmission of the subset across the network connecting the nodes, which is
-more time consuming.</p>
+When Map finishes the application of an analytic method to a subset on a core,
+Hadoop seeks to assign a subset on the same server as the core, rather than
+another server, to avoid transmission of the subset across the network
+connecting the servers, which is more time consuming.</p>
 
 </div>
 
@@ -270,7 +265,7 @@ more time consuming.</p>
 session server, for example, R CRAN packages. And you want these packages to
 run on the Hadoop cluster as well. The mechanism for doing this is much like
 what you have been using for packages in R, but adds a push of the packages to
-the cluster nodes since you will want to use them there too. It is all quite
+the cluster servers since you will want to use them there too. It is all quite
 simple.</p>
 
 <p>Standard R practice for a server with many R users is for a system
@@ -299,7 +294,7 @@ communication. In addition, if you want to use RStudio on the R session
 server, the system administrator will need to install RStudio server on the R
 session server. Now there is one caution here for both users and system
 administrators to consider.  You are best served if the linux versions you
-run are the same on the R server and cluster nodes, and also if the
+run are the same on the R server and cluster servers, and also if the
 hardware is the same. The first is more critical, but the second is a
 nice bonus.  Part of the reason is that Java plays a critical roll in RHIPE,
 and Java likes homogeneity.</p>
@@ -310,14 +305,14 @@ and Java likes homogeneity.</p>
 <div class='tab-pane' id='install-and-push'>
 <h3>Install and Push</h3>
 
-<p>To install <code>Rhipe</code> on the R session server, you first download the package file
+<p>To install <code>RHIPE</code> on the R session server, you first download the package file
 from within R</p>
 
 <pre><code class="r">system(&quot;wget http://ml.stat.purdue.edu/rhipebin/Rhipe_0.74.0.tar.gz&quot;)
 </code></pre>
 
 <p>This puts the package in your R session directory.
-There are other versions of <code>Rhipe</code>. You will need to go to Github to find out
+There are other versions of <code>RHIPE</code>. You will need to go to Github to find out
 about them.  To install the package on your R session server, run</p>
 
 <pre><code class="r">install.packages(&quot;testthat&quot;)
@@ -335,7 +330,7 @@ rhinit()
 </code></pre>
 
 <p>Next, you push all the R packages you have installed on the R session 
-server, including <code>RHIPE</code> onto the cluster HDFS.
+server, including <code>RHIPE</code> onto the HDFS.
 First, you need the system administrator to configure the HDFS so
 you can do both this and other analysis tasks where you need to write to the
 HDFS. You need to have a directory on the HDFS where you have write permission.
@@ -398,17 +393,20 @@ separate living quarter.</p>
 
 <p>The number of measurements (including missing), is 7 x 66 x 2883 = 1,331,946.
 So this is in fact a small dataset that could be analyzed in the standard
-serial R. However, we can use them to illustrate how RHIPE R commands implement
-Divide and Recombine. We simply pretend the data are large and complex, break
-into subsets, and continuing on with D&amp;R. The small size let&#39;s you easily
+serial R. However, we can use them to illustrate how RHIPE R commands
+implement D&amp;R.
+We simply pretend the data are large and complex, break
+into subsets, and proceed with analytic methods applied to subsets followed by
+recombination of outputs. The small size allows you to easily
 pick up the data, follow along using the R commands in the tutorial, and
 explore RHIPE yourself with other RHIPE R commands.</p>
 
-<p>&quot;housing.txt&quot; is available in our Tesseradata Github repository of the
-<code>RHIPE</code> documentation [here]
-The file is a table with 190,278 rows (66 months x 2883 counties) and
-7 columns (the variables). The fields in each row are separated by a comma,
-and there are no headers in the first line. Here are the first few lines of
+<p>&quot;housing.txt&quot; is available in our tessera.io Github repository of the
+<code>RHIPE</code> documentation.
+The file is a table. There are 190,278 rows, 66 months x 2883 counties.
+There are 7 columns, the above 7 variables and in the same order as the above
+list. The fields in each row are separated by a comma,
+and there are no headers in the first line.  Here are the first few lines of
 the file:</p>
 
 <pre><code>01001,Autauga,AL,1,27,96.616541353383,99.1324
@@ -426,43 +424,58 @@ the file:</p>
 
 <p>To get started, we need to make <code>housing.txt</code> available as a text file within
 the HDFS file system. This puts it in a place where it can be read into R, form
-subsets, and then write them to the HDFS. This is similar to what we do
-using R in the standard serial way. If we have a text file to read into R, we
+subsets, and write the subsets to the HDFS. This is similar to what we do
+using R in the standard serial way; if we have a text file to read into R, we
 move put it in a place where we can read it into R, for example, in the working
 directory of the R session.</p>
 
-<p>The first step, as for the standard R case, is to copy <code>housing.txt</code> to a
+<p>To set this up, the system administrator must do two tasks.
+On the R session server, set up a login directory where you have write
+permission; let&#39;s call it <code>yourloginname</code> in, say, <code>/home</code>.
+In the HDFS, the administrator does a similar thing, creates, say,
+<code>/yourloginname</code> which is in the root directory.</p>
+
+<p>Your first step, as for the standard R case, is to copy <code>housing.txt</code> to a
 directory on the R-session server where your R session is running.
-Suppose the path name of this directory is</p>
+Suppose in your login directory you have created a directory <code>housing</code>
+for your analysis of the housing data. You can copy <code>housing.txt</code> to</p>
 
-<pre><code class="r">[1] &quot;/home/yourusername/myRdirectory/&quot;
+<pre><code class="r">&quot;/home/yourusername/housing/&quot;
 </code></pre>
 
-<p>The next step is to get <code>housing.txt</code> onto the
-HDFS as a text file, so we can read it into R on the cluster.
-There are Hadoop commands that could be used directly to copy the file, but
-our promise to you is that you never need to use Hadoop commands. There is a
-a RHIPE function, <code>rhput()</code> that will do it for you.</p>
+<p>The next step is to get <code>housing.txt</code> onto the HDFS as a text file, so we can
+read it into R on the cluster. There are Hadoop commands that could be used
+directly to copy the file, but our promise to you is that you never need to
+use Hadoop commands. There is a <code>RHIPE function</code>, <code>rhput()</code> that will do it
+for you.</p>
 
-<pre><code class="r">rhput(&quot;/home/yourusername/myRdirectory/housing.txt&quot;, &quot;/yourloginname/housing/housing.txt&quot;)
+<pre><code class="r">rhput(&quot;/home/yourloginname/housing/housing.txt&quot;, &quot;/yourloginname/housing/housing.txt&quot;)
 </code></pre>
 
-<p>The first argument specifies the full linux path of the text file on the R
-session server to be copied. The second argument is the path name of a
-directory on the HDFS.</p>
+<p>The <code>rhput()</code> function takes two arguments.
+The first is the path name of the R server file to be copied. The second
+argument is the path name HDFS where the file will be written.
+Note that for the HDFS, in the  directory <code>/yourloginname</code>
+there is a directory <code>housing</code>. You might have created <code>housing</code>
+already with the command</p>
+
+<pre><code class="r">rhmkdir(/yourloginname/housing)
+</code></pre>
+
+<p>If not, then <code>rhput()</code> creates the directory for you.</p>
 
 <!--
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Recall that this directory is on the initiating R server. Then download the data file to your 
-local working directory with the following command:
+Recall that this directory is on the initiating R server. Then download the
+data file to your local working directory with the following command:
 
 
 ```r
 system("wget https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt")
 ```
 
-If it downloaded properly, then "housing.txt" will show up in the output of this command, which lists files
-in your local working directory:
+If it downloaded properly, then "housing.txt" will show up in the output of
+this command, which lists files in your local working directory:
 
 
 ```r
@@ -481,8 +494,8 @@ rhoptions(zips = "/ln/share/RhipeLib.tar.gz")
 rhoptions(runner = "sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh")
 ```
 
-Now we want to copy the raw text file to the HDFS.  The function that writes files to HDFS is `rhput()`.  
-Replace `tongx` with an appropriate HDFS directory, such as your user name.
+Now we want to copy the raw text file to the HDFS.  The function that writes
+files to HDFS is `rhput()`. Replace `tongx` with an appropriate HDFS directory, such as your user name.
 
 
 ```r
@@ -491,15 +504,8 @@ rhput("./housing.txt", "/yourloginname/housing/housing.txt")
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -->
 
-<p>The <code>rhput</code> function takes two arguments.
-The first argument is the path to the local file to be copied, and the second argument is the HDFS path where
-the file will be written. <code>rhput</code> creates the file at destination, overwriting the destination if
-it already exists.
-We can also copy files onto HDFS via Hadoop&#39;s command line interface, but
-<code>RHIPE</code> allows us to achieve this task from within R.</p>
-
-<p>We can confirm that the housing data text file has been written to HDFS with the <code>rhexists</code> function.
-Make sure you specify the same directory as you used in the last step.</p>
+<p>We can confirm that the housing data text file has been written to the HDFS
+with the <code>rhexists()</code> function.</p>
 
 <pre><code class="r">rhexists(&quot;/yourloginname/housing/housing.txt&quot;)
 </code></pre>
@@ -507,20 +513,16 @@ Make sure you specify the same directory as you used in the last step.</p>
 <pre><code>[1] TRUE
 </code></pre>
 
-<p>If we want to see more details about a file or directory on HDFS, we can use <code>rhls()</code>.</p>
+<p>We can use <code>rhls()</code> to get more information about files on the
+HDFS. It is similar to the Unix command <code>ls</code>. For example,
+rhls(&quot;/yourloginname/housing&quot;)</p>
 
-<pre><code class="r">rhls(&quot;/yourloginname/housing&quot;)
-</code></pre>
+<pre><code></code></pre>
 
-<pre><code>  permission         owner      group     size          modtime                               file
-1 -rw-rw-rw- yourloginname supergroup 7.683 mb 2014-09-17 11:11 /yourloginname/housing/housing.txt
-</code></pre>
+<p>permission         owner      group     size          modtime                               file
+1 -rw-rw-rw- yourloginname supergroup 7.683 mb 2014-09-17 11:11 /yourloginname/housing/housing.txt</p>
 
-<p><code>rhls()</code> is very similar to the bash command <code>ls</code>.  It will list all content under a given address. 
-We can see that the &quot;housing.txt&quot; file with size 11.82Mb is located under &quot;/ln/tongx/housing/&quot; 
-on HDFS.</p>
-
-<p>With our data on the HDFS, we are ready to start a D&amp;R analysis.</p>
+<pre><code></code></pre>
 
 </div>
 
@@ -529,13 +531,13 @@ on HDFS.</p>
 <h3>Read and Divide by County</h3>
 
 <p>Our division method for the housing data will be to divide by county,
-so there will 2883 subsets. Each subset will be a <code>data.frame</code> object with 4
+so there will be 2883 subsets. Each subset will be a <code>data.frame</code> object with 4
 column variables: <code>date</code>, <code>units</code>, <code>listing</code>, and <code>selling</code>.
 <code>FIPS</code>, <code>state</code>, and <code>county</code> are not column variables because each has only one
 value for each county; their values are added to the <code>data.frame</code> as
 attributes.</p>
 
-<p>The first step is to read each line of the file &#39;house.txt&#39; into R. By
+<p>The first step is to read each line of the file <code>house.txt</code> into R. By
 convention, <code>RHIPE</code> takes each line of a text file to be a key-value pair.
 The line number is the key. The value is the data for the line, in our case
 the 7 observations of the 7 variables of the data for one month and one county.</p>
@@ -576,40 +578,49 @@ output files, and manages key-value pairs for you.</p>
   reduce   = reduce1,
   input    = rhfmt(&quot;/yourloginname/housing/housing.txt&quot;, type = &quot;text&quot;),
   output   = rhfmt(&quot;/yourloginname/housing/byCounty&quot;, type = &quot;sequence&quot;),
-  readback = FALSE,
   mapred   = list(
     mapred.reduce.tasks = 10
   ),
+  readback = FALSE
 )
 </code></pre>
 
-<p>Arguments <code>map</code> and <code>reduce</code> take your Map and Reduce R code.
-<code>input</code> specifies the input to be the text file in the HDFS that we put there
-earlier using <code>rhput()</code>. <code>output</code> specifies the file name into which final
-outputs of the Reduce operation are written. Note that <code>rhwatch()</code> creates
-this file.</p>
+<p>Arguments <code>map</code> and <code>reduce</code> take your Map and Reduce R code, which will be
+described below. <code>input</code> specifies the input to be the text file in the HDFS
+that we put there earlier using <code>rhput()</code>. The file supplies input key-value
+pairs for the Map code.  <code>output</code> specifies the file name
+into which final output key-value pairs of the Reduce code that are written to
+the HDFS. <code>rhwatch()</code> creates this file if it does not exist, or overwrites it
+if it does not.</p>
 
 <p>In our division by county here, the Reduce recombination outputs are the
-2,883 county <code>data.frame</code> R objects. They are written as key-value pairs
-to the output directory housing created earlier.
-The keys and values are just those of the Reduce output: <code>FIPS</code> and the
-county <code>dataframe</code> objects. The key-value pair object is a list with one
-element per key-value pair. The element is a list too, with two elements; the
-first is the <code>FIPS</code> key, and the second is the county <code>data.frame</code>.</p>
+2883 county <code>data.frame</code> R objects. They are a <code>list</code> object that describes the
+key-value pairs: <code>FIPS</code> key and <code>data.frame</code> value. There is one <code>list</code> element
+per pair; that element is itself a list with two elements, the <code>FIPS</code> key and
+then the <code>data.frame</code> value.</p>
 
-<p>A very important point here is that these key-value pairs are an R object.
-So they can be written to the  R global environment of the R session for
-analysis there if that is feasible.
-You can do this by the argument <code>readback</code>. If <code>TRUE</code>, the list is also
-written to the R global environment of the R session. If <code>FALSE</code>, it is not.
-If later, this is wanted, then it can be done using the RHIPE R function
-<code>rhread()</code>.</p>
+<p>The argument <code>mapred</code> in our case is given a list with one element that
+specifies one Hadoop configuration parameter: the maximum number of map
+tasks that can be run simultaneously, 10, and the maximum number of reduce
+tasks that can run simultaneously, 10. This is done to keep Hadoop from asking
+for more resources than can be supplied to avoid failures and warnings of
+various kinds.  The number 10 was specified for a very small cluster with just
+16 that served both the Hadoop and the R session. A full discussion
+of Hadoop configuration parameters is beyond the scope of this documentation. </p>
+
+<p>The Reduce <code>list</code> output can also be written to the R global environment of
+the R session. One use of this is analytic recombination in the R session
+when the outputs are a small enough dataset. You can do this with the argument
+<code>readback</code>.  If <code>TRUE</code>, the list is also written to the global environment.
+If <code>FALSE</code>, it is not. If FALSE, it can be written latter using the RHIPE R
+function <code>rhread()</code>.</p>
 
 <pre><code class="r">countySubsets &lt;- rhread(&quot;/yourloginname/housing/byCounty&quot;)
 </code></pre>
 
-<p>Suppose, however, that you just want to look over the first 10 elements of
-<code>byCounty</code> to make sure all is well. This can be done by</p>
+<p>Suppose you just want to look over the <code>byCounty</code> file on the HDFS just to see
+if all is well, but that this can be done by looking at a small number of
+key-value pairs, say 10. The code for this is</p>
 
 <pre><code class="r">countySubsets &lt;- rhread(&quot;/yourloginname/housing/byCounty&quot;, max = 10)
 </code></pre>
@@ -700,11 +711,10 @@ into the individual observations of the text line. The result, <code>line</code>
 is a <code>list</code> of length one whose element is a <code>character vector</code> whose elements
 are the line observations. In our case, the
 observations are a <code>character vector</code> of length 7, in order:
-<code>FIPS</code>, <code>county</code>, <code>state</code>, <code>date</code>, <code>units</code>, <code>listing</code>, <code>selling</code>.
-Each one has type <code>character</code>.</p>
+<code>FIPS</code>, <code>county</code>, <code>state</code>, <code>date</code>, <code>units</code>, <code>listing</code>, <code>selling</code>.</p>
 
 <p>Next we turn to the Map output key-value pairs.
-<code>outputkey</code> for react text line is a character vector of length 3 with <code>FIPS</code>,
+<code>outputkey</code> for each text line is a character vector of length 3 with <code>FIPS</code>,
 <code>county</code>, and <code>state</code>. <code>outputvalue</code> is a <code>data.frame</code> with one row
 and 4 columns, the observations of <code>date</code>, <code>units</code>, <code>listing</code>, and <code>selling</code>, 
 each a <code>numeric</code> object.</p>
@@ -714,7 +724,7 @@ is given the value <code>FALSE</code>. This leaves character vectors in the <cod
 as is, and does on convert to a <code>factor</code>.</p>
 
 <p>The RHIPE function <code>rhcollect()</code> forms a Map output key-value pair for each
-line, and writes the results to the HDFS.</p>
+line, and writes the results to the HDFS as a key-value pair <code>list</code> object.</p>
 
 <h4>Reduce R Code</h4>
 
@@ -759,8 +769,8 @@ reduce.values))</code>; this uses <code>rbind()</code> to add rows to the <code>
 <code>post</code> operates further on the result of <code>reduce</code>. In our case it first assigns
 the observation of <code>FIPS</code> as the key. Then it adds <code>FIPS</code>,<code>county</code>, and
 <code>state</code> as <code>attributes</code>. Finally the RHIPE function
-<code>rhcollect()</code> forms a Reduce output key-value pair for each county. RHIPE then
-writes the Reduce output key-value pairs to the HDFS.</p>
+<code>rhcollect()</code> forms a Reduce output key-value pair <code>list</code>, and writes it to the
+HDFS.</p>
 
 </div>
 
@@ -772,7 +782,7 @@ writes the Reduce output key-value pairs to the HDFS.</p>
 to carry out D&amp;R with a very simple recombination procedure based on a
 summary statistic for each county of the variable <code>listing</code>.
 We do this for simplicity of explanation of how <code>RHIPE</code> works.
-However, we emphasize that in practice initial analysis would
+However, we emphasize that in practice, initial analysis would
 almost always involve comprehensive analysis of both the detailed data for all
 subset variables and summary statistics based on the detailed data.</p>
 
@@ -780,12 +790,12 @@ subset variables and summary statistics based on the detailed data.</p>
 <code>listing</code>, one summary for each county. Map R code computes the statistic.
 The output key of Map, and therefore the input key for Reduce is <code>state</code>.
 The Reduce R code creates a <code>data.frame</code> for each state
-where the columns are <code>FIPS</code>, <code>county</code>, <code>min</code>, <code>median</code>, and <code>max</code>.</p>
-
-<p>The next step is to analyze the county summary statistic, so ths
-is an example of an analytic recombination. In addition, we suppose that the
-summary statistic dataset is small enough to analyze in R. This is not uncommon
-in practice even when the raw data are very large and complex.</p>
+where the columns are <code>FIPS</code>, <code>county</code>, <code>min</code>, <code>median</code>, and <code>max</code>.
+So our example illustrates a scenario where we create summary statistics, and
+then analyze the results. This is an analytic recombination. In addition, we
+suppose that in this scenario the summary statistic dataset is small enough to
+analyze in the standard serial R.  This is not uncommon in practice even when
+the raw data are very large and complex.</p>
 
 <h3>The RHIPE Manager: rhwatch()</h3>
 
@@ -808,20 +818,18 @@ in practice even when the raw data are very large and complex.</p>
 
 <p>The input key-value pairs for Map, given to the argument <code>input</code>,
 are our county subsets which were written to the HDFS directory
-/yourloginname/housing  as the key-value pairs <code>list</code> object <code>byCounty</code>. 
+<code>/yourloginname/housing</code>  as the key-value pairs <code>list</code> object <code>byCounty</code>. 
 The final output key-value pairs for Reduce, specified by the argument
 <code>output</code>, will be written to the <code>list</code> object <code>CountyStats</code> in the same
-directory as the subsets. The keys are the states, and the values will be
-<code>data.frame</code> objects, for each observation of state. The variables of the
-<code>data.frame</code> are given above.</p>
+directory as the subsets. The keys are the states, and the values are the
+<code>data.frame</code> objects for the states.</p>
 
 <p>The argument <code>readback</code> is given the value TRUE, which means <code>CountyStats</code> is
-also written to the R global environment of the R session. We do this since we
-consider this example to be illustrated cases where the Reduce outputs are
-small enough to be analyzed in R.</p>
+also written to the R global environment of the R session. We do this because
+our scenario is that analytic recombination is done in R.</p>
 
-<p>The argument <code>mapred.reduce.tasks</code> is given the value 10, as in
-our use of it to create the county subsets.</p>
+<p>The argument <code>mapred.reduce.tasks</code> is given the value 10, as in our use of it
+to create the county subsets.</p>
 
 <h4>The Map R Code</h4>
 
@@ -843,13 +851,15 @@ our use of it to create the county subsets.</p>
 })
 </code></pre>
 
-<p><code>map.keys</code> are the Map input keys, the county subset identifiers <code>FIPS</code>, and
-<code>map.values</code> are the Map input values,  the county subset <code>data.frame</code>
-objects.  The <code>lapply()</code> loop goes through all subsets. The looping variable is
-<code>r</code>.  Each stage of the loop creates a Map output key-value pair.
-<code>outputkey</code> is the Map output key, the value of <code>state</code> for the county.
-<code>outputvalue</code> is a <code>data.frame</code> with one row that has the variables
-<code>FIPS</code>, <code>county</code>, <code>min</code>, <code>median</code>, and <code>max</code>.</p>
+<p><code>map.keys</code> is the Map input keys, the county subset identifiers <code>FIPS</code>.
+<code>map.values</code> is the Map input values, the county subset <code>data.frame</code>
+objects. The <code>lapply()</code> loop goes through all subsets, and the looping
+variable is <code>r</code>. Each stage of the loop creates one output key-value pair,
+<code>outputkey</code> and <code>outputvalue</code>.
+<code>outputkey</code> is the observation of <code>state</code>. <code>outputvalue</code> is a <code>data.frame</code>
+with one row that has the variables <code>FIPS</code>, <code>county</code>, <code>min</code>, <code>median</code>, and
+<code>max</code> for county <code>FIPS</code>. <code>rhcollect(outputkey, outputvalue)</code> emits the pairs
+to reducers, becoming the Reduce input key-value pairs.</p>
 
 <h4>The Reduce R Code</h4>
 
@@ -868,22 +878,21 @@ objects.  The <code>lapply()</code> loop goes through all subsets. The looping v
 )
 </code></pre>
 
-<p>The output key-value pairs of Map are the input key-value pairs to Reduce.
-The first task of Reduce is to group its input key-value pairs by unique key,
-in this case by <code>state</code>.
-The Reduce R code is applied to the key-value pairs of each group by a
-reducer.</p>
+<p>The first task of Reduce is to group its input key-value pairs by unique key,
+in this case by <code>state</code>. The Reduce R code is applied to the key-value pairs
+of each group by a reducer.</p>
 
 <p>Expression <code>pre</code>, initializes <code>reduceoutputvalue</code> to a
 <code>data.frame()</code>. <code>reduce</code> assembles the state <code>data.frame</code> as the
 reducer receives the values through <code>rbind(reduceoutputvalue, do.call(rbind,
 reduce.values))</code>; this uses <code>rbind()</code> to add rows to the <code>data.frame</code> object.
 <code>post</code> operates further on the result of <code>reduce</code>; <code>rhcollect()</code> forms a Reduce
-output key-value pair for each stat. RHIPE then writes the Reduce output
+output key-value pair for each state. RHIPE then writes the Reduce output
 key-value pairs to the HDFS.</p>
 
-<p>Recall that we told <code>rhwatch()</code> to write the Reduce output <code>CountyStats</code>
-to the global environment of the R session. So we can look at the output in R.</p>
+<p>Recall that we told RHIPE in <code>rhwatch()</code> to also write the Reduce output
+to <code>CountyStats</code> in both the R server global environment. There, we can have a
+look at the results to make sure all is well. We can look at a summary</p>
 
 <pre><code class="r">str(CountyStats)
 </code></pre>
@@ -908,7 +917,7 @@ to the global environment of the R session. So we can look at the output in R.</
 ......
 </code></pre>
 
-<p>We can access the key of the first key-value pair by</p>
+<p>We can look at the first key-value pair</p>
 
 <pre><code class="r">CountyStats[[1]][[2]]
 </code></pre>
@@ -916,7 +925,7 @@ to the global environment of the R session. So we can look at the output in R.</
 <pre><code>[1] &quot;AL&quot;
 </code></pre>
 
-<p>And the <code>data.frame</code> for state &quot;AL&quot; is:</p>
+<p>We can look at the <code>data.frame</code> for state &quot;AL&quot;</p>
 
 <pre><code class="r">head(CountyStats[[1]][[2]])
 </code></pre>
@@ -929,133 +938,6 @@ to the global environment of the R session. So we can look at the output in R.</
 5  60.34774  72.46377  93.53741 01027       Clay
 6 108.97167 119.66207 128.13390 01117     Shelby
 </code></pre>
-
-</div>
-
-
-<div class='tab-pane' id='manage-rhipe-jobs'>
-<h3>Manage RHIPE Jobs</h3>
-
-<p>As you submit more <code>RHIPE</code> jobs, you&#39;ll need to check their status and manage them.  In this short
-section, we&#39;ll introduce two new functions to do just that. </p>
-
-<p>First, let&#39;s submit a simple job:</p>
-
-<pre><code class="r">map13 &lt;- expression(
-  while(TRUE) {}
-)
-mr13 &lt;- rhwatch(
-  map      = map13,
-  input    = rhfmt(&quot;/yourloginname/housing/housing.txt&quot;, type = &quot;text&quot;),
-  output   = rhfmt(&quot;/yourloginname/housing/tmp&quot;, type = &quot;sequence&quot;),
-  mapred   = list(
-    mapred.reduce.tasks = 0
-  ),
-  readback = FALSE,
-  noeval   = TRUE
-)
-badjob &lt;- rhex(mr13, async = TRUE) 
-</code></pre>
-
-<p>We&#39;ve set <code>mapred.reduce.tasks</code> to be 0, because this job omits the optional reduce expression.<br>
-The map contains an infinite loop, so this job will never complete. The only purpose for this meaningless
-map expression is we want the job is keeping running when we try to access its status. But since we&#39;ve run
-this job on the backgroup, we can check its status with <code>rhstatus</code>, which takes as an argument
-the object returned by <code>rhex</code>. When we said background, it means that the job is running on the 
-Hadoop, and we still have the control ability of R session at the same time. </p>
-
-<pre><code class="r">rhstatus(badjob)
-</code></pre>
-
-<pre><code>[Tue Sep 30 00:34:20 2014] Name:2014-09-30 00:34:05 Job: job_201405301308_4753  State: RUNNING Duration: 14.673
-URL: http://deneb.stat.purdue.edu:50030/jobdetails.jsp?jobid=job_201405301308_4753
-             pct numtasks pending running complete killed failed_attempts
-map    0.0191228        1       0       1        0      0               0
-reduce 0.0000000        0       0       0        0      0               0
-       killed_attempts
-map                  0
-reduce               0
-Waiting 5 seconds
-</code></pre>
-
-<p>Type <code>ctrl+c</code> to stop the status updates.  Since we know this job won&#39;t ever complete, 
-we&#39;ll have to kill it.  Again, use the object returned by <code>rhex</code></p>
-
-<pre><code class="r">rhkill(badjob)
-</code></pre>
-
-<p>You can call <code>rhstatus</code> again to see that the job is now in state <code>KILLED</code></p>
-
-</div>
-
-
-<div class='tab-pane' id='hdfs-file-management'>
-<h3>HDFS File Management</h3>
-
-<p>We can delete, move and copy files on HDFS by using different <code>RHIPE</code> functions, and we 
-will illustrate how to do them in the following session.</p>
-
-<p>We can use <code>rhls()</code> to see that what we&#39;ve already had in the <code>/yourloginname/housing</code> directory:</p>
-
-<pre><code class="r">rhls(&quot;/yourloginname/housing&quot;)
-</code></pre>
-
-<pre><code>  permission         owner      group     size          modtime                                  file
-1 drwxrwxrwt yourloginname supergroup        0 2014-10-02 14:29       /yourloginname/housing/byCounty
-2 drwxrwxrwt yourloginname supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
-3 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
-</code></pre>
-
-<p>We can delete a directory or a file with the <code>rhdel()</code> function:</p>
-
-<pre><code class="r">rhdel(&quot;/yourloginname/housing/byCounty&quot;)
-</code></pre>
-
-<p>And we can use <code>rhls</code> again to see that we were successful:</p>
-
-<pre><code class="r">rhls(&quot;/yourloginname/housing&quot;)
-</code></pre>
-
-<pre><code>  permission         owner      group     size          modtime                                  file
-1 drwxrwxrwt yourloginname supergroup        0 2014-09-20 11:16    /yourloginname/housing/CountyStats
-2 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-17 11:11    /yourloginname/housing/housing.txt
-</code></pre>
-
-<p>As long as we&#39;re talking about HDFS file management, let&#39;s try out a few more functions.  Suppose
-we want to make a copy of the original text file on the HDFS.  We can use the
-<code>rhcp</code> function.  It takes two arguments.  The first is the source, or the directory on HDFS we 
-want to copy.  The second is the target, or location for the new copy.</p>
-
-<pre><code class="r">rhcp(&quot;/yourloginname/housing/housing.txt&quot;, &quot;/yourloginname/housing/tmp/housing.txt&quot;)
-rhls(&quot;/yourloginname/housing/tmp&quot;)
-</code></pre>
-
-<pre><code>  permission         owner      group     size          modtime                                   file
-1 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-30 15:25 /yourloginname/housing/tmp/housing.txt
-</code></pre>
-
-<p>We can use <code>rhmv</code> to move the text file to a different folder.  This
-function also takes two arguments, just like <code>rhcp</code>.</p>
-
-<pre><code class="r">rhmv(&quot;/yourloginname/housing/tmp/housing.txt&quot;, &quot;/yourloginname/housing/tmp2/housing.txt&quot;)
-rhls(&quot;/yourloginname/housing/&quot;)
-</code></pre>
-
-<pre><code>  permission         owner      group     size          modtime                               file
-1 drwxrwxrwt yourloginname supergroup        0 2014-09-20 11:16 /yourloginname/housing/CountyStats
-2 -rw-r--r-- yourloginname supergroup 7.683 mb 2014-09-17 11:11 /yourloginname/housing/housing.txt
-3 drwxrwxrwt yourloginname supergroup        0 2014-09-30 15:25         /yourloginname/housing/tmp
-4 drwxrwxrwt yourloginname supergroup        0 2014-09-30 15:28        /yourloginname/housing/tmp2
-</code></pre>
-
-<p>That&#39;s enough file management.  Now let&#39;s recreate the division by state from the division by 
-county, which is still on the HDFS.</p>
-
-</div>
-
-
-<div class='tab-pane' id='rules-for-subset-size'>
-<h3>Rules for Subset Size</h3>
 
 </div>
 
