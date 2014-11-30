@@ -578,9 +578,6 @@ output files, and manages key-value pairs for you.</p>
   reduce   = reduce1,
   input    = rhfmt(&quot;/yourloginname/housing/housing.txt&quot;, type = &quot;text&quot;),
   output   = rhfmt(&quot;/yourloginname/housing/byCounty&quot;, type = &quot;sequence&quot;),
-  mapred   = list(
-    mapred.reduce.tasks = 10
-  ),
   readback = FALSE
 )
 </code></pre>
@@ -598,15 +595,6 @@ if it does not.</p>
 key-value pairs: <code>FIPS</code> key and <code>data.frame</code> value. There is one <code>list</code> element
 per pair; that element is itself a list with two elements, the <code>FIPS</code> key and
 then the <code>data.frame</code> value.</p>
-
-<p>The argument <code>mapred</code> in our case is given a list with one element that
-specifies one Hadoop configuration parameter: the maximum number of map
-tasks that can be run simultaneously, 10, and the maximum number of reduce
-tasks that can run simultaneously, 10. This is done to keep Hadoop from asking
-for more resources than can be supplied to avoid failures and warnings of
-various kinds.  The number 10 was specified for a very small cluster with just
-16 that served both the Hadoop and the R session. A full discussion
-of Hadoop configuration parameters is beyond the scope of this documentation. </p>
 
 <p>The Reduce <code>list</code> output can also be written to the R global environment of
 the R session. One use of this is analytic recombination in the R session
@@ -807,9 +795,6 @@ the raw data are very large and complex.</p>
   input    = rhfmt(&quot;/yourloginname/housing/byCounty&quot;, type = &quot;sequence&quot;),
   output   = rhfmt(&quot;/yourloginname/housing/CountyStats&quot;, type = &quot;sequence&quot;),
   readback = TRUE
-  mapred   = list( 
-    mapred.reduce.tasks = 10
-  ),
 )
 </code></pre>
 

@@ -30,9 +30,6 @@ CountyStats <- rhwatch(
   input    = rhfmt("/yourloginname/housing/byCounty", type = "sequence"),
   output   = rhfmt("/yourloginname/housing/CountyStats", type = "sequence"),
   readback = TRUE
-  mapred   = list( 
-    mapred.reduce.tasks = 10
-  ),
 )
 ```
 Our Map and Reduce code, `map2` and `reduce2`, is given to the arguments

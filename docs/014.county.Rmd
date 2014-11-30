@@ -47,9 +47,6 @@ mr1 <- rhwatch(
   reduce   = reduce1,
   input    = rhfmt("/yourloginname/housing/housing.txt", type = "text"),
   output   = rhfmt("/yourloginname/housing/byCounty", type = "sequence"),
-  mapred   = list(
-    mapred.reduce.tasks = 10
-  ),
   readback = FALSE
 )
 ```
@@ -66,15 +63,6 @@ In our division by county here, the Reduce recombination outputs are the
 key-value pairs: `FIPS` key and `data.frame` value. There is one `list` element
 per pair; that element is itself a list with two elements, the `FIPS` key and
 then the `data.frame` value.
-
-The argument `mapred` in our case is given a list with one element that
-specifies one Hadoop configuration parameter: the maximum number of map
-tasks that can be run simultaneously, 10, and the maximum number of reduce
-tasks that can run simultaneously, 10. This is done to keep Hadoop from asking
-for more resources than can be supplied to avoid failures and warnings of
-various kinds.  The number 10 was specified for a very small cluster with just
-16 that served both the Hadoop and the R session. A full discussion
-of Hadoop configuration parameters is beyond the scope of this documentation. 
 
 The Reduce `list` output can also be written to the R global environment of
 the R session. One use of this is analytic recombination in the R session
