@@ -1,0 +1,48 @@
+## Housing Data ##
+
+### The Data ###
+
+The housing data consist of 7 monthly variables on housing sales from Oct
+2008 to Mar 2014, which is 66 months. The measurements are for 2883 counties
+in 48 U.S. states, excluding Hawaii and Alaska, and also for the District of
+Columbia which we treat as a state with one county.
+The data were derived from sales of housing units from Quandl's Zillow Housing
+Data (www.quandl.com/c/housing).
+A housing unit is a house, an apartment, a mobile home, a group of rooms, or a
+single room that is occupied or intended to be occupied  as a
+separate living quarter.
+
+The variables are
+- **FIPS**: FIPS county code, an unique identifier for each U.S. county
+- **county**: county name
+- **state**: state abbreviation
+- **date**: time of sale measured in months, from 1 to 66
+- **units**: number of units sold
+- **listing**: monthly median listing price (dollars per square foot)
+- **selling**: monthly median selling price (dollars per square foot)
+
+Many observations of the last three variables are missing: units 68%, listing
+7%, and selling 68%.
+ 
+The number of measurements (including missing), is 7 x 66 x 2883 = 1,331,946.
+So this is in fact a small dataset that could be analyzed in the standard
+serial R. However, we can use them to illustrate how RHIPE R commands implement
+Divide and Recombine. We simply pretend the data are large and complex, break
+into subsets, and continuing on with D&amp;R. The small size let's you easily
+pick up the data, follow along using the R commands in the tutorial, and
+explore RHIPE yourself with other RHIPE R commands.
+
+"housing.txt" is available in our Tesseradata Github repository of the
+`RHIPE` documentation [here]
+The file is a table with 190,278 rows (66 months x 2883 counties) and
+7 columns (the variables). The fields in each row are separated by a comma,
+and there are no headers in the first line. Here are the first few lines of
+the file:
+
+```
+01001,Autauga,AL,1,27,96.616541353383,99.1324
+01001,Autauga,AL,2,28,96.856993190152,95.8209
+01001,Autauga,AL,3,16,98.055555555556,96.3528
+01001,Autauga,AL,4,23,97.747480735033,95.2189
+01001,Autauga,AL,5,22,97.747480735033,92.7127
+```

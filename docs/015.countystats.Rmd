@@ -1,0 +1,165 @@
+### Compute County Min, Median, Max ###
+
+With the county division subsets now in the HDFS we will illustrate using them
+to carry out D&amp;R with a very simple recombination procedure based on a
+summary statistic for each county of the variable `listing`.
+We do this for simplicity of explanation of how `RHIPE` works.
+However, we emphasize that in practice, initial analysis would
+almost always involve comprehensive analysis of both the detailed data for all
+subset variables and summary statistics based on the detailed data.
+
+Our summary statistic consists of the minimum, median, and maximum of
+`listing`, one summary for each county. Map R code computes the statistic.
+The output key of Map, and therefore the input key for Reduce is `state`.
+The Reduce R code creates a `data.frame` for each state
+where the columns are `FIPS`, `county`, `min`, `median`, and `max`.
+So our example illustrates a scenario where we create summary statistics, and
+then analyze the results. This is an analytic recombination. In addition, we
+suppose that in this scenario the summary statistic dataset is small enough to
+analyze in the standard serial R.  This is not uncommon in practice even when
+the raw data are very large and complex.
+
+### The RHIPE Manager: rhwatch() ####
+
+Here is the code for `rhwatch()`.
+
+```{r eval=FALSE, tidy=FALSE}
+CountyStats <- rhwatch(
+  map      = map2,
+  reduce   = reduce2,
+  input    = rhfmt("/yourloginname/housing/byCounty", type = "sequence"),
+  output   = rhfmt("/yourloginname/housing/CountyStats", type = "sequence"),
+  readback = TRUE
+)
+```
+Our Map and Reduce code, `map2` and `reduce2`, is given to the arguments
+`map` and `reduce`. The code will be will be discussed later.
+
+The input key-value pairs for Map, given to the argument `input`,
+are our county subsets which were written to the HDFS directory
+`/yourloginname/housing`  as the key-value pairs `list` object `byCounty`. 
+The final output key-value pairs for Reduce, specified by the argument
+`output`, will be written to the `list` object `CountyStats` in the same
+directory as the subsets. The keys are the states, and the values are the
+`data.frame` objects for the states.
+
+The argument `readback` is given the value TRUE, which means `CountyStats` is
+also written to the R global environment of the R session. We do this because
+our scenario is that analytic recombination is done in R.
+
+The argument `mapred.reduce.tasks` is given the value 10, as in our use of it
+to create the county subsets.
+
+
+#### The Map R Code ####
+
+The Map R code is
+```{r eval=FALSE, tidy=FALSE}
+map2 <- expression({
+  lapply(seq_along(map.keys), function(r) {
+    outputvalue <- data.frame(
+      FIPS = map.keys[[r]],
+      county = attr(map.values[[r]], "county"),
+      min = min(map.values[[r]]$listing, na.rm = TRUE),
+      median = median(map.values[[r]]$listing, na.rm = TRUE),
+      max = max(map.values[[r]]$listing, na.rm = TRUE),
+      stringsAsFactors = FALSE
+    )
+    outputkey <- attr(map.values[[r]], "state")
+    rhcollect(outputkey, outputvalue)
+  })
+})
+```
+
+`map.keys` is the Map input keys, the county subset identifiers `FIPS`.
+`map.values` is the Map input values, the county subset `data.frame`
+objects. The `lapply()` loop goes through all subsets, and the looping
+variable is `r`. Each stage of the loop creates one output key-value pair,
+`outputkey` and `outputvalue`.
+`outputkey` is the observation of `state`. `outputvalue` is a `data.frame`
+with one row that has the variables `FIPS`, `county`, `min`, `median`, and
+`max` for county `FIPS`. `rhcollect(outputkey, outputvalue)` emits the pairs
+to reducers, becoming the Reduce input key-value pairs.
+
+#### The Reduce R Code ####
+The Reduce R code for the `listing` summary statistic is
+
+
+```{r eval=FALSE, tidy=FALSE}
+reduce2 <- expression(
+  pre = {
+    reduceoutputvalue <- data.frame()
+  },
+  reduce = {
+    reduceoutputvalue <- rbind(reduceoutputvalue, do.call(rbind, reduce.values))
+  },
+  post = {
+    rhcollect(reduce.key, reduceoutputvalue)
+  }
+)
+```
+
+The first task of Reduce is to group its input key-value pairs by unique key,
+in this case by `state`. The Reduce R code is applied to the key-value pairs
+of each group by a reducer.
+
+Expression `pre`, initializes `reduceoutputvalue` to a
+`data.frame()`. `reduce` assembles the state `data.frame` as the
+reducer receives the values through `rbind(reduceoutputvalue, do.call(rbind,
+reduce.values))`; this uses `rbind()` to add rows to the `data.frame` object.
+`post` operates further on the result of `reduce`; `rhcollect()` forms a Reduce
+output key-value pair for each state. RHIPE then writes the Reduce output
+key-value pairs to the HDFS.
+
+Recall that we told RHIPE in `rhwatch()` to also write the Reduce output
+to `CountyStats` in both the R server global environment. There, we can have a
+look at the results to make sure all is well. We can look at a summary
+
+```{r eval=FALSE, tidy=FALSE}
+str(CountyStats)
+```
+```
+List of 49
+ $ :List of 2
+  ..$ : chr "AL"
+  ..$ :'data.frame':  64 obs. of  5 variables:
+  .. ..$ min   : num [1:64] 34.9 94.7 83.9 92.9 60.3 ...
+  .. ..$ median: num [1:64] 51.9 99.2 88.6 97.5 72.5 ...
+  .. ..$ max   : num [1:64] 73.5 102.2 94.7 105.7 93.5 ...
+  .. ..$ FIPS  : chr [1:64] "01093" "01051" "01031" "01125" ...
+  .. ..$ county: chr [1:64] "Marion" "Elmore" "Coffee" "Tuscaloosa" ...
+ $ :List of 2
+  ..$ : chr "AR"
+  ..$ :'data.frame':	71 obs. of  5 variables:
+  .. ..$ min   : num [1:71] 64.916 0.548 58.333 31.409 92.222 ...
+  .. ..$ median: num [1:71] 84.3 59.6 68.4 40 95.9 ...
+  .. ..$ max   : num [1:71] 97.9 222 75.9 46.2 105.2 ...
+  .. ..$ FIPS  : chr [1:71] "05105" "05079" "05071" "05011" ...
+  .. ..$ county: chr [1:71] "Perry" "Lincoln" "Johnson" "Bradley" ...
+......
+```
+
+We can look at the first key-value pair
+
+
+```{r eval=FALSE, tidy=FALSE}
+CountyStats[[1]][[2]]
+```
+```
+[1] "AL"
+```
+
+We can look at the `data.frame` for state "AL"
+
+```{r eval=FALSE, tidy=FALSE}
+head(CountyStats[[1]][[2]])
+```
+```
+        min    median       max  FIPS     county
+1  34.88372  51.88628  73.46257 01093     Marion
+2  94.66667  99.20582 102.23077 01051     Elmore
+3  83.93817  88.59977  94.67041 01031     Coffee
+4  92.87617  97.53306 105.71429 01125 Tuscaloosa
+5  60.34774  72.46377  93.53741 01027       Clay
+6 108.97167 119.66207 128.13390 01117     Shelby
+```

@@ -1,0 +1,97 @@
+## Installing Packages ##
+
+### Background ###
+
+You will likely want to install packages on your R
+session server, for example, R CRAN packages. And you want these packages to
+run on the Hadoop cluster as well. The mechanism for doing this is much like
+what you have been using for packages in R, but adds a push of the packages to
+the cluster nodes since you will want to use them there too. It is all quite
+simple.
+
+Standard R practice for a server with many R users is for a system
+administrator to install R for use by all. However, you can
+override this by installing your own version. It makes sense to follow this
+practice in this setting too, and have the systems administrators install R
+and `RHIPE` on the R session server and the Hadoop cluster.
+(The `RHIPE` installation manual for system administrators is available in
+these pages in the QuickStart section.) But you can override this and install
+your own `RHIPE` and R, and push them to
+the cluster along with any other packages you installed.
+You do need to be careful to check versions of R, `RHIPE`, and
+Hadoop for compatibility. The Tessera GitHub site has this information.
+
+Now suppose you are using RMR on the Amazon cloud or Vagrant, both
+discussed in our QuickStart section. Then installation of R
+and RHIPE on the R session server and the push to the cluster 
+has been taken care of for you. But if you want to install
+R CRAN packages or packages from other sources you will need to understand the
+installation mechanism.
+
+There are some other installation matters that are the sole domain of the
+system administrator. Obviously linux and Hadoop are. But also
+protocol buffers must be installed on the Hadoop cluster to enable `RHIPE`
+communication. In addition, if you want to use RStudio on the R session
+server, the system administrator will need to install RStudio server on the R
+session server. Now there is one caution here for both users and system
+administrators to consider.  You are best served if the linux versions you
+run are the same on the R server and cluster nodes, and also if the
+hardware is the same. The first is more critical, but the second is a
+nice bonus.  Part of the reason is that Java plays a critical roll in RHIPE,
+and Java likes homogeneity.
+
+### Install and Push ###
+
+To install `Rhipe` on the R session server, you first download the package file
+from within R
+
+```{r eval=FALSE, tidy=FALSE}
+system("wget http://ml.stat.purdue.edu/rhipebin/Rhipe_0.74.0.tar.gz")
+
+```
+This puts the package in your R session directory.
+There are other versions of `Rhipe`. You will need to go to Github to find out
+about them.  To install the package on your R session server, run
+```{r eval=FALSE, tidy=FALSE}
+install.packages("testthat")
+install.packages("rJava")
+install.packages("Rhipe_0.74.0.tar.gz", repos=NULL, type="source")
+```
+The first two R CRAN packages are used only for `RHIPE` installation.
+You do not need them again until you reinstall.
+`RHIPE` is now installed. Each time you startup an R session and you
+want`RHIPE` to be available, you run
+```{r eval=FALSE, tidy=FALSE}
+library(Rhipe)
+rhinit()
+```
+
+Next, you push all the R packages you have installed on the R session 
+server, including <code>RHIPE</code> onto the cluster HDFS.
+First, you need the system administrator to configure the HDFS so
+you can do both this and other analysis tasks where you need to write to the
+HDFS. You need to have a directory on the HDFS where you have write permission.
+A common convention is for the administrator is to set up for you
+the directory `/yourloginname` using your login name, and do the same
+thing for other users. We will assume that has happened.
+
+Suppose in `/yourloginname` you want to create a directory `bin` on the
+HDFS where you will push your installations on the R session server. You can
+do this and carry out the push by
+```{r eval=FALSE, tidy=FALSE}
+rhmkdir("/yourloginname/bin")
+hdfs.setwd("/yourloginname/bin")
+bashRhipeArchive("R.Pkg")
+```
+`rhmkdir()` creates your directory `bin` in the directory `yourloginname`.
+`hdfs.setwd()` declares `/yourloginname/bin` to be the directory with your
+choice of installations.  `bashRhipeArchive()` creates the actual archive of
+your installations and names it as `R.Pkg`.
+
+Each time your R code will require the installations on the HDFS, you
+must in your R session run
+```{r eval=FALSE, tidy=FALSE}
+library(Rhipe) rhinit()
+rhoptions(zips = "/yourloginname/bin/R.Pkg.tar.gz")
+rhoptions(runner = "sh ./R.Pkg/library/Rhipe/bin/RhipeMapReduce.sh")
+```

@@ -1,0 +1,99 @@
+### Write housing.txt to the HDFS ###
+
+To get started, we need to make `housing.txt` available as a text file within
+the HDFS file system. This puts it in a place where it can be read into R, form
+subsets, and write the subsets to the HDFS. This is similar to what we do
+using R in the standard serial way; if we have a text file to read into R, we
+move put it in a place where we can read it into R, for example, in the working
+directory of the R session.
+
+To set this up, the system administrator must do two tasks.
+On the R session server, set up a login directory where you have write
+permission; let's call it `yourloginname` in, say, `/home`.
+In the HDFS, the administrator does a similar thing, creates, say,
+`/yourloginname` which is in the root directory.
+
+Your first step, as for the standard R case, is to copy `housing.txt` to a
+directory on the R-session server where your R session is running.
+Suppose in your login directory you have created a directory `housing`
+for your analysis of the housing data. You can copy `housing.txt` to
+
+```{r eval=FALSE, tidy=FALSE}
+"/home/yourusername/housing/"
+```
+The next step is to get `housing.txt` onto the HDFS as a text file, so we can
+read it into R on the cluster. There are Hadoop commands that could be used
+directly to copy the file, but our promise to you is that you never need to
+use Hadoop commands. There is a `RHIPE function`, `rhput()` that will do it
+for you.
+
+```{r eval=FALSE, tidy=FALSE}
+rhput("/home/yourloginname/housing/housing.txt", "/yourloginname/housing/housing.txt")
+```
+
+The `rhput()` function takes two arguments.
+The first is the path name of the R server file to be copied. The second
+argument is the path name HDFS where the file will be written.
+Note that for the HDFS, in the  directory `/yourloginname`
+there is a directory `housing`. You might have created `housing`
+already with the command
+
+```{r eval=FALSE, tidy=FALSE}
+rhmkdir(/yourloginname/housing)
+```
+If not, then `rhput()` creates the directory for you.
+
+
+<!--
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Recall that this directory is on the initiating R server. Then download the
+data file to your local working directory with the following command:
+
+```{r eval=FALSE, tidy=FALSE}
+system("wget https://raw.githubusercontent.com/xiaosutong/docs-RHIPE/gh-pages/housing.txt")
+```
+
+If it downloaded properly, then "housing.txt" will show up in the output of
+this command, which lists files in your local working directory:
+
+```{r eval=FALSE, tidy=FALSE}
+list.files(".")
+```
+
+This tutorial assumes that you've already installed `RHIPE` using the instructions provided.
+Every time we use `RHIPE`, we have to call the `RHIPE` library in R and initialize it.  Your values
+for `zips` and `runner` might be different than these, depending on the details of your installation.
+
+```{r eval=FALSE, tidy=FALSE}
+library(Rhipe)
+rhinit()
+rhoptions(zips = "/ln/share/RhipeLib.tar.gz")
+rhoptions(runner = "sh ./RhipeLib/library/Rhipe/bin/RhipeMapReduce.sh")
+```
+
+Now we want to copy the raw text file to the HDFS.  The function that writes
+files to HDFS is `rhput()`. Replace `tongx` with an appropriate HDFS directory, such as your user name.
+
+```{r eval=FALSE, tidy=FALSE}
+rhput("./housing.txt", "/yourloginname/housing/housing.txt")
+```
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-->
+
+We can confirm that the housing data text file has been written to the HDFS
+with the `rhexists()` function.
+
+```{r eval=FALSE, tidy=FALSE}
+rhexists("/yourloginname/housing/housing.txt")
+```
+```
+[1] TRUE
+```
+We can use `rhls()` to get more information about files on the
+HDFS. It is similar to the Unix command `ls`. For example,
+rhls("/yourloginname/housing")
+```
+```
+  permission         owner      group     size          modtime                               file
+1 -rw-rw-rw- yourloginname supergroup 7.683 mb 2014-09-17 11:11 /yourloginname/housing/housing.txt
+```
