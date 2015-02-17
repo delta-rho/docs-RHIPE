@@ -33,7 +33,7 @@ pick up the data, follow along using the R commands in the tutorial, and
 explore RHIPE yourself with other RHIPE R commands.
 
 "housing.txt" is available in our Tesseradata Github repository of the
-`RHIPE` documentation [here]
+`RHIPE` documentation [here](https://raw.githubusercontent.com/tesseradata/docs-RHIPE/gh-pages/housing.txt). 
 The file is a table with 190,278 rows (66 months x 2883 counties) and
 7 columns (the variables). The fields in each row are separated by a comma,
 and there are no headers in the first line. Here are the first few lines of
