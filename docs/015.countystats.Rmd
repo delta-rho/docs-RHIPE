@@ -59,13 +59,13 @@ map2 <- expression({
   lapply(seq_along(map.keys), function(r) {
     outputvalue <- data.frame(
       FIPS = map.keys[[r]],
-      county = attr(map.values[[r]], "county"),
+      county = attr(map.values[[r]], "location")["county"],
       min = min(map.values[[r]]$listing, na.rm = TRUE),
       median = median(map.values[[r]]$listing, na.rm = TRUE),
       max = max(map.values[[r]]$listing, na.rm = TRUE),
       stringsAsFactors = FALSE
     )
-    outputkey <- attr(map.values[[r]], "state")
+    outputkey <- attr(map.values[[r]], "location")["state"]
     rhcollect(outputkey, outputvalue)
   })
 })
@@ -121,21 +121,23 @@ str(CountyStats)
 ```
 List of 49
  $ :List of 2
-  ..$ : chr "AL"
-  ..$ :'data.frame':  64 obs. of  5 variables:
-  .. ..$ min   : num [1:64] 34.9 94.7 83.9 92.9 60.3 ...
-  .. ..$ median: num [1:64] 51.9 99.2 88.6 97.5 72.5 ...
-  .. ..$ max   : num [1:64] 73.5 102.2 94.7 105.7 93.5 ...
-  .. ..$ FIPS  : chr [1:64] "01093" "01051" "01031" "01125" ...
-  .. ..$ county: chr [1:64] "Marion" "Elmore" "Coffee" "Tuscaloosa" ...
+  ..$ : Named chr "AL"
+  .. ..- attr(*, "names")= chr "state"
+  ..$ :'data.frame':	64 obs. of  5 variables:
+  .. ..$ FIPS  : chr [1:64] "01055" "01053" "01051" "01049" ...
+  .. ..$ county: chr [1:64] "Etowah" "Escambia" "Elmore" "DeKalb" ...
+  .. ..$ min   : num [1:64] 62.1 60.4 94.7 59.2 41.2 ...
+  .. ..$ median: num [1:64] 67.6 66.2 99.2 71.9 50.6 ...
+  .. ..$ max   : num [1:64] 77.8 79.8 102.2 82.3 60.4 ...
  $ :List of 2
-  ..$ : chr "AR"
+  ..$ : Named chr "AR"
+  .. ..- attr(*, "names")= chr "state"
   ..$ :'data.frame':	71 obs. of  5 variables:
-  .. ..$ min   : num [1:71] 64.916 0.548 58.333 31.409 92.222 ...
-  .. ..$ median: num [1:71] 84.3 59.6 68.4 40 95.9 ...
-  .. ..$ max   : num [1:71] 97.9 222 75.9 46.2 105.2 ...
-  .. ..$ FIPS  : chr [1:71] "05105" "05079" "05071" "05011" ...
-  .. ..$ county: chr [1:71] "Perry" "Lincoln" "Johnson" "Bradley" ...
+  .. ..$ FIPS  : chr [1:71] "05025" "05023" "05021" "05019" ...
+  .. ..$ county: chr [1:71] "Cleveland" "Cleburne" "Clay" "Clark" ...
+  .. ..$ min   : num [1:71] 46.2 99.9 28.1 61.6 58.5 ...
+  .. ..$ median: num [1:71] 60.2 108.2 38.7 67.3 82.1 ...
+  .. ..$ max   : num [1:71] 73.5 125 48.8 72.7 117.4 ...
 ......
 ```
 
@@ -143,10 +145,12 @@ We can look at the first key-value pair
 
 
 ```{r eval=FALSE, tidy=FALSE}
-CountyStats[[1]][[2]]
+CountyStats[[1]][[1]]
 ```
 ```
-[1] "AL"
+[[1]]
+state 
+ "AL" 
 ```
 
 We can look at the `data.frame` for state "AL"
@@ -155,11 +159,11 @@ We can look at the `data.frame` for state "AL"
 head(CountyStats[[1]][[2]])
 ```
 ```
-        min    median       max  FIPS     county
-1  34.88372  51.88628  73.46257 01093     Marion
-2  94.66667  99.20582 102.23077 01051     Elmore
-3  83.93817  88.59977  94.67041 01031     Coffee
-4  92.87617  97.53306 105.71429 01125 Tuscaloosa
-5  60.34774  72.46377  93.53741 01027       Clay
-6 108.97167 119.66207 128.13390 01117     Shelby
+    FIPS     county       min    median       max
+1  01055     Etowah  62.07526  67.64964  77.80488
+2  01053   Escambia  60.44186  66.23173  79.83193
+3  01051     Elmore  94.66667  99.20582 102.23077
+4  01049     DeKalb  59.20484  71.89464  82.32628
+5  01047     Dallas  41.20072  50.60164  60.37621
+6  01045       Dale  65.04065  73.40946  81.80147
 ```
