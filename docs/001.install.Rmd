@@ -19,11 +19,11 @@ these pages in the QuickStart section.) But you can override this and install
 your own `RHIPE` and R, and push them to
 the cluster along with any other packages you installed.
 You do need to be careful to check versions of R, `RHIPE`, and
-Hadoop for compatibility. The Tessera GitHub site has this information.
+Hadoop for compatibility. The DeltaRho GitHub site has this information.
 
 Now suppose you are using RMR on the Amazon cloud or Vagrant, both
 discussed in our QuickStart section. Then installation of R
-and RHIPE on the R session server and the push to the cluster 
+and RHIPE on the R session server and the push to the cluster
 has been taken care of for you. But if you want to install
 R CRAN packages or packages from other sources you will need to understand the
 installation mechanism.
@@ -66,7 +66,7 @@ library(Rhipe)
 rhinit()
 ```
 
-Next, you push all the R packages you have installed on the R session 
+Next, you push all the R packages you have installed on the R session
 server, including <code>RHIPE</code> onto the cluster HDFS.
 First, you need the system administrator to configure the HDFS so
 you can do both this and other analysis tasks where you need to write to the

@@ -17,25 +17,25 @@
     <link href="assets/prism/prism.r.css" rel="stylesheet">
     <script type='text/javascript' src='assets/prism/prism.js'></script>
     <script type='text/javascript' src='assets/prism/prism.r.js'></script>
-    
-    
-    
+
+
+
     <script type="text/javascript" src="assets/MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-   MathJax.Hub.Config({    
-     extensions: ["tex2jax.js"],    
-     "HTML-CSS": { scale: 100}    
+   MathJax.Hub.Config({
+     extensions: ["tex2jax.js"],
+     "HTML-CSS": { scale: 100}
    });
    </script>
-    
+
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="js/html5shiv.js"></script>
     <![endif]-->
-    
+
     <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
     <!-- <link href='http://fonts.googleapis.com/css?family=Lustria' rel='stylesheet' type='text/css'> -->
     <link href='http://fonts.googleapis.com/css?family=Bitter' rel='stylesheet' type='text/css'>
-    
+
 
     <!-- Fav and touch icons -->
     <link rel="apple-touch-icon-precomposed" sizes="144x144" href="ico/apple-touch-icon-144-precomposed.png">
@@ -51,7 +51,7 @@
 
       <div class="masthead">
         <ul class="nav nav-pills pull-right">
-           <li class=''><a href='index.html'>Docs</a></li><li class='active'><a href='functionref.html'>Function Ref</a></li><li><a href='https://github.com/tesseradata/RHIPE'>Github <i class='fa fa-github'></i></a></li>
+           <li class=''><a href='index.html'>Docs</a></li><li class='active'><a href='functionref.html'>Function Ref</a></li><li><a href='https://github.com/delta-rho/RHIPE'>Github <i class='fa fa-github'></i></a></li>
         </ul>
         <p class="myHeader">RHIPE: R function reference</p>
       </div>
@@ -60,11 +60,11 @@
 
 <div class="container-fluid">
    <div class="row-fluid">
-   
+
    <div class="col-md-3 well">
    <ul class = "nav nav-list" id="toc">
    <li class='nav-header unselectable' data-edit-href='01.Rfunction.Rmd'>Contents</li>
-      
+
       <li class='active'>
          <a target='_self' class='nav-not-header' href='#package-information'>Package Information</a>
       </li>
@@ -324,7 +324,7 @@ destination <code>dest</code> also on the HDFS.</p>
 The absolute path on the hdfs to the directory(s) to be deleted.</p>
 
 <p><strong>Description</strong><br>
-This function deletes the folders contained in the character vector <code>folders</code> which are located on 
+This function deletes the folders contained in the character vector <code>folders</code> which are located on
 the HDFS. The deletion is recursive, so all subfolders will be deleted too. Nothing is returned.</p>
 
 <h4>Author</h4>
@@ -386,7 +386,7 @@ Is the number of debug files to read</p>
 <code>conf</code> is a list returned from <code>rhwatch</code> describing the MapReduce job.</p>
 
 <p><strong>async</strong><br>
-When <code>async</code> is <code>TRUE</code>, the function returns immediately, leaving the job running in the background 
+When <code>async</code> is <code>TRUE</code>, the function returns immediately, leaving the job running in the background
 on Hadoop.</p>
 
 <p><strong>mapred</strong><br>
@@ -402,14 +402,14 @@ Additional parameters for system call.</p>
 <h4>Description</h4>
 
 <p>Submits a MapReduce job (created using <code>rhwatch</code>) to the Hadoop MapReduce framework. The argument
-<code>mapred</code> serves the same purpose as the <code>mapred</code> argument to <code>rhwatch</code>. This will override the 
-settings in the object returned from <code>rhwatch</code>.  The function returns when the job ends 
+<code>mapred</code> serves the same purpose as the <code>mapred</code> argument to <code>rhwatch</code>. This will override the
+settings in the object returned from <code>rhwatch</code>.  The function returns when the job ends
 (success/failure or because the user terminated (see <code>rhkill</code>)). When <code>async</code> is TRUE, the function
 returns immediately, leaving the job running in the background on Hadoop.</p>
 
 <h4>Details</h4>
 
-<p>When <code>async</code> is <code>TRUE</code>, function returns an object of class <code>jobtoken</code>. The generic function 
+<p>When <code>async</code> is <code>TRUE</code>, function returns an object of class <code>jobtoken</code>. The generic function
 <code>print.jobtoken</code>, displays the start time, duration (in seconds) and percent progress. This object
 can be used in calls to <code>rhstatus</code>,<code>rhjoin</code> and <code>rhkill</code>. Otherwise is returns a list of counters
 and the job state.</p>
@@ -507,8 +507,8 @@ Path to file or directory on local filesystem to create as the new copy.</p>
 <h4>Description</h4>
 
 <p>Copies the files (or folder) at <code>src</code>, located on the HDFS to the destination <code>dest</code> located on the
-local filesystem. If a file or folder of the same name as <code>dest</code> exists on the local filesystem, it 
-will be deleted. The <code>dest</code> can contain ~ which will be expanded. The original copy of the file or 
+local filesystem. If a file or folder of the same name as <code>dest</code> exists on the local filesystem, it
+will be deleted. The <code>dest</code> can contain ~ which will be expanded. The original copy of the file or
 folder is left on the HDFS after this operation.</p>
 
 <h4>Author</h4>
@@ -568,10 +568,10 @@ Number of records or bytes to read. Depends on &#39;chunk&#39;.</p>
 either &quot;records&quot; or &quot;bytes&quot;</p>
 
 <p><strong>skip</strong><br>
-Files to skip while reading the hdfs. Various installs of Hadoop add additional log info to 
-HDFS output from MapReduce.  Attempting to read these files is not what we want to do. To get around 
-this we specify pieces of filenames to grep and remove from the read. <code>skip</code> is a vector argument 
-just to have sensible defaults for a number of different systems. You can learn which if any files 
+Files to skip while reading the hdfs. Various installs of Hadoop add additional log info to
+HDFS output from MapReduce.  Attempting to read these files is not what we want to do. To get around
+this we specify pieces of filenames to grep and remove from the read. <code>skip</code> is a vector argument
+just to have sensible defaults for a number of different systems. You can learn which if any files
 need to be skipped by using <code>rhls</code> on the target directory.</p>
 
 <p><strong>mc</strong><br>
@@ -627,8 +627,8 @@ The parameter <code>job</code> can either be string with the format <code>job_da
 returned from <code>rhex</code> with the <code>async</code> option set to <code>TRUE</code>.</p>
 
 <p><strong>Description</strong><br>
-This kills the MapReduce job with job identifier given by <code>job</code>. The parameter <code>job</code> can 
-either be string with the format <code>job_datetime_id</code> or the value returned from <code>rhex</code> with the 
+This kills the MapReduce job with job identifier given by <code>job</code>. The parameter <code>job</code> can
+either be string with the format <code>job_datetime_id</code> or the value returned from <code>rhex</code> with the
 <code>async</code> option set to <code>TRUE</code>.</p>
 
 <h4>Author</h4>
@@ -673,9 +673,9 @@ One of &#39;g&#39;,&#39;m&#39;,&#39;b&#39; or &#39;h&#39; (gigabytes, megabytes,
 
 <h4>Details</h4>
 
-<p>Returns a data.frame of filesystem information for the files located at <code>path</code>. If <code>recurse</code> is 
+<p>Returns a data.frame of filesystem information for the files located at <code>path</code>. If <code>recurse</code> is
 <code>TRUE</code>, <code>rhls</code> will recursively travel the directory tree rooted at <code>path</code>. The returned object
-is a data.frame consisting of the columns: permission, owner, group, size (which is numeric), 
+is a data.frame consisting of the columns: permission, owner, group, size (which is numeric),
 modification time, and the file name. <code>path</code> may optionally end in &#39;*&#39; which is the wildcard and
 will match any character(s).</p>
 
@@ -708,7 +708,7 @@ Path to the .RData file on the HDFS.</p>
 <p><strong>envir</strong><br>
 Environment in which to load the .RData file.</p>
 
-<p><strong>value</strong> 
+<p><strong>value</strong>
 data from HDFS</p>
 
 <h4>Description</h4>
@@ -726,8 +726,8 @@ data from HDFS</p>
 <h4>Details</h4>
 
 <p>This code, will chunk a data frame(or matrix) or list into sub objects, defined by <code>chunks</code> and then
-written to the HDFS across <code>numfiles</code> files. Thus if chunks is 10, and <code>numfiles</code> is 20, then a data 
-frame is divided into sub data frames of rows 10 each and written across 20 files. In order to 
+written to the HDFS across <code>numfiles</code> files. Thus if chunks is 10, and <code>numfiles</code> is 20, then a data
+frame is divided into sub data frames of rows 10 each and written across 20 files. In order to
 improve the R-Java switch, this is buffered, the buffer size defined by <code>passByte</code>(bytes).</p>
 
 </div>
@@ -746,7 +746,7 @@ improve the R-Java switch, this is buffered, the buffer size defined by <code>pa
 <h4>Arguments</h4>
 
 <p><strong>expr</strong><br>
-Any R expression, that operates on current map.keys, map.values and current index (given by 
+Any R expression, that operates on current map.keys, map.values and current index (given by
 <code>k</code>,<code>r</code>, and <code>.index</code> respectively).</p>
 
 <p><strong>before</strong><br>
@@ -806,7 +806,7 @@ Is the location of the directory to be created. It is expanded using
 <code>rhabsolute.hdfs.path</code></p>
 
 <p><strong>permissions</strong><br>
-either of the integer form e.g. 777 or string e.g. rwx. If missing the default is 
+either of the integer form e.g. 777 or string e.g. rwx. If missing the default is
 used.</p>
 
 <p><strong>value</strong>  Logical TRUE if success</p>
@@ -871,13 +871,13 @@ Absolute path to place the copies on the HDFS.</p>
 
 <h4>Arguments</h4>
 
-<p><strong>job</strong>  Can be a character indicating the string to a folder, or the result of call to <code>rhwatch</code>. 
-For the latter, this works only read is FALSE (because if read is TRUE, the output is 
+<p><strong>job</strong>  Can be a character indicating the string to a folder, or the result of call to <code>rhwatch</code>.
+For the latter, this works only read is FALSE (because if read is TRUE, the output is
 returned)</p>
 
 <h4>Description</h4>
 
-<p>Returns the output folder from a previous RHIPE job Take a look at <code>hdfs.getwd</code> for more 
+<p>Returns the output folder from a previous RHIPE job Take a look at <code>hdfs.getwd</code> for more
 information.</p>
 
 <h4>Author</h4>
@@ -900,14 +900,14 @@ information.</p>
 <h4>Arguments</h4>
 
 <p><strong>li</strong><br>
-A list of options.  Names of elements indicate the option being modified.  Values of elements 
+A list of options.  Names of elements indicate the option being modified.  Values of elements
 indicate the value the option is to take on.  If NULL then a list of current rhoptions is returned.<br>
 See details.</p>
 
 <p><strong>...</strong><br>
 Options maybe assigned values as <code>key=value</code>. See examples.</p>
 
-<p><strong>value</strong> 
+<p><strong>value</strong>
 <code>rhoptions()</code> returns a list of current options.</p>
 
 <h4>Description</h4>
@@ -917,7 +917,7 @@ Options maybe assigned values as <code>key=value</code>. See examples.</p>
 
 <h4>Details</h4>
 
-<p>One may set the following options specific to Rhipe and many options specific to mapred (not listed 
+<p>One may set the following options specific to Rhipe and many options specific to mapred (not listed
 here but present in the Hadoop documentation).</p>
 
 <h4>Note</h4>
@@ -957,12 +957,12 @@ Path to the local file to be copied to the HDFS.</p>
 Path to the file on the HDFS. <code>rhput</code> creates the file at dest.</p>
 
 <p><strong>deletedest</strong><br>
-If <code>TRUE</code> this function attempts to delete the destination of the HDFS before trying to copy to 
+If <code>TRUE</code> this function attempts to delete the destination of the HDFS before trying to copy to
 that location on the HDFS.</p>
 
 <h4>Description</h4>
 
-<p>Copies the local file called <code>src</code> (not a folder) to the destination <code>dest</code> on the HDFS. Uses 
+<p>Copies the local file called <code>src</code> (not a folder) to the destination <code>dest</code> on the HDFS. Uses
 <code>path.expand</code> to expand the <code>src</code> parameter.</p>
 
 <h4>Note</h4>
@@ -1012,8 +1012,8 @@ Set to lapply by default. User can change this to <code>mclapply</code> for para
 If the keys and values are hadoop Text objects</p>
 
 <p><strong>skip</strong><br>
-Files to skip while reading the HDFS. Various installs of Hadoop add additional log info to HDFS 
-output from MapReduce.  Attempting to read these files is not what we want to do in <code>rhread</code>. To 
+Files to skip while reading the HDFS. Various installs of Hadoop add additional log info to HDFS
+output from MapReduce.  Attempting to read these files is not what we want to do in <code>rhread</code>. To
 get around this we specify pieces of filenames to grep and remove from the read. <code>skip</code> is a vector
 argument just to have sensible defaults for a number of different systems. You can learn which if
 any files need to be skipped by using <code>rhls</code> on target directory.</p>
@@ -1035,14 +1035,14 @@ lines, each row a line from the text files.</p>
 
 <h4>Details</h4>
 
-<p>Reads the key/value pairs from the files pointed to by <code>files</code>. The source <code>files</code> can end in a 
+<p>Reads the key/value pairs from the files pointed to by <code>files</code>. The source <code>files</code> can end in a
 wildcard <code>*</code> e.g. <code>/path/input/p*</code> will read all the key/value pairs contained in files starting
 with <code>p</code> in the folder <code>/path/input/</code>.</p>
 
 <p>The parameter <code>type</code> specifies the format of <code>files</code>. This can be one of <code>text</code>, <code>map</code> or <code>sequence</code>
 which imply a Text file, MapFile or a SequenceFile respectively.</p>
 
-<p>The parameter <code>max</code> specifies the maximum number of entries to read, by default all the key/value 
+<p>The parameter <code>max</code> specifies the maximum number of entries to read, by default all the key/value
 pairs will be read.  Specifying <code>max</code> for text files, limits the number of lines read.</p>
 
 <p><code>mc</code> is by default <code>lapply</code>. The user can change this to mclapply for faster throughput.</p>
@@ -1117,7 +1117,7 @@ Path to file on HDFS.  Creates the file or overwrites it.</p>
 
 <h4>Description</h4>
 
-<p>Puts the result of a <code>save.image</code> call unto the HDFS. Useful if you have variables in the current 
+<p>Puts the result of a <code>save.image</code> call unto the HDFS. Useful if you have variables in the current
 environment you want to work with in a MapReduce as a shared object.</p>
 
 <h4>Author</h4>
@@ -1157,10 +1157,10 @@ If <code>autokill</code> is TUE, then any R errors caused by the map/reduce code
 to be killed.</p>
 
 <p><strong>verbose</strong><br>
-If <code>verbose</code> is TRUE, also provided is the state of the job, the duration in seconds, a 
-data frame with columns for the Map and Reduce phase. This data frame summarizes the number of tasks, 
-the percent complete, and the number of tasks that are pending, running, complete or have failed. In 
-addition the list has an element that consists of both user defined and Hadoop MapReduce built in 
+If <code>verbose</code> is TRUE, also provided is the state of the job, the duration in seconds, a
+data frame with columns for the Map and Reduce phase. This data frame summarizes the number of tasks,
+the percent complete, and the number of tasks that are pending, running, complete or have failed. In
+addition the list has an element that consists of both user defined and Hadoop MapReduce built in
 counters (counters can be user defined with a call to <code>rhcounter</code>).</p>
 
 <p><strong>showErrors</strong><br>
@@ -1179,13 +1179,13 @@ A list of the current state</p>
 
 <h4>Note</h4>
 
-<p>This function does something different depending on if it is used in MapReduce expression during a 
+<p>This function does something different depending on if it is used in MapReduce expression during a
 MapReduce task. In a MapReduce task use this function to REPORT the status of your job to Hadoop.</p>
 
-<p>From the user side, this displays the status of a running MapReduce job and reports information 
+<p>From the user side, this displays the status of a running MapReduce job and reports information
 accumulated about the Hadoop job.</p>
 
-<p>The parameter <code>job</code> can either be a string with the format *job_datetime_id<code>(e.g. 
+<p>The parameter <code>job</code> can either be a string with the format *job_datetime_id<code>(e.g.
 *job_201007281701_0274*) or the value returned from</code>rhex<code>with the</code>async` option set to TRUE.</p>
 
 <h4>Author</h4>
@@ -1220,39 +1220,39 @@ A serialized or unserialized object</p>
 
 <h4>Description</h4>
 
-<p>The function <code>rhsz</code> serializes an object using RHIPE&#39;s binary serialization. This will return the raw 
-bytes corresponding the serialized object. If the object cannot be serialized, it will be converted to 
-NULL and serialized. <code>rhuz</code> takes the bytes and un-serializes, throwing an error if it cannot. These two 
-functions are also available at the R console. RHIPE uses the internals of these functions in 
-<code>rhcollect</code> and <code>rhread</code>. The maximum size of the serialized object that can be read is 256MB. Larger 
-objects will be written successfully, but when read RHIPE will throw an error. These functions are 
+<p>The function <code>rhsz</code> serializes an object using RHIPE&#39;s binary serialization. This will return the raw
+bytes corresponding the serialized object. If the object cannot be serialized, it will be converted to
+NULL and serialized. <code>rhuz</code> takes the bytes and un-serializes, throwing an error if it cannot. These two
+functions are also available at the R console. RHIPE uses the internals of these functions in
+<code>rhcollect</code> and <code>rhread</code>. The maximum size of the serialized object that can be read is 256MB. Larger
+objects will be written successfully, but when read RHIPE will throw an error. These functions are
 useful to get an approximate idea of how large an object will be.</p>
 
 <h4>Details</h4>
 
-<p>The R serialization is verbose. Serialized objects have 22 bytes of header and booleans are serialized 
-to integers. Best performance is achieved in Hadoop when the size of the data exchanged is as small as 
-possible. RHIPE implements its own serialization using Google&#39;s 
+<p>The R serialization is verbose. Serialized objects have 22 bytes of header and booleans are serialized
+to integers. Best performance is achieved in Hadoop when the size of the data exchanged is as small as
+possible. RHIPE implements its own serialization using Google&#39;s
 <a href="http://code.google.com/p/protobuf/">Protocol Buffers</a>.
-A benefit of using this is that the data produced by RHIPE can be read in languages 
+A benefit of using this is that the data produced by RHIPE can be read in languages
 such as Python, C and Java using the wrappers provided on the Google website.</p>
 
-<p>However, a drawback of RHIPE&#39;s serialization is that not all R objects can be seamlessly serialized. 
+<p>However, a drawback of RHIPE&#39;s serialization is that not all R objects can be seamlessly serialized.
 RHIPE can serialize the following</p>
 
 <ul>
-<li><p>Scalar vectors: integers, characters (including UTF8 strings), numerics, logicals, complex and raw. 
+<li><p>Scalar vectors: integers, characters (including UTF8 strings), numerics, logicals, complex and raw.
 <code>NA</code> values are accepted.</p></li>
 <li><p>Lists of the above.</p></li>
 <li><p>Attributes of objects.</p></li>
 </ul>
 
-<p>RHIPE can serialize data frames, factors, matrices including others like time series objects) since 
+<p>RHIPE can serialize data frames, factors, matrices including others like time series objects) since
 these are the above data structure with attributes.</p>
 
-<p>Closures, environments and promises cannot be serialized. You may often get around this limitation by 
-using the built in serialization present in R first, and then serializing that string via <code>rhsz</code> (or 
-indirectly via <code>rhcollect</code>. For example, to serialize the output of <code>xyplot</code>, wrap it in a call to 
+<p>Closures, environments and promises cannot be serialized. You may often get around this limitation by
+using the built in serialization present in R first, and then serializing that string via <code>rhsz</code> (or
+indirectly via <code>rhcollect</code>. For example, to serialize the output of <code>xyplot</code>, wrap it in a call to
 <code>serialize</code>.</p>
 
 <h4>Author</h4>
@@ -1281,16 +1281,16 @@ indirectly via <code>rhcollect</code>. For example, to serialize the output of <
 <h4>Arguments</h4>
 
 <p><strong>map</strong><br>
-<code>map</code> is an R expression (created using the R command <code>expression</code>) that is evaluated by RHIPE 
-during the map stage. For each task, RHIPE will call this expression multiple times (see details). This 
-can also be a function of two arguments,the key and the value. Using an expression provides one more 
+<code>map</code> is an R expression (created using the R command <code>expression</code>) that is evaluated by RHIPE
+during the map stage. For each task, RHIPE will call this expression multiple times (see details). This
+can also be a function of two arguments,the key and the value. Using an expression provides one more
 opportunity for vector operations.</p>
 
 <p><strong>reduce</strong><br>
-<code>reduce</code> is an R expression (created using the R command <code>expression</code>) that is evaluated by 
-RHIPE during the reduce stage, or it is a vector of expressions with names pre, reduce, and post.  For 
-example <code>reduce = expression(pre={...}, reduce={...}, post={...})</code>. <code>reduce</code> is optional, and if not 
-specified the map output keys will be sorted and shuffled and saved to disk. If it is not specified, 
+<code>reduce</code> is an R expression (created using the R command <code>expression</code>) that is evaluated by
+RHIPE during the reduce stage, or it is a vector of expressions with names pre, reduce, and post.  For
+example <code>reduce = expression(pre={...}, reduce={...}, post={...})</code>. <code>reduce</code> is optional, and if not
+specified the map output keys will be sorted and shuffled and saved to disk. If it is not specified,
 then a default identity reduce is performed. Setting it to 0 or another integer is equivalent to
 <code>mapred.reduce.tasks=reduce</code></p>
 
@@ -1299,12 +1299,12 @@ If set to <code>TRUE</code>, RHIPE will run the <code>reduce</code> expression o
 expression locally i.e. on the same computer that is running the associated map after <em>io.sort.mb</em>
 megabytes of key, value pairs. See details.</p>
 
-<p>WARNING: setup/cleanup may not run when you think when used with a combiner. We recommend only advanced 
+<p>WARNING: setup/cleanup may not run when you think when used with a combiner. We recommend only advanced
 users try to use both a combiner and setup/cleanup expressions.</p>
 
 <p><strong>input</strong><br>
-Specifies the type of input. If a character vector then Sequence file input. If a numeric(N), 
-the lapply input e.g the key will be from 1 to N. If a pair of numbers, then the key ranges from 1 
+Specifies the type of input. If a character vector then Sequence file input. If a numeric(N),
+the lapply input e.g the key will be from 1 to N. If a pair of numbers, then the key ranges from 1
 ..N[1] and <code>mapred.map.tasks</code> is set to N<a href="thus%20each%20split%20processes%20approximately%20N%5B1%5D/N%5B2%5D%20key%20%0Avalues">2</a>. See <code>rhfmt</code> for more examples and <code>rhoptions()$ioformats</code>. To get text input, specify
 <code>rhfmt(path, &#39;text&#39;)</code>.</p>
 
@@ -1313,31 +1313,31 @@ Similar to <code>input</code>.  To get a map output format (after after which th
   <code>rhmapfile</code> to query using <code>rhgetkey</code>), specify <code>rhfmt(path, &#39;map&#39;)</code>.</p>
 
 <p><strong>setup</strong><br>
-An expression of R code to be run before map and reduce.  Alternatively an expression with 
-elements map and reduce e.g <code>setup=expression(map=,reduce=)}</code> and each of those is, ran respectively, 
+An expression of R code to be run before map and reduce.  Alternatively an expression with
+elements map and reduce e.g <code>setup=expression(map=,reduce=)}</code> and each of those is, ran respectively,
 before the map and reduce phases. See details.</p>
 
 <p><strong>cleanup</strong><br>
 As in setup except cleanup runs after the map and reduce phases.</p>
 
 <p><strong>orderby</strong><br>
-This is one of <em>bytes</em>, <em>integer</em>, <em>numeric</em> and <em>character</em>. The intermediate keys will be 
-ordered assuming the output key in the map is of that type. If not of the type an exception will be 
-thrown. Tuples can be sorted too, see <em>Tuple Sorting</em> in the online documentation pdf (BUGBUG: What&#39;s 
+This is one of <em>bytes</em>, <em>integer</em>, <em>numeric</em> and <em>character</em>. The intermediate keys will be
+ordered assuming the output key in the map is of that type. If not of the type an exception will be
+thrown. Tuples can be sorted too, see <em>Tuple Sorting</em> in the online documentation pdf (BUGBUG: What&#39;s
 this?).</p>
 
 <p><strong>mapred</strong><br>
-Specify Hadoop and RHIPE options in this parameter (a list).  See details and for Hadoop 
+Specify Hadoop and RHIPE options in this parameter (a list).  See details and for Hadoop
 options go <a href="https://hadoop.apache.org/docs/r1.0.4/mapred-default.html">here</a>.</p>
 
 <p><strong>shared</strong><br>
-This is a character vector of files located on the HDFS. At the beginning of the MapReduce 
-job, these files will be copied to the local hard disks of the Tasktrackers (cluster computers on which 
+This is a character vector of files located on the HDFS. At the beginning of the MapReduce
+job, these files will be copied to the local hard disks of the Tasktrackers (cluster computers on which
 the compute nodes/cores are located). See details.</p>
 
 <p><strong>jarfiles</strong><br>
-Optional JARs that need to be used during Hadoop MapReduce.  This is used in the case when 
-a user provides a custom InputFormat.  Specify the JAR file to handle this InputFormat using this 
+Optional JARs that need to be used during Hadoop MapReduce.  This is used in the case when
+a user provides a custom InputFormat.  Specify the JAR file to handle this InputFormat using this
 argument and specify the name of the InputFormat in the <code>mapred</code> argument.</p>
 
 <p><strong>zips</strong><br>
@@ -1348,10 +1348,10 @@ Distributed cache file on the HDFS to unzip and distribute to each MapReduce tas
 A list of two names elements: <code>lims</code> and <code>type</code>.  See details.}</p>
 
 <p><strong>parameters</strong><br>
-A named list with parameters to be passed to a mapreduce job.It can also be the string 
-&#39;all&#39;, and all variables (whose size &lt;= <code>rhoptions()$copyObjects$maxsize</code> (bytes) and the name of the 
+A named list with parameters to be passed to a mapreduce job.It can also be the string
+&#39;all&#39;, and all variables (whose size &lt;= <code>rhoptions()$copyObjects$maxsize</code> (bytes) and the name of the
 variable not in <code>rhoptions()$copyObjects$exclude</code> will be automatically copied. If <code>rhoptions()$copyObje
-cts$auto</code> is TRUE (default), RHIPE will make an attempt (via codetools) to determine the called 
+cts$auto</code> is TRUE (default), RHIPE will make an attempt (via codetools) to determine the called
 variables/functions and copy them automatically.</p>
 
 <p><strong>copyFiles</strong><br>
@@ -1366,7 +1366,7 @@ Hadoop MapReduce uses the default name <em>job_date_time_number</em> e.g. <code>
 The parameter <code>job</code> can either be a string with the format <em>job_datetime_id</em> (e.g.
   <code>job_201007281701_0274</code>)</p>
 
-<p><strong>mon.sec</strong> 
+<p><strong>mon.sec</strong>
 If <code>mon.sec</code> is greater than 0, a small data frame indicating the progress will be
 returned every <code>mon.sec</code> seconds.</p>
 
@@ -1377,10 +1377,10 @@ If <code>FALSE</code>, results will not be read back and insteat results from rh
 If <code>TRUE</code> do not run, just return the job object</p>
 
 <p><strong>debug</strong><br>
-Can be one of count&#39; which counts the number of errors but does not stop the job, &#39;stop&#39; 
-which stops the job (setting debug to NULL (default) is the same and is much faster) and &#39;collect&#39; 
-which collects 20 errors per split, saves them in files (inside the output folder) prefixed with 
-<code>rhipe.debug</code> and does not kill the job. The maximum number of errors to collect can be set in the 
+Can be one of count&#39; which counts the number of errors but does not stop the job, &#39;stop&#39;
+which stops the job (setting debug to NULL (default) is the same and is much faster) and &#39;collect&#39;
+which collects 20 errors per split, saves them in files (inside the output folder) prefixed with
+<code>rhipe.debug</code> and does not kill the job. The maximum number of errors to collect can be set in the
 <code>param</code> argument to <code>rhwatch</code>, i.e., <code>rh.max.errors=10</code> collects a maximum of 10 errors.</p>
 
 <p><strong>...</strong><br>
@@ -1388,15 +1388,15 @@ Extra parameters passed to <code>rhstatus</code>.</p>
 
 <p><strong>value</strong><br>
 If the state is SUCCEEDED and total output size (in MB) is
-less than <code>rhoptions()$max.read.in.size</code> the data is read with a warning if the number of records is 
-more than <code>rhoptions()$reduce.output.records.warn</code>. If <code>rhoptions()$rhmr.max.records.to.read.in</code> is 
-not <code>NA</code>, that many records is read. This only works for Sequence output. Otherwise an object of 
-length two. The first element is the data returned from rhstatus and the second is the data returned 
+less than <code>rhoptions()$max.read.in.size</code> the data is read with a warning if the number of records is
+more than <code>rhoptions()$reduce.output.records.warn</code>. If <code>rhoptions()$rhmr.max.records.to.read.in</code> is
+not <code>NA</code>, that many records is read. This only works for Sequence output. Otherwise an object of
+length two. The first element is the data returned from rhstatus and the second is the data returned
 by the internal <code>rhwatch()</code> function.</p>
 
 <h4>Description</h4>
 
-<p>Creates the R object that contains all the information required by RHIPE to run a MapReduce job via a 
+<p>Creates the R object that contains all the information required by RHIPE to run a MapReduce job via a
 call to <code>rhex</code> (see details).</p>
 
 <h4>Details</h4>
@@ -1405,55 +1405,55 @@ call to <code>rhex</code> (see details).</p>
 If a task consists of <em>W</em> key,value pairs, the expression <code>map</code> will be
 called ceil(<em>W</em> / <code>rhipe_map_buffsize</code>) times. The default value of <code>rhipe_map_buff_size</code> is 10,000
 and is user configurable. Each time <code>map</code> is called, the vectors <code>map.keys</code> and <code>map.values</code> contain
-<code>rhipe_map_buff_size</code> keys and values respectively. If the objects are large it advisable to reduce the 
+<code>rhipe_map_buff_size</code> keys and values respectively. If the objects are large it advisable to reduce the
 size of <code>rhipe_map_buff_size</code>, so that the total amount of memory used by a task is well controlled.<br>
 For particularly large map.values, the authors have used <code>rhipe_map_buff_size</code> as low as 10.</p>
 
 <p><strong>Setup</strong><br>
-In RHIPE, each task is a sequence of many thousands of key, value pairs. Before running the 
-<code>map</code> and <code>reduce</code> expression (and before any key, value pairs have been read), RHIPE will evaluate 
-expressions in <code>setup</code> and <code>cleanup</code>. Each of these may contain the names <code>map</code> and <code>reduce</code> e.g 
-<code>setup=list(map=,reduce=)</code> specific to the <code>map</code> and <code>reduce</code> expressions. If just an expressions is 
-provided, it will be evaluated before both the Map phase and Reduce phase. The same is true for 
-<code>cleanup</code>. Variables created, packages loaded in the <code>setup</code> expression will be visible in the <code>map</code> 
-and the <code>reduce</code> expression but not both since both are evaluated in different R sessions (except when 
+In RHIPE, each task is a sequence of many thousands of key, value pairs. Before running the
+<code>map</code> and <code>reduce</code> expression (and before any key, value pairs have been read), RHIPE will evaluate
+expressions in <code>setup</code> and <code>cleanup</code>. Each of these may contain the names <code>map</code> and <code>reduce</code> e.g
+<code>setup=list(map=,reduce=)</code> specific to the <code>map</code> and <code>reduce</code> expressions. If just an expressions is
+provided, it will be evaluated before both the Map phase and Reduce phase. The same is true for
+<code>cleanup</code>. Variables created, packages loaded in the <code>setup</code> expression will be visible in the <code>map</code>
+and the <code>reduce</code> expression but not both since both are evaluated in different R sessions (except when
 using a combiner). </p>
 
 <p><strong>Sorting and Shuffling</strong><br>
 To turn off sorting and shuffling and instead write the map output to disk directly, set
-<code>mapred.reduce.tasks</code> to zero in <code>mapred</code>. In this case, the output keys are not sorted and the output 
+<code>mapred.reduce.tasks</code> to zero in <code>mapred</code>. In this case, the output keys are not sorted and the output
 format should not be <code>map</code> (since a map file expects sorted keys).</p>
 
 <p><strong>Using a Combiner</strong><br>
-If <code>combiner</code> is TRUE, the <code>reduce</code> expression will be invoked during the local 
-combine, in which case the output is intermediate and not saved as final output. The <code>reduce</code> 
-expression also be invoked during the final reduce phase, in which case it will receive all the values 
-associated with the key (note, these are values outputted when <code>reduce</code> is invoked as a combiner) and 
-the output will be committed to the destination folder. To determine in which state <code>reduce</code> is 
+If <code>combiner</code> is TRUE, the <code>reduce</code> expression will be invoked during the local
+combine, in which case the output is intermediate and not saved as final output. The <code>reduce</code>
+expression also be invoked during the final reduce phase, in which case it will receive all the values
+associated with the key (note, these are values outputted when <code>reduce</code> is invoked as a combiner) and
+the output will be committed to the destination folder. To determine in which state <code>reduce</code> is
 running read the environment variable <code>rhipe_iscombining</code> which is <code>1&#39; (also the R symbol</code>rhipe_iscom
-bining<code>is equal TRUE) or</code>0&#39; for the former and latter states respectively. WARNING: setup and 
-cleanup may not run when you think when used with a combiner.  We recommend only advanced users try to 
+bining<code>is equal TRUE) or</code>0&#39; for the former and latter states respectively. WARNING: setup and
+cleanup may not run when you think when used with a combiner.  We recommend only advanced users try to
 use both a combiner and setup/cleanup expressions.</p>
 
 <p><strong>Using Shared Files</strong><br>
 <code>shared</code> is a character vector of files located on the HDFS. At the beginning of
-the MapReduce job, these files will be copied to the local hard disks of the Tasktrackers (cluster 
-computers on which the compute nodes/cores are located). User provided R code can read theses files 
+the MapReduce job, these files will be copied to the local hard disks of the Tasktrackers (cluster
+computers on which the compute nodes/cores are located). User provided R code can read theses files
 from the current directory (which is located on the local hard disk). For example, if
 <code>/path/to/file.Rdata</code> is located on the HDFS and shared, it is possible to read it in the R expressions
-as <code>load(&#39;file.Rdata&#39;)</code>. Note, there is no need for the full path, the file is copied to the current 
+as <code>load(&#39;file.Rdata&#39;)</code>. Note, there is no need for the full path, the file is copied to the current
 directory of the R process.</p>
 
 <p><strong>sequence</strong><br>
-The keys and values can be arbitrary R objects. All the information of the object will be 
-preserved. To extract a single key,value pair from a sequence file, either the user has to read the 
+The keys and values can be arbitrary R objects. All the information of the object will be
+preserved. To extract a single key,value pair from a sequence file, either the user has to read the
 entire file or compose a MapReduce job to subset that key,value pair.</p>
 
 <p><strong>text</strong><br>
-The keys, and values are stored as lines of text. If the input is of text format, the keys 
-will be byte offsets from beginning of the file and the value is a line of text without the trailing 
-newline. R objects written to a text output format are written as one line. Characters are quoted and 
-vectors are separated by <code>mapred.field.separator</code> (default is space). The character used to separate 
+The keys, and values are stored as lines of text. If the input is of text format, the keys
+will be byte offsets from beginning of the file and the value is a line of text without the trailing
+newline. R objects written to a text output format are written as one line. Characters are quoted and
+vectors are separated by <code>mapred.field.separator</code> (default is space). The character used to separate
 the key from the value is specified in the <code>mapred</code> argument by setting
 <code>mapred.textoutputformat.separator</code> (default is tab).
 To not output the key, set <code>mapred.textoutputformat.usekey</code> to FALSE.</p>
@@ -1469,29 +1469,29 @@ either throw an error or querying the output for a key might return with empty r
 be created if <code>orderby</code> is not <em>bytes</em>.</p>
 
 <p><strong>Custom Partitioning</strong><br>
-A list of two names elements: <code>lims</code> and <code>type</code>. A partitioner forces all keys 
-sharing the same property to be processed by one reducer. Thus, for these keys, the output of the reduce 
-phase will be saved in one file. For example, if the keys were IP addresses e.g. <code>c(A,B,C,D)</code> where the 
-components are integers, with the default partitioner, the space of keys will be uniformly distributed 
-across the number of reduce tasks. If it is desired to store all IP addresses with the same first three 
+A list of two names elements: <code>lims</code> and <code>type</code>. A partitioner forces all keys
+sharing the same property to be processed by one reducer. Thus, for these keys, the output of the reduce
+phase will be saved in one file. For example, if the keys were IP addresses e.g. <code>c(A,B,C,D)</code> where the
+components are integers, with the default partitioner, the space of keys will be uniformly distributed
+across the number of reduce tasks. If it is desired to store all IP addresses with the same first three
 ordinates in one file (and processed by one R process), use a partitioner as
-<code>list(lims=c(1:3), type=&#39;integer&#39;)</code>. RHIPE implements partitioners when the key is an atomic vector of 
-the following type: integer, string, and real. The value of <code>lims</code> specifies the ordinates (beginning 
+<code>list(lims=c(1:3), type=&#39;integer&#39;)</code>. RHIPE implements partitioners when the key is an atomic vector of
+the following type: integer, string, and real. The value of <code>lims</code> specifies the ordinates (beginning
 and end) of the key to partition on. The numbers must be positive. <code>lims</code> can be a single number.</p>
 
 <p><strong>Avoid Time Outs</strong><br>
 To avoid time outs during long map or reduce expressions, your MapReduce
-expressions should report status messages via calls to rhstatus. In the absence of <code>rhstatus</code> and if 
-<code>mapred.task.timeout</code> is non-zero (by default it is 10 minutes) Hadoop will eventually kill a lengthy R 
+expressions should report status messages via calls to rhstatus. In the absence of <code>rhstatus</code> and if
+<code>mapred.task.timeout</code> is non-zero (by default it is 10 minutes) Hadoop will eventually kill a lengthy R
 process.</p>
 
 <p><strong>List of Important Options for the mapred argument</strong><br>
 These are all set with <code>mapred = list( name=value, name=value,...)</code>.</p>
 
 <ul>
-<li><p>rhipe_map_buffsize:   Number of elements in the map buffer. (not size in bytes!)  Control the amount 
+<li><p>rhipe_map_buffsize:   Number of elements in the map buffer. (not size in bytes!)  Control the amount
 of memory your map task employ using this.</p></li>
-<li><p>rhipe_reduce_buffsize:   Number of elements in the reduce.values buffer. (not size in bytes!) Control 
+<li><p>rhipe_reduce_buffsize:   Number of elements in the reduce.values buffer. (not size in bytes!) Control
 the amount of memory your reduce task employ using this.</p></li>
 <li><p>rhipe_stream_buffer:  .</p></li>
 <li><p>mapred.task.timeout: If non-zero the number of milliseconds before a task times out.</p></li>
@@ -1532,7 +1532,7 @@ An integer specificed to chunk data frames into rows or lists into sublists.</p>
 Buffer size for writing (see details).</p>
 
 <p><strong>kvpairs</strong><br>
-If <code>TRUE</code>, <code>object</code> should be a list of key-value pairs. Otherwise, it should be a data frame or 
+If <code>TRUE</code>, <code>object</code> should be a list of key-value pairs. Otherwise, it should be a data frame or
 matrix (in which case <code>NULL</code> keys will be written with arbitrary chunking of the data).</p>
 
 <p><strong>verbose</strong><br>
@@ -1541,23 +1541,23 @@ Logical - print messages about what is being done</p>
 <h4>Description</h4>
 
 <p>Takes a list of objects, found in <code>object</code> and writes them to the folder pointed to by <code>file</code> which
-will be located on the HDFS. The file <code>dest</code> will be in a format interpretable by <code>RHIPE</code>, i.e it 
+will be located on the HDFS. The file <code>dest</code> will be in a format interpretable by <code>RHIPE</code>, i.e it
 can be used as input to a MapReduce job. The values of the list of are written as key-value pairs in
 a <code>SequenceFileFormat</code> format. <code>numfiles</code> specifies the number of files to write the values to. For
-example, if <code>numfiles</code> is 1, the entire list will be written to one file in the folder <code>dest</code>. 
-Computations across small files do not parallelize well on Hadoop. If the file is small, it will be 
-treated as one split and the user does not gain any (hoped for) parallelization. Distinct files are 
-treated as distinct splits. It is better to split objects across a number of files. If the list 
+example, if <code>numfiles</code> is 1, the entire list will be written to one file in the folder <code>dest</code>.
+Computations across small files do not parallelize well on Hadoop. If the file is small, it will be
+treated as one split and the user does not gain any (hoped for) parallelization. Distinct files are
+treated as distinct splits. It is better to split objects across a number of files. If the list
 consists of a million objects, it is prudent to split them across a few files. Thus if <code>numfiles</code> is
-10 and list contains 1,000,000 values, each of the 10 files (located in the directory <code>dest</code>) will 
+10 and list contains 1,000,000 values, each of the 10 files (located in the directory <code>dest</code>) will
 contain 100,000 values.</p>
 
 </div>
 
-   
+
    <ul class="pager">
-      <li><a href="#" id="previous">&larr; Previous</a></li> 
-      <li><a href="#" id="next">Next &rarr;</a></li> 
+      <li><a href="#" id="previous">&larr; Previous</a></li>
+      <li><a href="#" id="next">Next &rarr;</a></li>
    </ul>
 </div>
 

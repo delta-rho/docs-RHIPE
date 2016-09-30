@@ -2,18 +2,18 @@
 
 ### Introduction ###
 
-Actually, the elapsed time depends on many factors. This presents an opportunity for optimizing the 
-computation even further by making the best choice of the factor. Our approach to the optimization 
+Actually, the elapsed time depends on many factors. This presents an opportunity for optimizing the
+computation even further by making the best choice of the factor. Our approach to the optimization
 is to run statistically designed experiments. This experiment consists of a lot of factors. There are
-two different types of elapsed time, which means there is one computation-type categorical factor. 
-Three statistical factors  are "n", "m" and "v", which are the kernel factors for our experiment. 
-There are also two Hadoop HDFS factors and two Hadoop MapReduce factors, two hardware factors. In 
-total, we have 10 factors. We also have replicates for each combination of these factors. For more 
+two different types of elapsed time, which means there is one computation-type categorical factor.
+Three statistical factors  are "n", "m" and "v", which are the kernel factors for our experiment.
+There are also two Hadoop HDFS factors and two Hadoop MapReduce factors, two hardware factors. In
+total, we have 10 factors. We also have replicates for each combination of these factors. For more
 details, you can check the paper(link) which describes the whole experiment process. In this tutorial,
-we mainly focus on the computation-type category factor "type" and the three statistical factors "n", 
+we mainly focus on the computation-type category factor "type" and the three statistical factors "n",
 "m" and "v".
 
-We will vary the values of `n`, `m`, `v` and set 3 replicates for the experiment. 
+We will vary the values of `n`, `m`, `v` and set 3 replicates for the experiment.
 
 - n    : 21, 23, 25, 27
 - m    : 8, 9, 10, ..., 16
@@ -22,12 +22,12 @@ We will vary the values of `n`, `m`, `v` and set 3 replicates for the experiment
 - rep  : 3
 
 Firstly, we will run a serial computation in R, which means there is no parallel computing. By contrast,
-another designed experiment with tessera computation system will be carried out to check the 
-computation ablity of tessera. 
+another designed experiment with DeltaRho computation system will be carried out to check the
+computation ablity of DeltaRho.
 
 ### Serial Computation in R ###
 
-Let's see what we can do without tessera computation environment, and we only run this experiment in
+Let's see what we can do without DeltaRho computation environment, and we only run this experiment in
 R. Let's just try one single run first to have a basic idea about the time costing.
 
 ```{r, eval=FALSE,tidy=FALSE}
@@ -41,16 +41,16 @@ L
 
 ```
 
-We illustrate the serial computation in R by setting the number of observations $m = 2^{23}$, the 
-log2 number of variables $v = 5$. The size of the dataset is $2^{23}\cdot 2^5 \cdot 2^3=2GB$. Since 
+We illustrate the serial computation in R by setting the number of observations $m = 2^{23}$, the
+log2 number of variables $v = 5$. The size of the dataset is $2^{23}\cdot 2^5 \cdot 2^3=2GB$. Since
 we run this serial computation in R, we don't need the reading time. That is, we can directly analyze
-the dataset after we generate it. In this case, the elapsed time would be the second elapsed time 
-"L" which is the analysing time. 
+the dataset after we generate it. In this case, the elapsed time would be the second elapsed time
+"L" which is the analysing time.
 
 ```
 367.719
 ```
-The total elapsed time $L =367.719$, the unit for `L` is second. So it will take about 6.13 mins to 
+The total elapsed time $L =367.719$, the unit for `L` is second. So it will take about 6.13 mins to
 finish the analyising part. That's not bad. What if we enlarge the value of `v` to 6? Then the size
 of the new dataset would be $2^{23}\cdot 2^6 \cdot 2^3=4GB$. We can re-run this test.
 
@@ -68,7 +68,7 @@ L
 962.317
 ```
 The total elapsed time `L` is 962.317 seconds, which is approximately 16.04 minutes. So `L` increases
-by about 2 times while the size of dataset increases by 1 time. That is getting crazy. Let's keep 
+by about 2 times while the size of dataset increases by 1 time. That is getting crazy. Let's keep
 going on by change the value of `m`.
 
 ```{r, eval=FALSE,tidy=FALSE}
@@ -85,9 +85,9 @@ L
 1815.752
 ```
 The number of rows is $2^{25}$ and the number of collumns is $2^5$. So the size for the new dataset
-is $2^{25}\cdot 2^5 \cdot 2^3=8GB$. The elapsed time `L` is 1815.752 seconds, which is about 30.3 
+is $2^{25}\cdot 2^5 \cdot 2^3=8GB$. The elapsed time `L` is 1815.752 seconds, which is about 30.3
 minutes. What if we keep increasing the size of the dataframe by setting $m = 2^{27}$ and $v=4$? In
-this case, the size of the dataset is 16GB. And actually, we will get an error message in the 
+this case, the size of the dataset is 16GB. And actually, we will get an error message in the
 analysing step:
 
 ```
@@ -95,9 +95,9 @@ Error: cannot allocate vector of size 15.0 Gb
 Timing stopped at: 237.267 102.842 416.989
 
 ```
-Same situation happens when we set $m = 2^{25}$ and $v=6$ in which case, the data set size is 16GB, 
-too. So Serial Computation in R has a lot of limitations in large data analysis such as timing 
-costing and memory limitation. 
+Same situation happens when we set $m = 2^{25}$ and $v=6$ in which case, the data set size is 16GB,
+too. So Serial Computation in R has a lot of limitations in large data analysis such as timing
+costing and memory limitation.
 
 #### Conclusion and Plot ####
 
@@ -111,7 +111,7 @@ And it is time for us to experience the computation ablity of `RHIPE`.
 
 ### A Designed Experiment Using RHIPE ###
 
-We have shown how to run a single run of the performance test, so we 
+We have shown how to run a single run of the performance test, so we
 can easily generalize the single run to the whole cluster performance experiment.
 
 #### Generation Datasets Example ####
@@ -125,7 +125,7 @@ run.vec <- 3
 dir.exp <- "/ln/song273/tmp/multi.factor"
 ```
 
-First, we specify some parameters in the frond end of R. The `run.vec` denotes for each combination 
+First, we specify some parameters in the frond end of R. The `run.vec` denotes for each combination
 of `m`,`v`, we have 3 replicates. The `dir.exp` specifies the directory for this experiment on HDFS.
 
 ##### Map and Execution Function #####
@@ -141,21 +141,21 @@ for (n in n.vec){
 }
 ```
 
-The `map1` and `mr1` are the map function and the execution function seperately we write in the datasets 
+The `map1` and `mr1` are the map function and the execution function seperately we write in the datasets
 generation part of the single run example. You can just copy the codes from the last section there.
 For each fixed value of `m` and `p` there is a single run. So the idea is to put the single run code
-to a for-loop. And the for-loop contains multi-number of MapReduce jobs. The `dir.dm` specifies the 
-output location for each MapReduce job. 
+to a for-loop. And the for-loop contains multi-number of MapReduce jobs. The `dir.dm` specifies the
+output location for each MapReduce job.
 
 It is noteworthy that we only generate subsets once and in the following timing part, we would read
-the subsets from HDFS to the front end of R 3 times. 
+the subsets from HDFS to the front end of R 3 times.
 
 ##### Elapsed Time Measurement #####
 
 ```{r, eval=FALSE,tidy=FALSE}
 for (n in n.vec){
  for (rep in rep.vec) {
-  
+
   ## timing for O
   type = "O"
   for (m in m.vec) {
@@ -166,7 +166,7 @@ for (n in n.vec){
       mr2
       t      = as.numeric(system.time({rhex(mr2, async=FALSE)})[3])
       t      = data.frame(rep=rep,n=n,m=m,v=v,type=type,t=t)
-      timing = rbind(timing,t) 
+      timing = rbind(timing,t)
     }
   }
   ## timing for T
@@ -180,19 +180,19 @@ for (n in n.vec){
       mr3
       t      = as.numeric(system.time({rhex(mr3, async=FALSE)})[3])
       t      = data.frame(rep=rep,n=n,m=m,v=v,type=type,t=t)
-      timing = rbind(timing,t)   
+      timing = rbind(timing,t)
     }
   }
  }
 }
 ```
 
-The first for-loop stands for the different values of `n`. For each fixed value of `n`, the second 
-for-loop stands for the replicates. For each fixed value of `n` and `rep`, the third and forth 
+The first for-loop stands for the different values of `n`. For each fixed value of `n`, the second
+for-loop stands for the replicates. For each fixed value of `n` and `rep`, the third and forth
 for-loop is for differente combination of `m` and `v`. There is a single run of performance test for
 any fixed `n`, `rep`, `m` and `v`. `dir.dm` and `dir.nf` seperately specify the input type and output
-type for execution function `mr2`. The `dir.dm` and `dir.gf` seperately specify the input type and 
-output type for execution function `mr3`. The `map2`, `map3`, `reduce3` are the map and reduce 
+type for execution function `mr2`. The `dir.dm` and `dir.gf` seperately specify the input type and
+output type for execution function `mr3`. The `map2`, `map3`, `reduce3` are the map and reduce
 function we specified before.
 
 Finally, we save our final results to a data frame called `timing`.
@@ -228,8 +228,8 @@ timing
 
 ```
 The `timing` dataframe has 648 rows and 6 collumns because `n` has 4 different values, `type` has two
-levels, `m` has 9 different values and `v` has 3 different values. For each combination of the 
-factors, we have 3 replicates. So we have $4\cdot 2\cdot 9\cdot 3\cdot 3=648$ rows. 
+levels, `m` has 9 different values and `v` has 3 different values. For each combination of the
+factors, we have 3 replicates. So we have $4\cdot 2\cdot 9\cdot 3\cdot 3=648$ rows.
 
 #### Save the Results to the local ####
 
@@ -240,8 +240,8 @@ our local laptop.
 save(timing, file=paste("timing", ".RData", sep=""))
 ```
 
-First, we saved `timing` to the R current working directory on initiating 
-R server by using `save` function. Then we will copy this file from the server to our laptop or 
+First, we saved `timing` to the R current working directory on initiating
+R server by using `save` function. Then we will copy this file from the server to our laptop or
 desktop computer. We are assuming that your laptop is running Linux OS. So from now no we will
 working in the R that is running on your local laptop.
 
@@ -250,12 +250,12 @@ system(scp song273@deneb.stat.purdue.edu:timing.RData /home/song273/elapsedtime/
 ```
 
 The linux command `scp` will copy the `timing.RData` file from the remote host cluster to the laptop
-directory "/home/song273/elapsedtime/". Then we can analyze the data in our local computer which 
+directory "/home/song273/elapsedtime/". Then we can analyze the data in our local computer which
 gives us more freedom to analysis, for examle we don't need to worry about the abrupt network fault.
 
 ### Visualize the Results ###
 
-Here we use R function `xyplot` in the `lattice` package to visualize the results. 
+Here we use R function `xyplot` in the `lattice` package to visualize the results.
 
 ```{r, eval=FALSE, tidy=FALSE }
 library(lattice)
@@ -268,7 +268,7 @@ frame `timing` is available in our working directory.
 ```{r, eval=FALSE, tidy=FALSE }
 v = c("v=4","v=5","v=6")
 label = levels(as.factor(v))
-xyplot(log2(t)~timing$m|n*type, 
+xyplot(log2(t)~timing$m|n*type,
        data   = timing,
        type   ="p",
        groups = as.factor(timing$v),
@@ -292,16 +292,16 @@ the same.
 
    [Plot1. Elapsed time plots against m](./plots/Elapsed_Time_m_v.pdf).
 
-   As we can see from the first plot, for every fixed value of `n` and `v`, the total elapsed time 
+   As we can see from the first plot, for every fixed value of `n` and `v`, the total elapsed time
    "T" decreases first and then increases later as the value of `m` changes. And the three different
    curves in one pannel show the same drop-increase pattern.
 
-- The second plot describes the relationship between two kinds of elapsed time and log number of 
+- The second plot describes the relationship between two kinds of elapsed time and log number of
 varibales `v`.
 
    [Plot2. Elapsed time plots against v](./plots/Elapsed_Time_v_n.pdf).
 
-   As we can see from the plot2, for fixed value of `m` , as the value of `v` increases, the value 
+   As we can see from the plot2, for fixed value of `m` , as the value of `v` increases, the value
    of log2(elapsed time) increases linearly in each panel of the plot.
 
 - The third plot describes the relationship between two kinds of elapsed time and log observations `n`.
@@ -312,29 +312,29 @@ varibales `v`.
 
    [Plot4. Elapsed time plots against Replicates](./plots/Elapsed_Time_rep_v.pdf).
 
-   This plots helps to see whether replication has blocking effect on the elapsed time. Because R has 
-   temporary memory and we read the subsets from HDFS to the front end of R for the first time and R 
-   has temperory memory about these files and in the next replicate of reading part, R maybe just 
-   reads these subsets from memory instead of reading them from the HDFS, which will affect our 
+   This plots helps to see whether replication has blocking effect on the elapsed time. Because R has
+   temporary memory and we read the subsets from HDFS to the front end of R for the first time and R
+   has temperory memory about these files and in the next replicate of reading part, R maybe just
+   reads these subsets from memory instead of reading them from the HDFS, which will affect our
    elpased time experiment.
 
    From the plot4, we can see that replication doesn't have the blocking effects.
-  
+
 ### Summary ###
 
-We contrast the resulsts in the Serial Computation in R and the Divide and Recombine Computation 
-with `RHIPE`. 
+We contrast the resulsts in the Serial Computation in R and the Divide and Recombine Computation
+with `RHIPE`.
 
 [Plot. Elapsed time plots against v](./plots/contrast_D_S.pdf).
 
 For each combination of `n` and `v`, we pick up the optimal `m` in the Divid and Recombine
 Computation to get the minimum elapsed time "T". In this plot, we contrast the minimum elapsed time
 "T" in Divide and Recombine and the elapsed time "T" in the Serial Computation in R. In this plot,
-the categorical factor `compute` has two levels, 'D' and 'S'. The 'D' stands for the Divide and 
+the categorical factor `compute` has two levels, 'D' and 'S'. The 'D' stands for the Divide and
 Recombine computation type. And the 'S' stands for the Serial Computation type.
 
-As we can see from the plot, the Divid and Recombine Computation by RHIPE has much more prevailing 
-advantages than the Serial Computation in R in the aspect of computation speed as well as the 
-computation ablity. 
+As we can see from the plot, the Divid and Recombine Computation by RHIPE has much more prevailing
+advantages than the Serial Computation in R in the aspect of computation speed as well as the
+computation ablity.
 
 
